@@ -15,6 +15,7 @@ from datetime import datetime, timezone, timedelta
 import bcrypt
 import jwt
 import secrets
+import httpx
 from openai import OpenAI
 from emergentintegrations.payments.stripe.checkout import StripeCheckout, CheckoutSessionResponse, CheckoutStatusResponse, CheckoutSessionRequest
 
@@ -35,6 +36,12 @@ if DEEPSEEK_API_KEY:
 
 # Stripe Config
 STRIPE_API_KEY = os.environ.get("STRIPE_API_KEY")
+
+# Brevo Email Config
+BREVO_API_KEY = os.environ.get("BREVO_API_KEY")
+EMAIL_FROM = os.environ.get("EMAIL_FROM", "noreply@learnhub.com")
+EMAIL_FROM_NAME = os.environ.get("EMAIL_FROM_NAME", "LearnHub")
+FRONTEND_URL = os.environ.get("FRONTEND_URL", "https://feature-builder-19.preview.emergentagent.com")
 
 app = FastAPI(title="LearnHub - Course Platform")
 api_router = APIRouter(prefix="/api")
@@ -207,6 +214,168 @@ def require_roles(*roles):
             raise HTTPException(status_code=403, detail="Insufficient permissions")
         return user
     return role_checker
+
+# ============ BREVO EMAIL SERVICE ============
+
+async def send_brevo_email(to_email: str, to_name: str, subject: str, html_content: str, text_content: str = None):
+    """Send email using Brevo API"""
+    if not BREVO_API_KEY:
+        logger.warning("Brevo API key not configured, skipping email")
+        return None
+    
+    url = "https://api.brevo.com/v3/smtp/email"
+    headers = {
+        "accept": "application/json",
+        "api-key": BREVO_API_KEY,
+        "content-type": "application/json"
+    }
+    
+    payload = {
+        "sender": {"name": EMAIL_FROM_NAME, "email": EMAIL_FROM},
+        "to": [{"email": to_email, "name": to_name}],
+        "subject": subject,
+        "htmlContent": html_content
+    }
+    
+    if text_content:
+        payload["textContent"] = text_content
+    
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(url, json=payload, headers=headers)
+            if response.status_code in [200, 201, 202]:
+                logger.info(f"Email sent successfully to {to_email}")
+                return response.json()
+            else:
+                logger.error(f"Failed to send email: {response.status_code} - {response.text}")
+                return None
+    except Exception as e:
+        logger.error(f"Email sending error: {e}")
+        return None
+
+async def send_enrollment_email(user_email: str, user_name: str, course_title: str, course_id: str):
+    """Send course enrollment notification email"""
+    subject = f"Welcome to {course_title}! - LearnHub"
+    html_content = f"""
+    <html>
+    <body style="font-family: 'IBM Plex Sans', Arial, sans-serif; background-color: #F4F5F7; padding: 40px;">
+        <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 4px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <div style="background-color: #002FA7; padding: 30px; text-align: center;">
+                <h1 style="color: white; margin: 0; font-size: 24px;">🎓 You're Enrolled!</h1>
+            </div>
+            <div style="padding: 30px;">
+                <p style="color: #0A0B10; font-size: 16px;">Hi {user_name},</p>
+                <p style="color: #64748B; font-size: 14px; line-height: 1.6;">
+                    Congratulations! You have been successfully enrolled in:
+                </p>
+                <div style="background-color: #F4F5F7; padding: 20px; border-radius: 4px; margin: 20px 0; border-left: 4px solid #002FA7;">
+                    <h2 style="color: #0A0B10; margin: 0 0 10px 0; font-size: 18px;">{course_title}</h2>
+                </div>
+                <p style="color: #64748B; font-size: 14px; line-height: 1.6;">
+                    Start your learning journey now! Access your course materials, take quizzes, and earn your certificate.
+                </p>
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="{FRONTEND_URL}/courses/{course_id}" 
+                       style="background-color: #002FA7; color: white; padding: 12px 30px; text-decoration: none; border-radius: 4px; font-weight: 500; display: inline-block;">
+                        Start Learning
+                    </a>
+                </div>
+                <p style="color: #94A3B8; font-size: 12px; text-align: center;">
+                    If you have any questions, feel free to reach out to our support team.
+                </p>
+            </div>
+            <div style="background-color: #0A0B10; padding: 20px; text-align: center;">
+                <p style="color: #64748B; font-size: 12px; margin: 0;">© 2026 LearnHub. All rights reserved.</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    return await send_brevo_email(user_email, user_name, subject, html_content)
+
+async def send_progress_email(user_email: str, user_name: str, course_title: str, progress: int, course_id: str):
+    """Send course progress update email"""
+    subject = f"Progress Update: {progress}% Complete - {course_title}"
+    html_content = f"""
+    <html>
+    <body style="font-family: 'IBM Plex Sans', Arial, sans-serif; background-color: #F4F5F7; padding: 40px;">
+        <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 4px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <div style="background-color: #002FA7; padding: 30px; text-align: center;">
+                <h1 style="color: white; margin: 0; font-size: 24px;">📊 Progress Update</h1>
+            </div>
+            <div style="padding: 30px;">
+                <p style="color: #0A0B10; font-size: 16px;">Hi {user_name},</p>
+                <p style="color: #64748B; font-size: 14px; line-height: 1.6;">
+                    Great progress on <strong>{course_title}</strong>!
+                </p>
+                <div style="background-color: #F4F5F7; padding: 20px; border-radius: 4px; margin: 20px 0;">
+                    <p style="color: #0A0B10; font-size: 14px; margin: 0 0 10px 0;">Your Progress:</p>
+                    <div style="background-color: #E2E8F0; height: 24px; border-radius: 12px; overflow: hidden;">
+                        <div style="background-color: #002FA7; height: 100%; width: {progress}%; display: flex; align-items: center; justify-content: center;">
+                            <span style="color: white; font-size: 12px; font-weight: bold;">{progress}%</span>
+                        </div>
+                    </div>
+                </div>
+                <p style="color: #64748B; font-size: 14px; line-height: 1.6;">
+                    Keep going! You're doing amazing work.
+                </p>
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="{FRONTEND_URL}/courses/{course_id}" 
+                       style="background-color: #002FA7; color: white; padding: 12px 30px; text-decoration: none; border-radius: 4px; font-weight: 500; display: inline-block;">
+                        Continue Learning
+                    </a>
+                </div>
+            </div>
+            <div style="background-color: #0A0B10; padding: 20px; text-align: center;">
+                <p style="color: #64748B; font-size: 12px; margin: 0;">© 2026 LearnHub. All rights reserved.</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    return await send_brevo_email(user_email, user_name, subject, html_content)
+
+async def send_certificate_email(user_email: str, user_name: str, course_title: str, certificate_id: str, score: int):
+    """Send certificate completion notification email"""
+    subject = f"🎓 Congratulations! Certificate for {course_title}"
+    html_content = f"""
+    <html>
+    <body style="font-family: 'IBM Plex Sans', Arial, sans-serif; background-color: #F4F5F7; padding: 40px;">
+        <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 4px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <div style="background: linear-gradient(135deg, #002FA7 0%, #0A0B10 100%); padding: 40px; text-align: center;">
+                <div style="font-size: 60px; margin-bottom: 10px;">🎓</div>
+                <h1 style="color: white; margin: 0; font-size: 28px;">Congratulations!</h1>
+                <p style="color: rgba(255,255,255,0.8); margin: 10px 0 0 0;">You've earned a certificate</p>
+            </div>
+            <div style="padding: 30px;">
+                <p style="color: #0A0B10; font-size: 16px;">Dear {user_name},</p>
+                <p style="color: #64748B; font-size: 14px; line-height: 1.6;">
+                    You have successfully completed <strong>{course_title}</strong> with a score of <strong>{score}%</strong>!
+                </p>
+                <div style="background: linear-gradient(135deg, rgba(0,47,167,0.1) 0%, rgba(10,11,16,0.1) 100%); padding: 25px; border-radius: 4px; margin: 20px 0; text-align: center; border: 2px solid #002FA7;">
+                    <p style="color: #64748B; font-size: 12px; margin: 0 0 5px 0; text-transform: uppercase; letter-spacing: 2px;">Certificate of Completion</p>
+                    <h2 style="color: #0A0B10; margin: 0 0 10px 0; font-size: 20px;">{course_title}</h2>
+                    <p style="color: #002FA7; font-size: 18px; margin: 0; font-weight: 500;">{user_name}</p>
+                    <p style="color: #94A3B8; font-size: 12px; margin: 15px 0 0 0;">Certificate ID: {certificate_id}</p>
+                </div>
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="{FRONTEND_URL}/certificates" 
+                       style="background-color: #002FA7; color: white; padding: 12px 30px; text-decoration: none; border-radius: 4px; font-weight: 500; display: inline-block;">
+                        View Your Certificate
+                    </a>
+                </div>
+                <p style="color: #64748B; font-size: 14px; line-height: 1.6; text-align: center;">
+                    Share your achievement on LinkedIn, Twitter, or Facebook!
+                </p>
+            </div>
+            <div style="background-color: #0A0B10; padding: 20px; text-align: center;">
+                <p style="color: #64748B; font-size: 12px; margin: 0;">© 2026 LearnHub. All rights reserved.</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    return await send_brevo_email(user_email, user_name, subject, html_content)
 
 # ============ AUTH ENDPOINTS ============
 
@@ -522,6 +691,30 @@ async def submit_quiz(quiz_id: str, data: QuizAttemptCreate, request: Request):
             {"course_id": quiz["course_id"], "user_id": user["id"]},
             {"$set": {"completed": True, "completed_at": datetime.now(timezone.utc).isoformat(), "score": score}}
         )
+        
+        # Generate certificate and send email
+        cert_doc = {
+            "course_id": quiz["course_id"],
+            "user_id": user["id"],
+            "user_name": user["name"],
+            "course_title": course.get("title") if course else "Course",
+            "score": score,
+            "template": "default",
+            "primary_color": "#002FA7",
+            "secondary_color": "#0A0B10",
+            "issued_at": datetime.now(timezone.utc).isoformat(),
+            "certificate_id": str(uuid.uuid4())[:8].upper()
+        }
+        await db.certificates.insert_one(cert_doc)
+        
+        # Send certificate email
+        await send_certificate_email(
+            user["email"],
+            user["name"],
+            course.get("title") if course else "Course",
+            cert_doc["certificate_id"],
+            score
+        )
     
     return {"score": score, "passed": passed, "passing_score": passing_score, "correct": correct, "total": len(questions)}
 
@@ -535,8 +728,8 @@ async def create_enrollment(data: EnrollmentCreate, request: Request):
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
     
-    # If client_manager doing bulk enrollment
-    if user["role"] == "client_manager" and data.user_ids:
+    # Admin doing bulk enrollment (moved from client_manager to admin)
+    if user["role"] == "admin" and data.user_ids:
         enrolled = []
         for uid in data.user_ids:
             existing = await db.enrollments.find_one({"course_id": data.course_id, "user_id": uid})
@@ -550,6 +743,16 @@ async def create_enrollment(data: EnrollmentCreate, request: Request):
                     "created_at": datetime.now(timezone.utc).isoformat()
                 })
                 enrolled.append(uid)
+                
+                # Send enrollment email to each user
+                enrolled_user = await db.users.find_one({"_id": ObjectId(uid)})
+                if enrolled_user:
+                    await send_enrollment_email(
+                        enrolled_user.get("email"),
+                        enrolled_user.get("name"),
+                        course.get("title"),
+                        data.course_id
+                    )
         return {"message": f"Enrolled {len(enrolled)} users", "enrolled": enrolled}
     
     # Self enrollment
@@ -575,6 +778,10 @@ async def create_enrollment(data: EnrollmentCreate, request: Request):
         "score": 0,
         "created_at": datetime.now(timezone.utc).isoformat()
     })
+    
+    # Send enrollment email
+    await send_enrollment_email(user["email"], user["name"], course.get("title"), data.course_id)
+    
     return {"message": "Enrolled successfully"}
 
 @api_router.get("/enrollments/my")
@@ -612,9 +819,177 @@ async def get_course_enrollments(course_id: str, request: Request):
                 "user_email": student.get("email"),
                 "completed": e.get("completed", False),
                 "score": e.get("score", 0),
-                "created_at": e.get("created_at")
+                "created_at": e.get("created_at"),
+                "completed_at": e.get("completed_at")
             })
     return result
+
+# ============ GROUP PROGRESS TRACKING (Client Manager) ============
+
+@api_router.get("/groups/overview")
+async def get_groups_overview(request: Request):
+    """Get overview of all courses with group progress - for Client Manager"""
+    user = await require_roles("admin", "client_manager")(request)
+    
+    # Get all courses
+    courses = await db.courses.find({}, {"_id": 1, "title": 1, "language": 1, "thumbnail_url": 1}).to_list(100)
+    
+    result = []
+    for course in courses:
+        course_id = str(course["_id"])
+        
+        # Get enrollment stats
+        total_enrolled = await db.enrollments.count_documents({"course_id": course_id})
+        completed = await db.enrollments.count_documents({"course_id": course_id, "completed": True})
+        in_progress = total_enrolled - completed
+        
+        # Calculate average score of completed students
+        completed_enrollments = await db.enrollments.find({"course_id": course_id, "completed": True}, {"score": 1}).to_list(1000)
+        avg_score = 0
+        if completed_enrollments:
+            scores = [e.get("score", 0) for e in completed_enrollments]
+            avg_score = round(sum(scores) / len(scores), 1)
+        
+        # Calculate completion rate
+        completion_rate = round((completed / total_enrolled * 100), 1) if total_enrolled > 0 else 0
+        
+        result.append({
+            "course_id": course_id,
+            "course_title": course.get("title"),
+            "language": course.get("language", "en"),
+            "thumbnail_url": course.get("thumbnail_url"),
+            "total_enrolled": total_enrolled,
+            "completed": completed,
+            "in_progress": in_progress,
+            "completion_rate": completion_rate,
+            "average_score": avg_score
+        })
+    
+    return result
+
+@api_router.get("/groups/course/{course_id}/progress")
+async def get_course_group_progress(course_id: str, request: Request):
+    """Get detailed progress of all students in a course - for Client Manager"""
+    user = await require_roles("admin", "client_manager")(request)
+    
+    course = await db.courses.find_one({"_id": ObjectId(course_id)})
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    
+    enrollments = await db.enrollments.find({"course_id": course_id}).to_list(1000)
+    
+    students = []
+    for e in enrollments:
+        student = await db.users.find_one({"_id": ObjectId(e["user_id"])}, {"_id": 1, "name": 1, "email": 1})
+        if student:
+            # Get quiz attempts for this student in this course
+            quiz_attempts = await db.quiz_attempts.find({
+                "course_id": course_id,
+                "user_id": e["user_id"]
+            }).sort("created_at", -1).to_list(10)
+            
+            last_activity = e.get("completed_at") or e.get("created_at")
+            if quiz_attempts:
+                last_activity = quiz_attempts[0].get("created_at", last_activity)
+            
+            students.append({
+                "user_id": e["user_id"],
+                "user_name": student.get("name"),
+                "user_email": student.get("email"),
+                "enrolled_at": e.get("created_at"),
+                "completed": e.get("completed", False),
+                "completed_at": e.get("completed_at"),
+                "score": e.get("score", 0),
+                "quiz_attempts": len(quiz_attempts),
+                "last_activity": last_activity,
+                "status": "completed" if e.get("completed") else "in_progress"
+            })
+    
+    # Sort by completion status (completed first, then by score)
+    students.sort(key=lambda x: (not x["completed"], -x["score"]))
+    
+    # Calculate summary stats
+    total = len(students)
+    completed_count = sum(1 for s in students if s["completed"])
+    avg_score = round(sum(s["score"] for s in students if s["completed"]) / completed_count, 1) if completed_count > 0 else 0
+    
+    return {
+        "course_id": course_id,
+        "course_title": course.get("title"),
+        "language": course.get("language", "en"),
+        "passing_score": course.get("passing_score", 70),
+        "summary": {
+            "total_enrolled": total,
+            "completed": completed_count,
+            "in_progress": total - completed_count,
+            "completion_rate": round((completed_count / total * 100), 1) if total > 0 else 0,
+            "average_score": avg_score
+        },
+        "students": students
+    }
+
+@api_router.get("/groups/student/{user_id}/progress")
+async def get_student_progress(user_id: str, request: Request):
+    """Get detailed progress of a specific student across all courses - for Client Manager"""
+    user = await require_roles("admin", "client_manager")(request)
+    
+    student = await db.users.find_one({"_id": ObjectId(user_id)}, {"_id": 1, "name": 1, "email": 1})
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+    
+    enrollments = await db.enrollments.find({"user_id": user_id}).to_list(100)
+    
+    courses = []
+    for e in enrollments:
+        course = await db.courses.find_one({"_id": ObjectId(e["course_id"])})
+        if course:
+            # Get quiz attempts
+            quiz_attempts = await db.quiz_attempts.find({
+                "course_id": e["course_id"],
+                "user_id": user_id
+            }).sort("created_at", -1).to_list(10)
+            
+            # Get certificate if completed
+            certificate = None
+            if e.get("completed"):
+                cert = await db.certificates.find_one({"course_id": e["course_id"], "user_id": user_id})
+                if cert:
+                    certificate = {
+                        "certificate_id": cert.get("certificate_id"),
+                        "issued_at": cert.get("issued_at")
+                    }
+            
+            courses.append({
+                "course_id": e["course_id"],
+                "course_title": course.get("title"),
+                "language": course.get("language", "en"),
+                "enrolled_at": e.get("created_at"),
+                "completed": e.get("completed", False),
+                "completed_at": e.get("completed_at"),
+                "score": e.get("score", 0),
+                "passing_score": course.get("passing_score", 70),
+                "quiz_attempts": len(quiz_attempts),
+                "certificate": certificate
+            })
+    
+    # Calculate overall stats
+    total_courses = len(courses)
+    completed_courses = sum(1 for c in courses if c["completed"])
+    avg_score = round(sum(c["score"] for c in courses if c["completed"]) / completed_courses, 1) if completed_courses > 0 else 0
+    
+    return {
+        "user_id": user_id,
+        "user_name": student.get("name"),
+        "user_email": student.get("email"),
+        "summary": {
+            "total_enrolled": total_courses,
+            "completed": completed_courses,
+            "in_progress": total_courses - completed_courses,
+            "completion_rate": round((completed_courses / total_courses * 100), 1) if total_courses > 0 else 0,
+            "average_score": avg_score
+        },
+        "courses": courses
+    }
 
 # ============ CERTIFICATE ENDPOINTS ============
 

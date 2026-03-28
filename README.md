@@ -324,9 +324,16 @@ LearnHub is a full-featured Learning Management System (LMS) that enables organi
 ### Enrollments
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/api/enrollments` | Enroll in course (self or bulk) |
+| POST | `/api/enrollments` | Enroll in course (self or bulk by admin) |
 | GET | `/api/enrollments/my` | Get my enrollments |
 | GET | `/api/enrollments/course/{id}` | Get course enrollments (admin/manager) |
+
+### Group Progress Tracking (Client Manager)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/groups/overview` | Overview of all courses with progress stats |
+| GET | `/api/groups/course/{id}/progress` | Detailed student progress for a course |
+| GET | `/api/groups/student/{id}/progress` | Individual student progress across courses |
 
 ### Certificates
 | Method | Endpoint | Description |
@@ -431,9 +438,33 @@ LearnHub is a full-featured Learning Management System (LMS) that enables organi
 
 | Role | Capabilities |
 |------|--------------|
-| **Admin** | Full access: Create/edit/delete courses, quizzes, manage users, view analytics, translate content |
-| **Client Manager** | Bulk enroll students, view course enrollments, manage groups |
-| **Student** | Browse courses, enroll, take quizzes, earn certificates, use AI chat, participate in forums |
+| **Admin** | Full access: Create/edit/delete courses & quizzes, Bulk enroll students, Manage users, View analytics, AI translate content, Configure certificates |
+| **Client Manager** | View course enrollments, Monitor group training progress, View student completion rates & scores, Track individual student progress across courses |
+| **Student** | Browse courses, Enroll (free or via payment), Take quizzes, Earn certificates, Use AI chat, Participate in forums |
+
+---
+
+## 📧 Email Notifications (Brevo)
+
+### Configuration
+```env
+BREVO_API_KEY=your-brevo-api-key
+EMAIL_FROM=noreply@learnhub.com
+EMAIL_FROM_NAME=LearnHub
+```
+
+### Email Types
+| Event | Recipient | Content |
+|-------|-----------|---------|
+| **Enrollment** | Student | Welcome email with course link |
+| **Progress** | Student | Progress update with percentage |
+| **Certificate** | Student | Congratulations with certificate details |
+
+### Getting Brevo API Key
+1. Sign up at [brevo.com](https://brevo.com)
+2. Go to SMTP & API → API Keys
+3. Create new API key
+4. Add to backend .env file
 
 ---
 

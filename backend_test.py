@@ -6,8 +6,6 @@ from datetime import datetime
 class LearnHubAPITester:
     def __init__(self, base_url="https://feature-builder-19.preview.emergentagent.com"):
         self.base_url = base_url
-        self.token = None
-        self.admin_token = None
         self.tests_run = 0
         self.tests_passed = 0
         self.session = requests.Session()
@@ -16,26 +14,20 @@ class LearnHubAPITester:
     def run_test(self, name, method, endpoint, expected_status, data=None, use_admin=False):
         """Run a single API test"""
         url = f"{self.base_url}/api/{endpoint}"
-        headers = {'Content-Type': 'application/json'}
         
-        # Use admin token if specified
-        token_to_use = self.admin_token if use_admin else self.token
-        if token_to_use:
-            headers['Authorization'] = f'Bearer {token_to_use}'
-
         self.tests_run += 1
         print(f"\n🔍 Testing {name}...")
         print(f"   URL: {url}")
         
         try:
             if method == 'GET':
-                response = self.session.get(url, headers=headers)
+                response = self.session.get(url)
             elif method == 'POST':
-                response = self.session.post(url, json=data, headers=headers)
+                response = self.session.post(url, json=data)
             elif method == 'PUT':
-                response = self.session.put(url, json=data, headers=headers)
+                response = self.session.put(url, json=data)
             elif method == 'DELETE':
-                response = self.session.delete(url, headers=headers)
+                response = self.session.delete(url)
 
             success = response.status_code == expected_status
             if success:
@@ -74,6 +66,15 @@ class LearnHubAPITester:
         if success and 'id' in response:
             # Extract token from cookies if available
             print(f"   Admin logged in: {response.get('name')} ({response.get('role')})")
+            # Verify admin authentication by checking /auth/me
+            auth_success, auth_response = self.run_test(
+                "Verify Admin Auth",
+                "GET",
+                "auth/me",
+                200
+            )
+            if auth_success:
+                print(f"   Admin auth verified: {auth_response.get('role')}")
             return True
         return False
 
@@ -339,9 +340,125 @@ class LearnHubAPITester:
             return True, new_course_id
         return False, None
 
+    def test_bulk_enrollment(self, course_id, user_ids):
+        """Test bulk enrollment (admin only)"""
+        success, response = self.run_test(
+            "Bulk Enrollment",
+            "POST",
+            "enrollments",
+            200,
+            data={"course_id": course_id, "user_ids": user_ids},
+            use_admin=True
+        )
+        if success:
+            enrolled_count = len(response.get('enrolled', []))
+            print(f"   Bulk enrolled {enrolled_count} users")
+            return True
+        return False
+
+    def test_groups_overview(self):
+        """Test groups overview endpoint (admin/client_manager)"""
+        success, response = self.run_test(
+            "Groups Overview",
+            "GET",
+            "groups/overview",
+            200,
+            use_admin=True
+        )
+        if success and isinstance(response, list):
+            print(f"   Found {len(response)} courses in overview")
+            for course in response[:3]:  # Show first 3 courses
+                print(f"   Course: {course.get('course_title')} - Enrolled: {course.get('total_enrolled')}, Completed: {course.get('completed')}")
+            return True
+        return False
+
+    def test_course_group_progress(self, course_id):
+        """Test course group progress endpoint"""
+        success, response = self.run_test(
+            "Course Group Progress",
+            "GET",
+            f"groups/course/{course_id}/progress",
+            200,
+            use_admin=True
+        )
+        if success and 'summary' in response:
+            summary = response.get('summary', {})
+            students = response.get('students', [])
+            print(f"   Course progress - Total: {summary.get('total_enrolled')}, Completed: {summary.get('completed')}")
+            print(f"   Students tracked: {len(students)}")
+            return True
+        return False
+
+    def test_student_progress(self, user_id):
+        """Test individual student progress endpoint"""
+        success, response = self.run_test(
+            "Student Progress",
+            "GET",
+            f"groups/student/{user_id}/progress",
+            200,
+            use_admin=True
+        )
+        if success and 'summary' in response:
+            summary = response.get('summary', {})
+            courses = response.get('courses', [])
+            print(f"   Student progress - Enrolled: {summary.get('total_enrolled')}, Completed: {summary.get('completed')}")
+            print(f"   Courses: {len(courses)}")
+            return True
+        return False
+
+    def test_course_enrollments(self, course_id):
+        """Test getting course enrollments (admin/client_manager)"""
+        success, response = self.run_test(
+            "Course Enrollments",
+            "GET",
+            f"enrollments/course/{course_id}",
+            200,
+            use_admin=True
+        )
+        if success and isinstance(response, list):
+            print(f"   Found {len(response)} enrollments for course")
+            return True
+        return False
+
+    def test_client_manager_registration(self):
+        """Test client manager registration"""
+        timestamp = datetime.now().strftime('%H%M%S')
+        test_email = f"manager{timestamp}@test.com"
+        
+        success, response = self.run_test(
+            "Client Manager Registration",
+            "POST",
+            "auth/register",
+            200,
+            data={
+                "email": test_email,
+                "password": "test123",
+                "name": f"Test Manager {timestamp}",
+                "role": "client_manager"
+            }
+        )
+        if success and 'id' in response:
+            print(f"   Client Manager registered: {response.get('name')} ({response.get('email')})")
+            return True, test_email, response.get('id')
+        return False, None, None
+
+    def test_client_manager_login(self, email):
+        """Test client manager login"""
+        success, response = self.run_test(
+            "Client Manager Login",
+            "POST",
+            "auth/login",
+            200,
+            data={"email": email, "password": "test123"}
+        )
+        if success and 'id' in response:
+            print(f"   Client Manager logged in: {response.get('name')}")
+            return True
+        return False
+
 def main():
-    print("🚀 Starting LearnHub API Tests")
-    print("=" * 50)
+    print("🚀 Starting LearnHub API Tests - Role Management & Email Notifications")
+    print("=" * 70)
     
     tester = LearnHubAPITester()
     
@@ -368,6 +485,12 @@ def main():
     if not tester.test_student_login(student_email):
         print("❌ Student login failed")
         return 1
+
+    # Test client manager registration and login
+    print("\n👥 Testing Client Manager Role")
+    manager_success, manager_email, manager_id = tester.test_client_manager_registration()
+    if manager_success:
+        tester.test_client_manager_login(manager_email)
 
     # Test student stats and auth
     tester.test_student_stats()
@@ -423,8 +546,67 @@ def main():
         tester.test_enrollment(course_id)
         tester.test_get_my_enrollments()
 
+        # Test NEW FEATURES - Admin Bulk Enrollment & Group Progress
+        print("\n📊 Testing New Admin Features - Bulk Enrollment & Group Progress")
+        
+        # Login as admin for bulk enrollment
+        tester.test_admin_login()
+        
+        # Create additional students for bulk enrollment
+        student_ids = []
+        for i in range(2):
+            timestamp = datetime.now().strftime('%H%M%S') + str(i)
+            test_email = f"bulkstudent{timestamp}@test.com"
+            reg_success, response = tester.run_test(
+                f"Create Bulk Student {i+1}",
+                "POST",
+                "auth/register",
+                200,
+                data={
+                    "email": test_email,
+                    "password": "test123",
+                    "name": f"Bulk Student {i+1}",
+                    "role": "student"
+                }
+            )
+            if reg_success and 'id' in response:
+                student_ids.append(response['id'])
+        
+        # Login as admin again after creating students
+        tester.test_admin_login()
+        
+        # Test bulk enrollment
+        if student_ids:
+            tester.test_bulk_enrollment(course_id, student_ids)
+        
+        # Test group progress endpoints
+        print("\n🔍 Checking admin authentication before group tests...")
+        auth_success, auth_response = tester.run_test(
+            "Check Current User",
+            "GET",
+            "auth/me",
+            200
+        )
+        if auth_success:
+            print(f"   Current user: {auth_response.get('name')} ({auth_response.get('role')})")
+        
+        tester.test_groups_overview()
+        tester.test_course_group_progress(course_id)
+        tester.test_course_enrollments(course_id)
+        
+        # Test individual student progress
+        if student_ids:
+            tester.test_student_progress(student_ids[0])
+        
+        # Test Client Manager access to group progress
+        if manager_success:
+            print("\n👥 Testing Client Manager Group Progress Access")
+            tester.test_client_manager_login(manager_email)
+            tester.test_groups_overview()
+            tester.test_course_group_progress(course_id)
+
     # Print final results
-    print("\n" + "=" * 50)
+    print("\n" + "=" * 70)
     print(f"📊 Test Results: {tester.tests_passed}/{tester.tests_run} passed")
     
     if tester.tests_passed == tester.tests_run:
