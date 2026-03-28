@@ -1,34 +1,331 @@
-.App-logo {
-    height: 40vmin;
-    pointer-events: none;
+/* LearnHub - Course Platform Styles */
+/* Swiss & High-Contrast Design System */
+
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
+
+/* Base Styles */
+* {
+  box-sizing: border-box;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-    .App-logo {
-        animation: App-logo-spin infinite 20s linear;
-    }
+body {
+  font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-.App-header {
-    background-color: #0f0f10;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    font-size: calc(10px + 2vmin);
-    color: white;
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
 }
 
-.App-link {
-    color: #61dafb;
+::-webkit-scrollbar-track {
+  background: #F4F5F7;
 }
 
-@keyframes App-logo-spin {
-    from {
-        transform: rotate(0deg);
-    }
-    to {
-        transform: rotate(360deg);
-    }
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
+
+/* Focus Styles */
+*:focus-visible {
+  outline: 2px solid #002FA7;
+  outline-offset: 2px;
+}
+
+/* Selection */
+::selection {
+  background-color: #002FA7;
+  color: white;
+}
+
+/* Line Clamp Utilities */
+.line-clamp-1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Card Hover Effect */
+.card-hover {
+  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+}
+
+.card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+/* Button Styles */
+button {
+  transition: all 0.2s ease-out;
+}
+
+/* Input Focus Ring */
+input:focus,
+textarea:focus,
+select:focus {
+  ring-color: rgba(0, 47, 167, 0.2);
+}
+
+/* Badge Styles */
+.badge-free {
+  background-color: #DCFCE7;
+  color: #15803D;
+}
+
+.badge-paid {
+  background-color: #002FA7;
+  color: white;
+}
+
+/* Progress Bar */
+.progress-bar {
+  background-color: #E2E8F0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  background-color: #002FA7;
+  height: 100%;
+  transition: width 0.3s ease-out;
+}
+
+/* Video Container */
+.video-container {
+  position: relative;
+  padding-bottom: 56.25%; /* 16:9 aspect ratio */
+  height: 0;
+  overflow: hidden;
+}
+
+.video-container iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Certificate Styles */
+.certificate {
+  background: linear-gradient(135deg, rgba(0, 47, 167, 0.05) 0%, rgba(10, 11, 16, 0.05) 100%);
+  border-bottom: 4px solid #002FA7;
+}
+
+/* Chat Messages */
+.chat-message-user {
+  background-color: #002FA7;
+  color: white;
+  border-radius: 12px 12px 0 12px;
+}
+
+.chat-message-assistant {
+  background-color: #F1F5F9;
+  color: #0A0B10;
+  border-radius: 12px 12px 12px 0;
+}
+
+/* Sidebar Transition */
+.sidebar-transition {
+  transition: width 0.2s ease-out;
+}
+
+/* Table Styles */
+table {
+  border-collapse: collapse;
+}
+
+th, td {
+  text-align: left;
+}
+
+/* Glassmorphism Header */
+.glass-header {
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  background-color: rgba(255, 255, 255, 0.8);
+}
+
+/* Form Styles */
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #0A0B10;
+  margin-bottom: 0.5rem;
+}
+
+.form-input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #E2E8F0;
+  border-radius: 2px;
+  font-size: 0.875rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-input:focus {
+  border-color: #002FA7;
+  box-shadow: 0 0 0 3px rgba(0, 47, 167, 0.1);
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 3rem;
+  color: #64748B;
+}
+
+.empty-state-icon {
+  width: 4rem;
+  height: 4rem;
+  margin: 0 auto 1rem;
+  color: #CBD5E1;
+}
+
+/* Loading Spinner */
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive Utilities */
+@media (max-width: 768px) {
+  .hide-mobile {
+    display: none;
+  }
+}
+
+@media (min-width: 769px) {
+  .hide-desktop {
+    display: none;
+  }
+}
+
+/* Quiz Styles */
+.quiz-option {
+  transition: all 0.2s ease-out;
+}
+
+.quiz-option:hover {
+  background-color: #F8FAFC;
+}
+
+.quiz-option-selected {
+  border-color: #002FA7;
+  background-color: rgba(0, 47, 167, 0.05);
+}
+
+/* Forum Styles */
+.forum-post {
+  transition: all 0.2s ease-out;
+}
+
+.forum-post:hover {
+  background-color: #FAFAFA;
+}
+
+/* Notification Toast */
+.toast {
+  border-radius: 2px;
+}
+
+/* Modal Overlay */
+.modal-overlay {
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+}
+
+/* Dropdown Menu */
+.dropdown-menu {
+  border-radius: 2px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+/* Tabs */
+.tab-active {
+  border-bottom: 2px solid #002FA7;
+  color: #002FA7;
+}
+
+/* Avatar */
+.avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+/* Skeleton Loading */
+.skeleton {
+  background: linear-gradient(90deg, #F1F5F9 25%, #E2E8F0 50%, #F1F5F9 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
