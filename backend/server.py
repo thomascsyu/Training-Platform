@@ -1768,13 +1768,17 @@ async def root():
 # Include router and middleware
 app.include_router(api_router)
 
-# Get frontend URL for CORS
-FRONTEND_URL = os.environ.get("FRONTEND_URL", "https://feature-builder-19.preview.emergentagent.com")
+# CORS Configuration - uses CORS_ORIGINS from .env
+CORS_ORIGINS_STR = os.environ.get("CORS_ORIGINS", "*")
+if CORS_ORIGINS_STR == "*":
+    cors_origins = ["*"]
+else:
+    cors_origins = [origin.strip() for origin in CORS_ORIGINS_STR.split(",")]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[FRONTEND_URL, "http://localhost:3000", "https://localhost:3000"],
-    allow_credentials=True,
+    allow_origins=cors_origins,
+    allow_credentials=True if CORS_ORIGINS_STR != "*" else False,  # credentials not allowed with "*"
     allow_methods=["*"],
     allow_headers=["*"],
 )
