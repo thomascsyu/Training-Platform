@@ -791,9 +791,17 @@ async def get_my_enrollments(request: Request):
     user = await get_current_user(request)
     enrollments = await db.enrollments.find({"user_id": user["id"]}).to_list(100)
     
+    # Batch fetch courses to avoid N+1 queries
+    course_ids = [ObjectId(e["course_id"]) for e in enrollments]
+    courses = await db.courses.find(
+        {"_id": {"$in": course_ids}}, 
+        {"_id": 1, "title": 1, "thumbnail_url": 1}
+    ).to_list(100)
+    course_map = {str(c["_id"]): c for c in courses}
+    
     result = []
     for e in enrollments:
-        course = await db.courses.find_one({"_id": ObjectId(e["course_id"])}, {"_id": 1, "title": 1, "thumbnail_url": 1})
+        course = course_map.get(e["course_id"])
         if course:
             result.append({
                 "id": str(e.get("_id", "")),
@@ -811,9 +819,17 @@ async def get_course_enrollments(course_id: str, request: Request):
     user = await require_roles("admin", "client_manager")(request)
     enrollments = await db.enrollments.find({"course_id": course_id}).to_list(1000)
     
+    # Batch fetch users to avoid N+1 queries
+    user_ids = [ObjectId(e["user_id"]) for e in enrollments]
+    users = await db.users.find(
+        {"_id": {"$in": user_ids}}, 
+        {"_id": 1, "name": 1, "email": 1}
+    ).to_list(1000)
+    user_map = {str(u["_id"]): u for u in users}
+    
     result = []
     for e in enrollments:
-        student = await db.users.find_one({"_id": ObjectId(e["user_id"])}, {"_id": 1, "name": 1, "email": 1})
+        student = user_map.get(e["user_id"])
         if student:
             result.append({
                 "user_id": e["user_id"],
@@ -880,15 +896,26 @@ async def get_course_group_progress(course_id: str, request: Request):
     
     enrollments = await db.enrollments.find({"course_id": course_id}).to_list(1000)
     
+    # Batch fetch users to avoid N+1 queries
+    user_ids = [ObjectId(e["user_id"]) for e in enrollments]
+    users = await db.users.find({"_id": {"$in": user_ids}}, {"_id": 1, "name": 1, "email": 1}).to_list(1000)
+    user_map = {str(u["_id"]): u for u in users}
+    
+    # Batch fetch quiz attempts for all users in this course
+    all_quiz_attempts = await db.quiz_attempts.find({"course_id": course_id}).sort("created_at", -1).to_list(10000)
+    quiz_attempts_by_user = {}
+    for qa in all_quiz_attempts:
+        uid = qa["user_id"]
+        if uid not in quiz_attempts_by_user:
+            quiz_attempts_by_user[uid] = []
+        if len(quiz_attempts_by_user[uid]) < 10:  # Keep max 10 per user
+            quiz_attempts_by_user[uid].append(qa)
+    
     students = []
     for e in enrollments:
-        student = await db.users.find_one({"_id": ObjectId(e["user_id"])}, {"_id": 1, "name": 1, "email": 1})
+        student = user_map.get(e["user_id"])
         if student:
-            # Get quiz attempts for this student in this course
-            quiz_attempts = await db.quiz_attempts.find({
-                "course_id": course_id,
-                "user_id": e["user_id"]
-            }).sort("created_at", -1).to_list(10)
+            quiz_attempts = quiz_attempts_by_user.get(e["user_id"], [])
             
             last_activity = e.get("completed_at") or e.get("created_at")
             if quiz_attempts:
