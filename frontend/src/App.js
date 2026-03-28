@@ -1820,6 +1820,146 @@ const PaymentSuccessPage = () => {
   );
 };
 
+// ============ TRANSLATE DIALOG COMPONENT ============
+const TranslateDialog = ({ courseId, courseTitle, onTranslated }) => {
+  const { t } = useLanguage();
+  const [open, setOpen] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState("");
+  const [translating, setTranslating] = useState(false);
+  const [result, setResult] = useState(null);
+
+  const handleTranslate = async () => {
+    if (!selectedLanguage) {
+      toast.error("Please select a target language");
+      return;
+    }
+    
+    setTranslating(true);
+    setResult(null);
+    
+    try {
+      const { data } = await API.post(`/courses/${courseId}/create-translation?target_language=${selectedLanguage}`);
+      setResult(data);
+      toast.success(`Course translated to ${data.language_name}!`);
+      if (onTranslated) onTranslated();
+    } catch (e) {
+      toast.error(formatError(e));
+    } finally {
+      setTranslating(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button 
+          variant="outline" 
+          size="icon" 
+          className="rounded-sm"
+          title="Auto-translate to other languages"
+          data-testid={`translate-course-${courseId}`}
+        >
+          <Languages className="w-4 h-4" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Languages className="w-5 h-5 text-[#002FA7]" />
+            AI Auto-Translate
+          </DialogTitle>
+          <DialogDescription>
+            Create a translated version of "{courseTitle}" using Deepseek AI
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div className="space-y-4">
+          {!result ? (
+            <>
+              <div className="space-y-2">
+                <Label>Target Language</Label>
+                <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
+                  <SelectTrigger className="rounded-sm" data-testid="translate-language-select">
+                    <SelectValue placeholder="Select language..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {courseLanguages.map(lang => (
+                      <SelectItem key={lang.value} value={lang.value}>{lang.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="bg-slate-50 border border-slate-200 rounded-sm p-4">
+                <h4 className="font-medium text-sm mb-2">What will be translated:</h4>
+                <ul className="text-sm text-slate-600 space-y-1">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    Course title & description
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    All lesson titles & descriptions
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-slate-400" />
+                    Quiz questions (separate action)
+                  </li>
+                </ul>
+              </div>
+              
+              <Button 
+                onClick={handleTranslate}
+                disabled={translating || !selectedLanguage}
+                className="w-full bg-[#002FA7] hover:bg-[#002585] text-white rounded-sm"
+                data-testid="start-translation-btn"
+              >
+                {translating ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    Translating with AI...
+                  </>
+                ) : (
+                  <>
+                    <Bot className="w-4 h-4 mr-2" />
+                    Create Translated Course
+                  </>
+                )}
+              </Button>
+            </>
+          ) : (
+            <div className="text-center py-4">
+              <CheckCircle className="w-16 h-16 text-green-600 mx-auto mb-4" />
+              <h3 className="text-lg font-medium mb-2">Translation Complete!</h3>
+              <p className="text-slate-600 mb-2">
+                New course created in {result.language_name}
+              </p>
+              <p className="text-sm text-slate-500 mb-4">
+                "{result.title}"
+              </p>
+              <div className="flex gap-2 justify-center">
+                <Button 
+                  onClick={() => { setResult(null); setSelectedLanguage(""); }}
+                  variant="outline"
+                  className="rounded-sm"
+                >
+                  Translate to Another
+                </Button>
+                <Button 
+                  onClick={() => setOpen(false)}
+                  className="bg-[#002FA7] hover:bg-[#002585] text-white rounded-sm"
+                >
+                  Done
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 // ============ ADMIN COURSES PAGE ============
 const AdminCoursesPage = () => {
   const navigate = useNavigate();
@@ -2074,10 +2214,16 @@ const AdminCoursesPage = () => {
                   <div className="flex-1 min-w-0">
                     <h3 className="font-medium truncate">{course.title}</h3>
                     <div className="flex items-center gap-2 mt-1">
+                      {course.language && (
+                        <Badge className="bg-[#002FA7] text-white rounded-sm text-xs">
+                          <Globe className="w-3 h-3 mr-1" />
+                          {getLanguageDisplay(course.language)}
+                        </Badge>
+                      )}
                       {course.is_free ? (
                         <Badge variant="secondary" className="bg-green-100 text-green-700 rounded-sm text-xs">Free</Badge>
                       ) : (
-                        <Badge className="bg-[#002FA7] text-white rounded-sm text-xs">${course.price}</Badge>
+                        <Badge className="bg-amber-100 text-amber-700 rounded-sm text-xs">${course.price}</Badge>
                       )}
                       {course.is_private && (
                         <Badge variant="outline" className="rounded-sm text-xs">Private</Badge>
@@ -2085,6 +2231,7 @@ const AdminCoursesPage = () => {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
+                    <TranslateDialog courseId={course.id} courseTitle={course.title} onTranslated={fetchCourses} />
                     <Button 
                       variant="outline" 
                       size="icon" 

@@ -278,6 +278,67 @@ class LearnHubAPITester:
         )
         return success  # Success means it correctly rejected invalid language
 
+    def test_translate_text(self):
+        """Test text translation endpoint"""
+        translate_data = {
+            "text": "Hello, this is a test course",
+            "source_language": "en",
+            "target_language": "zh-TW"
+        }
+        
+        success, response = self.run_test(
+            "Translate Text",
+            "POST",
+            "translate/text",
+            200,
+            data=translate_data,
+            use_admin=True
+        )
+        if success and 'translated_text' in response:
+            print(f"   Translated text: {response.get('translated_text')}")
+            return True
+        return False
+
+    def test_translate_course(self, course_id):
+        """Test course translation endpoint"""
+        translate_data = {
+            "course_id": course_id,
+            "target_languages": ["zh-TW", "ja", "ko"]
+        }
+        
+        success, response = self.run_test(
+            "Translate Course",
+            "POST",
+            f"translate/course/{course_id}",
+            200,
+            data=translate_data,
+            use_admin=True
+        )
+        if success and 'translations' in response:
+            translations = response.get('translations', {})
+            print(f"   Translations created for languages: {list(translations.keys())}")
+            for lang, trans in translations.items():
+                if 'title' in trans:
+                    print(f"   {lang}: {trans['title']}")
+            return True
+        return False
+
+    def test_create_translated_course(self, source_course_id, target_language="zh-TW"):
+        """Test creating a translated course"""
+        success, response = self.run_test(
+            f"Create Translated Course ({target_language})",
+            "POST",
+            f"courses/{source_course_id}/create-translation?target_language={target_language}",
+            200,
+            use_admin=True
+        )
+        if success and 'new_course_id' in response:
+            new_course_id = response.get('new_course_id')
+            translated_title = response.get('title')
+            print(f"   New translated course created: {translated_title} (ID: {new_course_id})")
+            return True, new_course_id
+        return False, None
+
 def main():
     print("🚀 Starting LearnHub API Tests")
     print("=" * 50)
@@ -343,6 +404,17 @@ def main():
     if course_success and course_id:
         # Test course detail
         tester.test_get_course_detail(course_id)
+        
+        # Test translation features
+        print("\n🌐 Testing Auto-Translation Features")
+        tester.test_translate_text()
+        tester.test_translate_course(course_id)
+        
+        # Test creating translated course
+        translated_success, translated_course_id = tester.test_create_translated_course(course_id, "zh-TW")
+        if translated_success:
+            # Verify the translated course exists
+            tester.test_get_course_detail(translated_course_id)
         
         # Login as student again for enrollment
         tester.test_student_login(student_email)
