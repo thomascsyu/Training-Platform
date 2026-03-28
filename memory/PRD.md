@@ -33,6 +33,7 @@ Build a Kajabi-like course/content platform with:
 - [x] **Multi-language course support** (5 languages: EN, zh-TW, zh-CN, JA, KO)
 - [x] **Course language filtering and search**
 - [x] **UI language switching** (English ↔ Traditional Chinese)
+- [x] **AI Auto-Translation** using Deepseek AI
 - [x] Lesson management within courses
 - [x] Quiz builder with multiple choice questions
 - [x] Quiz scoring with configurable passing score
@@ -56,6 +57,10 @@ Build a Kajabi-like course/content platform with:
 - `/api/certificates/*` - Certificate management
 - `/api/forums/*` - Forum posts
 - `/api/chat` - AI chatbot (Deepseek)
+- `/api/translate/text` - Translate single text with AI
+- `/api/translate/course/{id}` - Translate course to multiple languages
+- `/api/translate/quiz/{id}` - Translate quiz questions
+- `/api/courses/{id}/create-translation` - Create translated course copy
 - `/api/payments/*` - Stripe checkout
 - `/api/users/*` - User management
 - `/api/stats/*` - Dashboard statistics
