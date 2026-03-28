@@ -67,6 +67,16 @@ class UserResponse(BaseModel):
     role: str
     created_at: str
 
+# Supported languages
+SUPPORTED_LANGUAGES = ["en", "zh-TW", "zh-CN", "ja", "ko"]
+LANGUAGE_NAMES = {
+    "en": "English",
+    "zh-TW": "繁體中文",
+    "zh-CN": "简体中文",
+    "ja": "日本語",
+    "ko": "한국어"
+}
+
 class CourseCreate(BaseModel):
     title: str
     description: str
@@ -78,6 +88,8 @@ class CourseCreate(BaseModel):
     is_private: bool = False
     passing_score: int = 70
     materials: List[Dict[str, str]] = []  # [{name, url}]
+    language: str = "en"  # en, zh-TW, zh-CN, ja, ko
+    category: Optional[str] = None
 
 class CourseUpdate(BaseModel):
     title: Optional[str] = None
@@ -90,6 +102,8 @@ class CourseUpdate(BaseModel):
     is_private: Optional[bool] = None
     passing_score: Optional[int] = None
     materials: Optional[List[Dict[str, str]]] = None
+    language: Optional[str] = None
+    category: Optional[str] = None
 
 class LessonCreate(BaseModel):
     course_id: str
@@ -271,6 +285,10 @@ async def get_me(request: Request):
 @api_router.post("/courses")
 async def create_course(data: CourseCreate, request: Request):
     user = await require_roles("admin")(request)
+    # Validate language
+    if data.language not in SUPPORTED_LANGUAGES:
+        raise HTTPException(status_code=400, detail=f"Unsupported language. Supported: {SUPPORTED_LANGUAGES}")
+    
     course_doc = {
         "title": data.title,
         "description": data.description,
@@ -282,6 +300,8 @@ async def create_course(data: CourseCreate, request: Request):
         "is_private": data.is_private,
         "passing_score": data.passing_score,
         "materials": data.materials,
+        "language": data.language,
+        "category": data.category,
         "created_by": user["id"],
         "created_at": datetime.now(timezone.utc).isoformat(),
         "updated_at": datetime.now(timezone.utc).isoformat()
@@ -289,8 +309,19 @@ async def create_course(data: CourseCreate, request: Request):
     result = await db.courses.insert_one(course_doc)
     return {"id": str(result.inserted_id), **{k: v for k, v in course_doc.items() if k != "_id"}}
 
+@api_router.get("/languages")
+async def get_languages():
+    """Get supported languages"""
+    return {"languages": SUPPORTED_LANGUAGES, "names": LANGUAGE_NAMES}
+
 @api_router.get("/courses")
-async def get_courses(request: Request, include_private: bool = False):
+async def get_courses(
+    request: Request, 
+    include_private: bool = False,
+    language: Optional[str] = None,
+    search: Optional[str] = None,
+    category: Optional[str] = None
+):
     try:
         user = await get_current_user(request)
         is_authenticated = True
@@ -306,7 +337,22 @@ async def get_courses(request: Request, include_private: bool = False):
     else:
         query["is_private"] = False
     
-    courses = await db.courses.find(query, {"_id": 1, "title": 1, "description": 1, "thumbnail_url": 1, "price": 1, "is_free": 1, "is_private": 1, "created_at": 1}).to_list(100)
+    # Language filter
+    if language and language in SUPPORTED_LANGUAGES:
+        query["language"] = language
+    
+    # Category filter
+    if category:
+        query["category"] = category
+    
+    # Search filter
+    if search:
+        query["$or"] = [
+            {"title": {"$regex": search, "$options": "i"}},
+            {"description": {"$regex": search, "$options": "i"}}
+        ]
+    
+    courses = await db.courses.find(query, {"_id": 1, "title": 1, "description": 1, "thumbnail_url": 1, "price": 1, "is_free": 1, "is_private": 1, "language": 1, "category": 1, "created_at": 1}).to_list(100)
     return [{"id": str(c["_id"]), **{k: v for k, v in c.items() if k != "_id"}} for c in courses]
 
 @api_router.get("/courses/{course_id}")

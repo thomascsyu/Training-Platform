@@ -21,14 +21,49 @@ import {
   BookOpen, GraduationCap, Users, PlayCircle, Award, MessageSquare, 
   Menu, X, LogOut, Settings, ChevronRight, Plus, Trash2, Edit, 
   Download, Send, Bot, FileText, Video, CheckCircle, Clock, 
-  DollarSign, Lock, Globe, BarChart3, Home, Loader2
+  DollarSign, Lock, Globe, BarChart3, Home, Loader2, Search, Languages
 } from "lucide-react";
+import { translations, courseLanguages, languageNames } from "@/i18n";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = axios.create({
   baseURL: `${BACKEND_URL}/api`,
   withCredentials: true
 });
+
+// Language Context
+const LanguageContext = createContext(null);
+
+const useLanguage = () => useContext(LanguageContext);
+
+const LanguageProvider = ({ children }) => {
+  const [lang, setLang] = useState(() => {
+    const saved = localStorage.getItem("learnhub_lang");
+    return saved || "en";
+  });
+
+  const t = (key) => {
+    const keys = key.split(".");
+    let value = translations[lang];
+    for (const k of keys) {
+      value = value?.[k];
+    }
+    return value || key;
+  };
+
+  const switchLanguage = (newLang) => {
+    if (["en", "zh-TW"].includes(newLang)) {
+      setLang(newLang);
+      localStorage.setItem("learnhub_lang", newLang);
+    }
+  };
+
+  return (
+    <LanguageContext.Provider value={{ lang, t, switchLanguage }}>
+      {children}
+    </LanguageContext.Provider>
+  );
+};
 
 // Auth Context
 const AuthContext = createContext(null);
@@ -109,9 +144,28 @@ const formatError = (error) => {
   return String(detail);
 };
 
+// Language Switcher Component
+const LanguageSwitcher = () => {
+  const { lang, switchLanguage } = useLanguage();
+  
+  return (
+    <Select value={lang} onValueChange={switchLanguage}>
+      <SelectTrigger className="w-[120px] rounded-sm border-slate-200" data-testid="language-switcher">
+        <Languages className="w-4 h-4 mr-2" />
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="en">English</SelectItem>
+        <SelectItem value="zh-TW">繁體中文</SelectItem>
+      </SelectContent>
+    </Select>
+  );
+};
+
 // ============ LANDING PAGE ============
 const LandingPage = () => {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [courses, setCourses] = useState([]);
 
@@ -137,23 +191,24 @@ const LandingPage = () => {
             <GraduationCap className="w-8 h-8 text-[#002FA7]" />
             <span className="text-xl font-medium tracking-tight text-[#0A0B10]">LearnHub</span>
           </Link>
-          <nav className="hidden md:flex items-center gap-8">
-            <Link to="/courses" className="text-slate-600 hover:text-[#002FA7] transition-colors" data-testid="nav-courses">Courses</Link>
+          <nav className="hidden md:flex items-center gap-6">
+            <Link to="/courses" className="text-slate-600 hover:text-[#002FA7] transition-colors" data-testid="nav-courses">{t("nav.courses")}</Link>
             {user ? (
               <>
-                <Link to="/dashboard" className="text-slate-600 hover:text-[#002FA7] transition-colors" data-testid="nav-dashboard">Dashboard</Link>
+                <Link to="/dashboard" className="text-slate-600 hover:text-[#002FA7] transition-colors" data-testid="nav-dashboard">{t("nav.dashboard")}</Link>
                 <Button onClick={() => navigate("/dashboard")} className="bg-[#002FA7] hover:bg-[#002585] text-white rounded-sm" data-testid="get-started-btn">
-                  Go to Dashboard
+                  {t("nav.dashboard")}
                 </Button>
               </>
             ) : (
               <>
-                <Link to="/login" className="text-slate-600 hover:text-[#002FA7] transition-colors" data-testid="nav-login">Login</Link>
+                <Link to="/login" className="text-slate-600 hover:text-[#002FA7] transition-colors" data-testid="nav-login">{t("nav.login")}</Link>
                 <Button onClick={() => navigate("/register")} className="bg-[#002FA7] hover:bg-[#002585] text-white rounded-sm" data-testid="get-started-btn">
-                  Get Started
+                  {t("nav.getStarted")}
                 </Button>
               </>
             )}
+            <LanguageSwitcher />
           </nav>
         </div>
       </header>
@@ -163,12 +218,12 @@ const LandingPage = () => {
         <div className="absolute inset-0 bg-gradient-to-br from-[#002FA7]/5 to-transparent" />
         <div className="container mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center relative z-10">
           <div>
-            <p className="text-xs tracking-[0.2em] uppercase font-bold text-slate-500 mb-4">Online Learning Platform</p>
+            <p className="text-xs tracking-[0.2em] uppercase font-bold text-slate-500 mb-4">{t("landing.overline")}</p>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl tracking-tight font-medium text-[#0A0B10] mb-6">
-              Master New Skills with Expert-Led Courses
+              {t("landing.headline")}
             </h1>
             <p className="text-base leading-relaxed text-slate-600 mb-8 max-w-lg">
-              Access high-quality courses, take quizzes to test your knowledge, and earn certificates upon completion. Join thousands of learners today.
+              {t("landing.subheadline")}
             </p>
             <div className="flex gap-4">
               <Button 
@@ -176,7 +231,7 @@ const LandingPage = () => {
                 className="bg-[#002FA7] hover:bg-[#002585] text-white rounded-sm px-8 py-6 text-lg"
                 data-testid="hero-cta-btn"
               >
-                Start Learning
+                {t("landing.startLearning")}
                 <ChevronRight className="w-5 h-5 ml-2" />
               </Button>
               <Button 
@@ -185,7 +240,7 @@ const LandingPage = () => {
                 className="border-slate-200 hover:bg-slate-50 rounded-sm px-8 py-6 text-lg"
                 data-testid="browse-courses-btn"
               >
-                Browse Courses
+                {t("landing.browseCourses")}
               </Button>
             </div>
           </div>
@@ -269,6 +324,18 @@ const LandingPage = () => {
 const CourseCard = ({ course, enrolled = false, showProgress = false, progress = 0 }) => {
   const navigate = useNavigate();
   
+  // Get language display name
+  const getLanguageDisplay = (langCode) => {
+    const langMap = {
+      "en": "EN",
+      "zh-TW": "繁中",
+      "zh-CN": "简中",
+      "ja": "日本",
+      "ko": "한국"
+    };
+    return langMap[langCode] || langCode;
+  };
+  
   return (
     <Card 
       className="bg-white border border-slate-200 rounded-sm hover:-translate-y-1 hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden"
@@ -283,6 +350,14 @@ const CourseCard = ({ course, enrolled = false, showProgress = false, progress =
             <BookOpen className="w-12 h-12 text-[#002FA7]/40" />
           </div>
         )}
+        <div className="absolute top-2 left-2 flex gap-1">
+          {course.language && (
+            <Badge className="bg-[#002FA7] text-white rounded-sm text-xs">
+              <Globe className="w-3 h-3 mr-1" />
+              {getLanguageDisplay(course.language)}
+            </Badge>
+          )}
+        </div>
         {course.is_private && (
           <Badge className="absolute top-2 right-2 bg-slate-800 text-white rounded-sm">
             <Lock className="w-3 h-3 mr-1" /> Private
@@ -834,16 +909,27 @@ const AdminDashboard = () => {
 // ============ COURSES LIST PAGE ============
 const CoursesPage = () => {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedLanguage, setSelectedLanguage] = useState("all");
 
   useEffect(() => {
     fetchCourses();
-  }, []);
+  }, [selectedLanguage]);
 
   const fetchCourses = async () => {
     try {
-      const { data } = await API.get("/courses");
+      let url = "/courses";
+      const params = new URLSearchParams();
+      if (selectedLanguage && selectedLanguage !== "all") {
+        params.append("language", selectedLanguage);
+      }
+      if (params.toString()) {
+        url += `?${params.toString()}`;
+      }
+      const { data } = await API.get(url);
       setCourses(data);
     } catch (e) {
       console.error(e);
@@ -851,6 +937,13 @@ const CoursesPage = () => {
       setLoading(false);
     }
   };
+
+  const filteredCourses = courses.filter(course => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    return course.title?.toLowerCase().includes(query) || 
+           course.description?.toLowerCase().includes(query);
+  });
 
   return (
     <div className="min-h-screen bg-[#F4F5F7]">
@@ -862,13 +955,14 @@ const CoursesPage = () => {
             <span className="text-xl font-medium tracking-tight text-[#0A0B10]">LearnHub</span>
           </Link>
           <nav className="flex items-center gap-4">
+            <LanguageSwitcher />
             {user ? (
               <Button onClick={() => window.location.href = "/dashboard"} className="bg-[#002FA7] hover:bg-[#002585] text-white rounded-sm" data-testid="dashboard-btn">
-                Dashboard
+                {t("nav.dashboard")}
               </Button>
             ) : (
               <Button onClick={() => window.location.href = "/login"} className="bg-[#002FA7] hover:bg-[#002585] text-white rounded-sm" data-testid="login-btn">
-                Login
+                {t("nav.login")}
               </Button>
             )}
           </nav>
@@ -876,17 +970,43 @@ const CoursesPage = () => {
       </header>
 
       <div className="container mx-auto px-6 md:px-12 lg:px-24 py-12" data-testid="courses-page">
-        <h1 className="text-2xl sm:text-3xl tracking-tight font-medium text-[#0A0B10] mb-8">
-          All Courses
+        <h1 className="text-2xl sm:text-3xl tracking-tight font-medium text-[#0A0B10] mb-6">
+          {t("courses.allCourses")}
         </h1>
+        
+        {/* Search and Filter */}
+        <div className="flex flex-col md:flex-row gap-4 mb-8">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <Input 
+              placeholder={t("courses.search")}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 rounded-sm border-slate-300"
+              data-testid="course-search-input"
+            />
+          </div>
+          <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
+            <SelectTrigger className="w-[200px] rounded-sm border-slate-300" data-testid="language-filter">
+              <Globe className="w-4 h-4 mr-2" />
+              <SelectValue placeholder={t("courses.allLanguages")} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t("courses.allLanguages")}</SelectItem>
+              {courseLanguages.map(lang => (
+                <SelectItem key={lang.value} value={lang.value}>{lang.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         
         {loading ? (
           <div className="flex justify-center py-12">
             <Loader2 className="w-8 h-8 animate-spin text-[#002FA7]" />
           </div>
-        ) : courses.length > 0 ? (
+        ) : filteredCourses.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {courses.map((course) => (
+            {filteredCourses.map((course) => (
               <CourseCard key={course.id} course={course} />
             ))}
           </div>
@@ -894,7 +1014,7 @@ const CoursesPage = () => {
           <Card className="bg-white border border-slate-200 rounded-sm">
             <CardContent className="p-12 text-center">
               <BookOpen className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-              <p className="text-slate-600">No courses available yet</p>
+              <p className="text-slate-600">{t("courses.noCourses")}</p>
             </CardContent>
           </Card>
         )}
@@ -1703,6 +1823,7 @@ const PaymentSuccessPage = () => {
 // ============ ADMIN COURSES PAGE ============
 const AdminCoursesPage = () => {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -1715,7 +1836,9 @@ const AdminCoursesPage = () => {
     price: 0,
     is_free: true,
     is_private: false,
-    passing_score: 70
+    passing_score: 70,
+    language: "en",
+    category: ""
   });
   const [creating, setCreating] = useState(false);
 
@@ -1738,7 +1861,7 @@ const AdminCoursesPage = () => {
     setCreating(true);
     try {
       await API.post("/courses", formData);
-      toast.success("Course created!");
+      toast.success(t("courses.createCourse") + " ✓");
       setShowCreateDialog(false);
       setFormData({
         title: "",
@@ -1749,7 +1872,9 @@ const AdminCoursesPage = () => {
         price: 0,
         is_free: true,
         is_private: false,
-        passing_score: 70
+        passing_score: 70,
+        language: "en",
+        category: ""
       });
       fetchCourses();
     } catch (e) {
@@ -1771,27 +1896,39 @@ const AdminCoursesPage = () => {
     }
   };
 
+  // Get language display name
+  const getLanguageDisplay = (langCode) => {
+    const langMap = {
+      "en": "English",
+      "zh-TW": "繁體中文",
+      "zh-CN": "简体中文",
+      "ja": "日本語",
+      "ko": "한국어"
+    };
+    return langMap[langCode] || langCode;
+  };
+
   return (
     <DashboardLayout>
       <div className="p-6" data-testid="admin-courses-page">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-2xl sm:text-3xl tracking-tight font-medium text-[#0A0B10]">
-            Manage Courses
+            {t("dashboard.manageCourses")}
           </h1>
           <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
             <DialogTrigger asChild>
               <Button className="bg-[#002FA7] hover:bg-[#002585] text-white rounded-sm" data-testid="create-course-btn">
-                <Plus className="w-4 h-4 mr-2" /> Create Course
+                <Plus className="w-4 h-4 mr-2" /> {t("courses.createCourse")}
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>Create New Course</DialogTitle>
-                <DialogDescription>Fill in the details to create a new course</DialogDescription>
+                <DialogTitle>{t("courses.createNew")}</DialogTitle>
+                <DialogDescription>{t("courses.fillDetails")}</DialogDescription>
               </DialogHeader>
-              <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+              <div className="space-y-4 pr-2">
                 <div className="space-y-2">
-                  <Label>Title</Label>
+                  <Label>{t("courses.title")}</Label>
                   <Input 
                     value={formData.title}
                     onChange={(e) => setFormData({...formData, title: e.target.value})}
@@ -1800,7 +1937,7 @@ const AdminCoursesPage = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Description</Label>
+                  <Label>{t("courses.description")}</Label>
                   <Textarea 
                     value={formData.description}
                     onChange={(e) => setFormData({...formData, description: e.target.value})}
@@ -1809,8 +1946,25 @@ const AdminCoursesPage = () => {
                     data-testid="course-description-input"
                   />
                 </div>
+                
+                {/* Language Selection - NEW */}
                 <div className="space-y-2">
-                  <Label>Thumbnail URL</Label>
+                  <Label>{t("courses.language")}</Label>
+                  <Select value={formData.language} onValueChange={(v) => setFormData({...formData, language: v})}>
+                    <SelectTrigger className="rounded-sm" data-testid="course-language-select">
+                      <Globe className="w-4 h-4 mr-2" />
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {courseLanguages.map(lang => (
+                        <SelectItem key={lang.value} value={lang.value}>{lang.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>{t("courses.thumbnailUrl")}</Label>
                   <Input 
                     value={formData.thumbnail_url}
                     onChange={(e) => setFormData({...formData, thumbnail_url: e.target.value})}
@@ -1821,7 +1975,7 @@ const AdminCoursesPage = () => {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Video URL</Label>
+                    <Label>{t("courses.videoUrl")}</Label>
                     <Input 
                       value={formData.video_url}
                       onChange={(e) => setFormData({...formData, video_url: e.target.value})}
@@ -2208,69 +2362,71 @@ const ManagerGroupsPage = () => {
 // ============ MAIN APP ============
 function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Toaster position="top-right" richColors />
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/courses" element={<CoursesPage />} />
-          <Route path="/courses/:id" element={<CourseDetailPage />} />
-          <Route path="/payment/success" element={<PaymentSuccessPage />} />
+    <LanguageProvider>
+      <AuthProvider>
+        <BrowserRouter>
+          <Toaster position="top-right" richColors />
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/courses" element={<CoursesPage />} />
+            <Route path="/courses/:id" element={<CourseDetailPage />} />
+            <Route path="/payment/success" element={<PaymentSuccessPage />} />
 
-          {/* Protected Routes */}
-          <Route path="/dashboard" element={
-            <ProtectedRoute>
-              <DashboardRouter />
-            </ProtectedRoute>
-          } />
-          <Route path="/my-courses" element={
-            <ProtectedRoute>
-              <DashboardLayout><StudentDashboard /></DashboardLayout>
-            </ProtectedRoute>
-          } />
-          <Route path="/certificates" element={
-            <ProtectedRoute>
-              <CertificatesPage />
-            </ProtectedRoute>
-          } />
-          <Route path="/quiz/:id" element={
-            <ProtectedRoute>
-              <QuizPage />
-            </ProtectedRoute>
-          } />
+            {/* Protected Routes */}
+            <Route path="/dashboard" element={
+              <ProtectedRoute>
+                <DashboardRouter />
+              </ProtectedRoute>
+            } />
+            <Route path="/my-courses" element={
+              <ProtectedRoute>
+                <DashboardLayout><StudentDashboard /></DashboardLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/certificates" element={
+              <ProtectedRoute>
+                <CertificatesPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/quiz/:id" element={
+              <ProtectedRoute>
+                <QuizPage />
+              </ProtectedRoute>
+            } />
 
-          {/* Admin Routes */}
-          <Route path="/admin/courses" element={
-            <ProtectedRoute roles={["admin"]}>
-              <AdminCoursesPage />
-            </ProtectedRoute>
-          } />
-          <Route path="/admin/users" element={
-            <ProtectedRoute roles={["admin"]}>
-              <AdminUsersPage />
-            </ProtectedRoute>
-          } />
-          <Route path="/admin/analytics" element={
-            <ProtectedRoute roles={["admin"]}>
-              <DashboardLayout><AdminDashboard /></DashboardLayout>
-            </ProtectedRoute>
-          } />
+            {/* Admin Routes */}
+            <Route path="/admin/courses" element={
+              <ProtectedRoute roles={["admin"]}>
+                <AdminCoursesPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/users" element={
+              <ProtectedRoute roles={["admin"]}>
+                <AdminUsersPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/analytics" element={
+              <ProtectedRoute roles={["admin"]}>
+                <DashboardLayout><AdminDashboard /></DashboardLayout>
+              </ProtectedRoute>
+            } />
 
-          {/* Client Manager Routes */}
-          <Route path="/manager/groups" element={
-            <ProtectedRoute roles={["client_manager"]}>
-              <ManagerGroupsPage />
-            </ProtectedRoute>
-          } />
+            {/* Client Manager Routes */}
+            <Route path="/manager/groups" element={
+              <ProtectedRoute roles={["client_manager"]}>
+                <ManagerGroupsPage />
+              </ProtectedRoute>
+            } />
 
-          {/* Fallback */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+            {/* Fallback */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
+    </LanguageProvider>
   );
 }
 

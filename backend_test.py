@@ -178,6 +178,106 @@ class LearnHubAPITester:
         """Test getting current user info"""
         return self.run_test("Auth Me", "GET", "auth/me", 200)
 
+    def test_get_languages(self):
+        """Test getting supported languages"""
+        success, response = self.run_test("Get Languages", "GET", "languages", 200)
+        if success:
+            languages = response.get('languages', [])
+            names = response.get('names', {})
+            print(f"   Supported languages: {languages}")
+            print(f"   Language names: {names}")
+            # Verify expected languages are present
+            expected_langs = ["en", "zh-TW", "zh-CN", "ja", "ko"]
+            missing_langs = [lang for lang in expected_langs if lang not in languages]
+            if missing_langs:
+                print(f"   ⚠️  Missing languages: {missing_langs}")
+                return False
+            return True
+        return False
+
+    def test_create_course_with_language(self, language="zh-TW"):
+        """Test creating a course with specific language"""
+        timestamp = datetime.now().strftime('%H%M%S')
+        course_data = {
+            "title": f"多語言測試課程 {timestamp}",
+            "description": "這是一個多語言測試課程",
+            "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+            "video_type": "youtube",
+            "price": 0.0,
+            "is_free": True,
+            "is_private": False,
+            "passing_score": 70,
+            "language": language,
+            "materials": []
+        }
+        
+        success, response = self.run_test(
+            f"Create Course with Language ({language})",
+            "POST",
+            "courses",
+            200,
+            data=course_data,
+            use_admin=True
+        )
+        if success and 'id' in response:
+            print(f"   Course created with language {language}: {response.get('title')} (ID: {response.get('id')})")
+            return True, response.get('id')
+        return False, None
+
+    def test_get_courses_with_language_filter(self, language="zh-TW"):
+        """Test getting courses filtered by language"""
+        success, response = self.run_test(
+            f"Get Courses with Language Filter ({language})",
+            "GET",
+            f"courses?language={language}",
+            200
+        )
+        if success:
+            courses = response if isinstance(response, list) else []
+            print(f"   Found {len(courses)} courses for language {language}")
+            # Verify all returned courses have the correct language
+            for course in courses:
+                if course.get('language') != language:
+                    print(f"   ⚠️  Course {course.get('id')} has wrong language: {course.get('language')}")
+                    return False
+            return True
+        return False
+
+    def test_get_courses_with_search(self, search_term="測試"):
+        """Test course search functionality"""
+        success, response = self.run_test(
+            f"Search Courses ({search_term})",
+            "GET",
+            f"courses?search={search_term}",
+            200
+        )
+        if success:
+            courses = response if isinstance(response, list) else []
+            print(f"   Found {len(courses)} courses matching '{search_term}'")
+            return True
+        return False
+
+    def test_create_course_invalid_language(self):
+        """Test creating course with invalid language"""
+        timestamp = datetime.now().strftime('%H%M%S')
+        course_data = {
+            "title": f"Invalid Language Course {timestamp}",
+            "description": "Course with invalid language",
+            "language": "invalid-lang",
+            "price": 0.0,
+            "is_free": True
+        }
+        
+        success, response = self.run_test(
+            "Create Course with Invalid Language",
+            "POST",
+            "courses",
+            400,  # Should fail with 400
+            data=course_data,
+            use_admin=True
+        )
+        return success  # Success means it correctly rejected invalid language
+
 def main():
     print("🚀 Starting LearnHub API Tests")
     print("=" * 50)
@@ -212,12 +312,33 @@ def main():
     tester.test_student_stats()
     tester.test_auth_me()
 
+    # Test language features
+    print("\n🌐 Testing Multi-Language Features")
+    tester.test_get_languages()
+
     # Test course operations
     tester.test_get_courses()
     
     # Create a course as admin (need to login as admin again)
     tester.test_admin_login()
     course_success, course_id = tester.test_create_course()
+    
+    # Test multi-language course creation
+    zh_course_success, zh_course_id = tester.test_create_course_with_language("zh-TW")
+    ja_course_success, ja_course_id = tester.test_create_course_with_language("ja")
+    
+    # Test invalid language
+    tester.test_create_course_invalid_language()
+    
+    # Test language filtering
+    if zh_course_success:
+        tester.test_get_courses_with_language_filter("zh-TW")
+    if ja_course_success:
+        tester.test_get_courses_with_language_filter("ja")
+    
+    # Test search functionality
+    tester.test_get_courses_with_search("測試")
+    tester.test_get_courses_with_search("Test")
     
     if course_success and course_id:
         # Test course detail
