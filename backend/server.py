@@ -948,9 +948,12 @@ async def root():
 # Include router and middleware
 app.include_router(api_router)
 
+# Get frontend URL for CORS
+FRONTEND_URL = os.environ.get("FRONTEND_URL", "https://feature-builder-19.preview.emergentagent.com")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[FRONTEND_URL, "http://localhost:3000", "https://localhost:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
