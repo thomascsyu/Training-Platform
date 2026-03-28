@@ -581,6 +581,7 @@ const DashboardLayout = ({ children }) => {
     { icon: BookOpen, label: "Courses", path: "/admin/courses" },
     { icon: Users, label: "Users", path: "/admin/users" },
     { icon: Users, label: "Bulk Enroll", path: "/admin/bulk-enroll" },
+    { icon: BarChart3, label: "Group Progress", path: "/manager/progress" },
     { icon: BarChart3, label: "Analytics", path: "/admin/analytics" }
   ] : user?.role === "client_manager" ? [
     { icon: Home, label: "Dashboard", path: "/dashboard" },
@@ -2795,7 +2796,7 @@ function App() {
 
             {/* Client Manager Routes */}
             <Route path="/manager/progress" element={
-              <ProtectedRoute roles={["client_manager"]}>
+              <ProtectedRoute roles={["admin", "client_manager"]}>
                 <ManagerGroupProgressPage />
               </ProtectedRoute>
             } />

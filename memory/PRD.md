@@ -53,13 +53,14 @@ Build a Kajabi-like course/content platform with:
 - `/api/courses/*` - Course CRUD with language field & filtering
 - `/api/lessons/*` - Lesson CRUD
 - `/api/quizzes/*` - Quiz CRUD and submission
-- `/api/enrollments/*` - Course enrollment
+- `/api/enrollments/*` - Course enrollment (Admin bulk enroll)
+- `/api/groups/overview` - Course progress overview (Admin/Client Manager)
+- `/api/groups/course/{id}/progress` - Detailed student progress per course
+- `/api/groups/student/{id}/progress` - Individual student progress
 - `/api/certificates/*` - Certificate management
 - `/api/forums/*` - Forum posts
 - `/api/chat` - AI chatbot (Deepseek)
-- `/api/translate/text` - Translate single text with AI
-- `/api/translate/course/{id}` - Translate course to multiple languages
-- `/api/translate/quiz/{id}` - Translate quiz questions
+- `/api/translate/*` - AI translation endpoints
 - `/api/courses/{id}/create-translation` - Create translated course copy
 - `/api/payments/*` - Stripe checkout
 - `/api/users/*` - User management
