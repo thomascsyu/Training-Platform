@@ -17,7 +17,7 @@ import jwt
 import secrets
 import httpx
 from openai import OpenAI
-from emergentintegrations.payments.stripe.checkout import StripeCheckout, CheckoutSessionResponse, CheckoutStatusResponse, CheckoutSessionRequest
+import stripe
 
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']
@@ -36,12 +36,14 @@ if DEEPSEEK_API_KEY:
 
 # Stripe Config
 STRIPE_API_KEY = os.environ.get("STRIPE_API_KEY")
+if STRIPE_API_KEY:
+    stripe.api_key = STRIPE_API_KEY
 
 # Brevo Email Config
 BREVO_API_KEY = os.environ.get("BREVO_API_KEY")
 EMAIL_FROM = os.environ.get("EMAIL_FROM", "noreply@learnhub.com")
 EMAIL_FROM_NAME = os.environ.get("EMAIL_FROM_NAME", "LearnHub")
-FRONTEND_URL = os.environ.get("FRONTEND_URL", "https://feature-builder-19.preview.emergentagent.com")
+FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:3000")
 
 app = FastAPI(title="LearnHub - Course Platform")
 api_router = APIRouter(prefix="/api")
@@ -1542,39 +1544,49 @@ async def create_checkout(data: PaymentCreate, request: Request):
     if price <= 0:
         raise HTTPException(status_code=400, detail="Invalid course price")
     
-    host_url = str(request.base_url).rstrip("/")
-    webhook_url = f"{host_url}/api/webhook/stripe"
-    stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url=webhook_url)
-    
     success_url = f"{data.origin_url}/payment/success?session_id={{CHECKOUT_SESSION_ID}}"
     cancel_url = f"{data.origin_url}/courses/{data.course_id}"
     
-    checkout_request = CheckoutSessionRequest(
-        amount=price,
-        currency="usd",
-        success_url=success_url,
-        cancel_url=cancel_url,
-        metadata={
+    try:
+        # Create Stripe Checkout Session using standard SDK
+        session = stripe.checkout.Session.create(
+            payment_method_types=['card'],
+            line_items=[{
+                'price_data': {
+                    'currency': 'usd',
+                    'product_data': {
+                        'name': course.get("title", "Course"),
+                        'description': course.get("description", "")[:500] if course.get("description") else None,
+                    },
+                    'unit_amount': int(price * 100),  # Stripe uses cents
+                },
+                'quantity': 1,
+            }],
+            mode='payment',
+            success_url=success_url,
+            cancel_url=cancel_url,
+            metadata={
+                "course_id": data.course_id,
+                "user_id": user["id"],
+                "course_title": course.get("title", "")
+            }
+        )
+        
+        # Create payment transaction record
+        await db.payment_transactions.insert_one({
+            "session_id": session.id,
             "course_id": data.course_id,
             "user_id": user["id"],
-            "course_title": course.get("title", "")
-        }
-    )
-    
-    session = await stripe_checkout.create_checkout_session(checkout_request)
-    
-    # Create payment transaction record
-    await db.payment_transactions.insert_one({
-        "session_id": session.session_id,
-        "course_id": data.course_id,
-        "user_id": user["id"],
-        "amount": price,
-        "currency": "usd",
-        "payment_status": "pending",
-        "created_at": datetime.now(timezone.utc).isoformat()
-    })
-    
-    return {"url": session.url, "session_id": session.session_id}
+            "amount": price,
+            "currency": "usd",
+            "payment_status": "pending",
+            "created_at": datetime.now(timezone.utc).isoformat()
+        })
+        
+        return {"url": session.url, "session_id": session.id}
+    except stripe.error.StripeError as e:
+        logger.error(f"Stripe error: {e}")
+        raise HTTPException(status_code=500, detail="Payment service error")
 
 @api_router.get("/payments/status/{session_id}")
 async def get_payment_status(session_id: str, request: Request):
@@ -1591,69 +1603,105 @@ async def get_payment_status(session_id: str, request: Request):
     if transaction.get("payment_status") == "paid":
         return {"status": "complete", "payment_status": "paid"}
     
-    host_url = str(request.base_url).rstrip("/")
-    webhook_url = f"{host_url}/api/webhook/stripe"
-    stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url=webhook_url)
-    
-    status = await stripe_checkout.get_checkout_status(session_id)
-    
-    # Update transaction status
-    if status.payment_status == "paid":
-        await db.payment_transactions.update_one(
-            {"session_id": session_id},
-            {"$set": {"payment_status": "paid", "updated_at": datetime.now(timezone.utc).isoformat()}}
-        )
-        # Auto-enroll user
-        existing = await db.enrollments.find_one({"course_id": transaction["course_id"], "user_id": transaction["user_id"]})
-        if not existing:
-            await db.enrollments.insert_one({
-                "course_id": transaction["course_id"],
-                "user_id": transaction["user_id"],
-                "completed": False,
-                "score": 0,
-                "created_at": datetime.now(timezone.utc).isoformat()
-            })
-    
-    return {"status": status.status, "payment_status": status.payment_status}
+    try:
+        # Get session status from Stripe
+        session = stripe.checkout.Session.retrieve(session_id)
+        payment_status = session.payment_status  # 'paid', 'unpaid', 'no_payment_required'
+        
+        # Update transaction status
+        if payment_status == "paid":
+            await db.payment_transactions.update_one(
+                {"session_id": session_id},
+                {"$set": {"payment_status": "paid", "updated_at": datetime.now(timezone.utc).isoformat()}}
+            )
+            # Auto-enroll user
+            existing = await db.enrollments.find_one({"course_id": transaction["course_id"], "user_id": transaction["user_id"]})
+            if not existing:
+                await db.enrollments.insert_one({
+                    "course_id": transaction["course_id"],
+                    "user_id": transaction["user_id"],
+                    "completed": False,
+                    "score": 0,
+                    "created_at": datetime.now(timezone.utc).isoformat()
+                })
+                
+                # Send enrollment email
+                enrolled_user = await db.users.find_one({"_id": ObjectId(transaction["user_id"])})
+                course = await db.courses.find_one({"_id": ObjectId(transaction["course_id"])})
+                if enrolled_user and course:
+                    await send_enrollment_email(
+                        enrolled_user.get("email"),
+                        enrolled_user.get("name"),
+                        course.get("title"),
+                        transaction["course_id"]
+                    )
+        
+        return {"status": session.status, "payment_status": payment_status}
+    except stripe.error.StripeError as e:
+        logger.error(f"Stripe error: {e}")
+        raise HTTPException(status_code=500, detail="Payment service error")
 
 @api_router.post("/webhook/stripe")
 async def stripe_webhook(request: Request):
     body = await request.body()
     signature = request.headers.get("Stripe-Signature")
+    webhook_secret = os.environ.get("STRIPE_WEBHOOK_SECRET")
     
     if not STRIPE_API_KEY:
         raise HTTPException(status_code=503, detail="Payment service not configured")
     
-    host_url = str(request.base_url).rstrip("/")
-    webhook_url = f"{host_url}/api/webhook/stripe"
-    stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url=webhook_url)
-    
     try:
-        event = await stripe_checkout.handle_webhook(body, signature)
+        # Verify webhook signature if secret is configured
+        if webhook_secret:
+            event = stripe.Webhook.construct_event(body, signature, webhook_secret)
+        else:
+            # Parse without verification (for development)
+            import json
+            event = stripe.Event.construct_from(json.loads(body), stripe.api_key)
         
-        if event.payment_status == "paid":
-            await db.payment_transactions.update_one(
-                {"session_id": event.session_id},
-                {"$set": {"payment_status": "paid", "updated_at": datetime.now(timezone.utc).isoformat()}}
-            )
+        # Handle checkout.session.completed event
+        if event.type == "checkout.session.completed":
+            session = event.data.object
+            session_id = session.id
+            payment_status = session.payment_status
             
-            # Auto-enroll user
-            transaction = await db.payment_transactions.find_one({"session_id": event.session_id})
-            if transaction:
-                existing = await db.enrollments.find_one({
-                    "course_id": transaction["course_id"],
-                    "user_id": transaction["user_id"]
-                })
-                if not existing:
-                    await db.enrollments.insert_one({
+            if payment_status == "paid":
+                await db.payment_transactions.update_one(
+                    {"session_id": session_id},
+                    {"$set": {"payment_status": "paid", "updated_at": datetime.now(timezone.utc).isoformat()}}
+                )
+                
+                # Auto-enroll user
+                transaction = await db.payment_transactions.find_one({"session_id": session_id})
+                if transaction:
+                    existing = await db.enrollments.find_one({
                         "course_id": transaction["course_id"],
-                        "user_id": transaction["user_id"],
-                        "completed": False,
-                        "score": 0,
-                        "created_at": datetime.now(timezone.utc).isoformat()
+                        "user_id": transaction["user_id"]
                     })
+                    if not existing:
+                        await db.enrollments.insert_one({
+                            "course_id": transaction["course_id"],
+                            "user_id": transaction["user_id"],
+                            "completed": False,
+                            "score": 0,
+                            "created_at": datetime.now(timezone.utc).isoformat()
+                        })
+                        
+                        # Send enrollment email
+                        enrolled_user = await db.users.find_one({"_id": ObjectId(transaction["user_id"])})
+                        course = await db.courses.find_one({"_id": ObjectId(transaction["course_id"])})
+                        if enrolled_user and course:
+                            await send_enrollment_email(
+                                enrolled_user.get("email"),
+                                enrolled_user.get("name"),
+                                course.get("title"),
+                                transaction["course_id"]
+                            )
         
         return {"status": "ok"}
+    except stripe.error.SignatureVerificationError as e:
+        logger.error(f"Webhook signature verification failed: {e}")
+        raise HTTPException(status_code=400, detail="Invalid signature")
     except Exception as e:
         logger.error(f"Webhook error: {e}")
         return {"status": "error"}

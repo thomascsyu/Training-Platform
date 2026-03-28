@@ -530,47 +530,132 @@ translations = {
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Deployment Guide
 
 ### Prerequisites
 - Node.js 18+
 - Python 3.11+
 - MongoDB 6+
+- Stripe account
 - Deepseek API key
-- Stripe API key (test mode)
+- Brevo account (for emails)
+
+### External Dependencies (Standard SDKs)
+This project uses **standard, publicly available packages** - no proprietary dependencies:
+
+| Package | Purpose | PyPI |
+|---------|---------|------|
+| `stripe` | Payment processing | ✅ `pip install stripe` |
+| `openai` | Deepseek AI (OpenAI-compatible) | ✅ `pip install openai` |
+| `httpx` | Brevo API calls | ✅ `pip install httpx` |
 
 ### Environment Variables
 
 **Backend (.env)**
-```
+```bash
+# Database
 MONGO_URL=mongodb://localhost:27017
 DB_NAME=learnhub
-JWT_SECRET=your-secret-key
-ADMIN_EMAIL=admin@learnhub.com
-ADMIN_PASSWORD=admin123
-DEEPSEEK_API_KEY=sk-xxx
-STRIPE_API_KEY=sk_test_xxx
-FRONTEND_URL=http://localhost:3000
+
+# Security (generate: python -c "import secrets; print(secrets.token_hex(32))")
+JWT_SECRET=your-secure-random-secret
+
+# Admin Account
+ADMIN_EMAIL=admin@yourdomain.com
+ADMIN_PASSWORD=secure-password
+
+# Stripe (https://dashboard.stripe.com/apikeys)
+STRIPE_API_KEY=sk_live_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+
+# Deepseek AI (https://platform.deepseek.com)
+DEEPSEEK_API_KEY=sk-...
+
+# Brevo Email (https://app.brevo.com/settings/keys/api)
+BREVO_API_KEY=xkeysib-...
+EMAIL_FROM=noreply@yourdomain.com
+EMAIL_FROM_NAME=LearnHub
+
+# Frontend URL
+FRONTEND_URL=https://yourdomain.com
 ```
 
 **Frontend (.env)**
-```
-REACT_APP_BACKEND_URL=http://localhost:8001
+```bash
+REACT_APP_BACKEND_URL=https://api.yourdomain.com
 ```
 
-### Installation
+### Installation Steps
 
 ```bash
-# Backend
-cd backend
-pip install -r requirements.txt
-python server.py
+# 1. Clone the repository
+git clone <repo-url>
+cd learnhub
 
-# Frontend
-cd frontend
+# 2. Backend setup
+cd backend
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+cp .env.example .env
+# Edit .env with your values
+
+# 3. Frontend setup
+cd ../frontend
 yarn install
+cp .env.example .env
+# Edit .env with your backend URL
+
+# 4. Start MongoDB
+mongod --dbpath /path/to/data
+
+# 5. Run backend
+cd backend
+uvicorn server:app --host 0.0.0.0 --port 8001 --reload
+
+# 6. Run frontend
+cd frontend
 yarn start
 ```
+
+### Docker Deployment
+
+```dockerfile
+# Backend Dockerfile
+FROM python:3.11-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+COPY . .
+CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "8001"]
+
+# Frontend Dockerfile
+FROM node:18-alpine
+WORKDIR /app
+COPY package.json yarn.lock ./
+RUN yarn install
+COPY . .
+RUN yarn build
+CMD ["npx", "serve", "-s", "build", "-l", "3000"]
+```
+
+### Stripe Webhook Setup
+
+1. Go to Stripe Dashboard → Developers → Webhooks
+2. Add endpoint: `https://yourdomain.com/api/webhook/stripe`
+3. Select events: `checkout.session.completed`
+4. Copy webhook secret to `STRIPE_WEBHOOK_SECRET`
+
+### Production Checklist
+
+- [ ] Set strong `JWT_SECRET`
+- [ ] Configure real Stripe keys (not test)
+- [ ] Set up Stripe webhook
+- [ ] Configure Brevo for email
+- [ ] Set proper `FRONTEND_URL`
+- [ ] Enable HTTPS
+- [ ] Set up MongoDB authentication
+- [ ] Configure CORS properly
 
 ---
 
