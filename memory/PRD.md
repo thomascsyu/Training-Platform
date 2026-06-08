@@ -13,7 +13,7 @@ Build a Kajabi-like course/content platform with:
 - Private/free courses with group member registration
 - Downloadable course materials
 - **Multi-language support**: Course versions in English, Traditional Chinese, Simplified Chinese, Japanese, Korean
-- **UI Internationalization**: English & Traditional Chinese interface
+- **UI Internationalization**: English & Traditional Chinese interface (partial — nav/dashboard/auth; course admin pages still mixed)
 
 ## Architecture
 - **Backend**: FastAPI + MongoDB + JWT Authentication
@@ -45,10 +45,18 @@ Build a Kajabi-like course/content platform with:
 - [x] Private courses with group enrollment
 - [x] Admin bulk enrollment (client managers view progress; admins enroll groups)
 
-## What's Been Implemented (Jan 2026)
+## What's Been Implemented (Jan 2026, updated Jun 2026)
+
+### Backend layout
+- `server.py` — Uvicorn entry
+- `app.py` — App factory, CORS, lifespan
+- `routes.py` — Aggregates domain routers under `/api`
+- `routers/` — `auth`, `courses`, `lessons`, `quizzes`, `enrollments`, `groups`, `certificates`, `forums`, `chat`, `translate`, `payments`, `users`, `stats`, `root`
+- `clients.py` — Shared Deepseek + Stripe clients
+- `course_utils.py` — Cascade delete helpers
 
 ### Backend APIs
-- `/api/auth/*` - Authentication (register, login, logout, me)
+- `/api/auth/*` - Authentication (register, login, logout, refresh, me)
 - `/api/languages` - Get supported languages
 - `/api/courses/*` - Course CRUD with language field & filtering
 - `/api/lessons/*` - Lesson CRUD
@@ -79,13 +87,13 @@ Build a Kajabi-like course/content platform with:
 - Quiz taking interface
 - Certificates page
 - Payment success page
-- Client manager group enrollment
+- Admin bulk enrollment UI (client managers view group progress only)
 
 ### Supported Languages
 | Code | Name | UI Support |
 |------|------|------------|
-| en | English | ✅ Full |
-| zh-TW | 繁體中文 | ✅ Full |
+| en | English | ✅ Primary UI |
+| zh-TW | 繁體中文 | ✅ Partial UI (nav, auth, dashboards) |
 | zh-CN | 简体中文 | Course only |
 | ja | 日本語 | Course only |
 | ko | 한국어 | Course only |
