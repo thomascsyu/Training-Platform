@@ -88,6 +88,7 @@ Build a Kajabi-like course/content platform with:
 - Quiz taking interface
 - Certificates page
 - Payment success page
+- Admin bulk enrollment UI (client managers view group progress only)
 - Admin analytics dashboard (`/admin/analytics`)
 - Lesson viewer with per-lesson progress tracking
 - Certificate PDF download
