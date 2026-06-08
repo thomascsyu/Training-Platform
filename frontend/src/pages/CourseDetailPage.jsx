@@ -32,6 +32,7 @@ import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 export const CourseDetailPage = () => {
   const { id } = useParams();
   const { user } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [course, setCourse] = useState(null);
   const [enrollment, setEnrollment] = useState(null);
@@ -120,7 +121,7 @@ export const CourseDetailPage = () => {
     setEnrolling(true);
     try {
       await API.post("/enrollments", { course_id: id });
-      toast.success("Enrolled successfully!");
+      toast.success(t("toast.enrolledSuccess"));
       fetchCourse();
     } catch (e) {
       toast.error(formatError(e));
@@ -154,7 +155,7 @@ export const CourseDetailPage = () => {
       const { data } = await API.post("/forums/posts", { course_id: id, content: forumInput });
       setForumPosts([data, ...forumPosts]);
       setForumInput("");
-      toast.success("Posted!");
+      toast.success(t("toast.posted"));
     } catch (e) {
       toast.error(formatError(e));
     }
@@ -190,7 +191,7 @@ export const CourseDetailPage = () => {
     try {
       const { data } = await API.post(`/progress/lessons/${lessonId}/complete`);
       setLessonProgress(data);
-      toast.success("Lesson marked complete!");
+      toast.success(t("toast.lessonComplete"));
     } catch (e) {
       toast.error(formatError(e));
     } finally {
@@ -302,7 +303,7 @@ export const CourseDetailPage = () => {
                       data-testid="view-certificate-btn"
                     >
                       <Award className="w-4 h-4 mr-2" />
-                      {enrollment.completed ? "View Certificate" : "Complete to get Certificate"}
+                      {enrollment.completed ? t("courses.viewCertificate") : t("courses.completeToGet")}
                     </Button>
                   </>
                 ) : (
@@ -315,7 +316,7 @@ export const CourseDetailPage = () => {
                     {enrolling ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
                     ) : course.is_free ? (
-                      "Enroll Now - Free"
+                      t("courses.enrollFree")
                     ) : (
                       <>
                         <DollarSign className="w-4 h-4 mr-1" />
@@ -403,7 +404,7 @@ export const CourseDetailPage = () => {
                             className="bg-[#002FA7] hover:bg-[#002585] text-white rounded-sm"
                             data-testid={`complete-lesson-${activeLesson.id}`}
                           >
-                            {completingLesson ? <Loader2 className="w-4 h-4 animate-spin" /> : "Mark Complete"}
+                            {completingLesson ? <Loader2 className="w-4 h-4 animate-spin" /> : t("courses.markComplete")}
                           </Button>
                           <Button
                             variant="outline"
@@ -544,7 +545,7 @@ export const CourseDetailPage = () => {
                   <Input 
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
-                    placeholder="Ask a question..."
+                    placeholder={t("chat.askQuestion")}
                     className="rounded-sm border-slate-300"
                     onKeyDown={(e) => e.key === "Enter" && sendChatMessage()}
                     data-testid="chat-input"
@@ -575,7 +576,7 @@ export const CourseDetailPage = () => {
                   <Textarea 
                     value={forumInput}
                     onChange={(e) => setForumInput(e.target.value)}
-                    placeholder="Share your thoughts or ask a question..."
+                    placeholder={t("forum.shareThoughts")}
                     className="rounded-sm border-slate-300 mb-2"
                     data-testid="forum-input"
                   />

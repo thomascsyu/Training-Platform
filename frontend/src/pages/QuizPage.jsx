@@ -31,6 +31,7 @@ import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 export const QuizPage = () => {
   const { id } = useParams();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [quiz, setQuiz] = useState(null);
   const [answers, setAnswers] = useState([]);
@@ -57,7 +58,7 @@ export const QuizPage = () => {
 
   const handleSubmit = async () => {
     if (answers.some(a => a === -1)) {
-      toast.error("Please answer all questions");
+      toast.error(t("toast.answerAll"));
       return;
     }
     
@@ -66,9 +67,9 @@ export const QuizPage = () => {
       const { data } = await API.post(`/quizzes/${id}/submit`, { quiz_id: id, answers });
       setResult(data);
       if (data.passed) {
-        toast.success("Congratulations! You passed!");
+        toast.success(t("toast.passedQuiz"));
       } else {
-        toast.error("You didn't pass. Try again!");
+        toast.error(t("toast.failedQuiz"));
       }
     } catch (e) {
       toast.error(formatError(e));
@@ -106,7 +107,7 @@ export const QuizPage = () => {
                   )}
                 </div>
                 <h3 className="text-2xl font-medium mb-2">
-                  {result.passed ? "Congratulations!" : "Try Again"}
+                  {result.passed ? t("quiz.congratulations") : t("quiz.tryAgain")}
                 </h3>
                 <p className="text-slate-600 mb-4">
                   Your Score: <span className="font-medium">{result.score}%</span> ({result.correct}/{result.total} correct)
@@ -187,7 +188,7 @@ export const QuizPage = () => {
                   className="w-full bg-[#002FA7] hover:bg-[#002585] text-white rounded-sm py-6"
                   data-testid="submit-quiz-btn"
                 >
-                  {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Submit Quiz"}
+                  {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : t("quiz.submit")}
                 </Button>
               </div>
             )}

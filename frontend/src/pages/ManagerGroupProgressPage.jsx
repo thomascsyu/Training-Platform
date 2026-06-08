@@ -79,7 +79,7 @@ export const ManagerGroupProgressPage = () => {
         <h1 className="text-2xl sm:text-3xl tracking-tight font-medium text-[#0A0B10] mb-2">
           Group Training Progress
         </h1>
-        <p className="text-slate-600 mb-8">Monitor student progress across all courses</p>
+        <p className="text-slate-600 mb-8">{t("manager.monitorProgress")}</p>
 
         {loading ? (
           <div className="flex justify-center py-12">
@@ -89,7 +89,7 @@ export const ManagerGroupProgressPage = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Course List */}
             <div className="lg:col-span-1 space-y-4">
-              <h2 className="font-medium text-slate-700">Courses</h2>
+              <h2 className="font-medium text-slate-700">{t("manager.coursesTitle")}</h2>
               {overview.length > 0 ? overview.map((course) => (
                 <Card 
                   key={course.course_id}
@@ -121,7 +121,7 @@ export const ManagerGroupProgressPage = () => {
                     </div>
                     {course.average_score > 0 && (
                       <p className="text-xs text-slate-500 mt-2">
-                        Avg Score: <span className="font-medium text-[#002FA7]">{course.average_score}%</span>
+                        {t("manager.avgScore")}: <span className="font-medium text-[#002FA7]">{course.average_score}%</span>
                       </p>
                     )}
                   </CardContent>
@@ -129,7 +129,7 @@ export const ManagerGroupProgressPage = () => {
               )) : (
                 <Card className="bg-white border border-slate-200 rounded-sm">
                   <CardContent className="p-8 text-center">
-                    <p className="text-slate-500">No courses with enrollments</p>
+                    <p className="text-slate-500">{t("manager.noCoursesWithEnrollments")}</p>
                   </CardContent>
                 </Card>
               )}
@@ -153,19 +153,19 @@ export const ManagerGroupProgressPage = () => {
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div className="text-center p-4 bg-slate-50 rounded-sm">
                           <p className="text-2xl font-medium text-[#0A0B10]">{courseProgress.summary.total_enrolled}</p>
-                          <p className="text-xs text-slate-500">Total Enrolled</p>
+                          <p className="text-xs text-slate-500">{t("manager.totalEnrolled")}</p>
                         </div>
                         <div className="text-center p-4 bg-green-50 rounded-sm">
                           <p className="text-2xl font-medium text-green-600">{courseProgress.summary.completed}</p>
-                          <p className="text-xs text-slate-500">Completed</p>
+                          <p className="text-xs text-slate-500">{t("manager.completedLabel")}</p>
                         </div>
                         <div className="text-center p-4 bg-yellow-50 rounded-sm">
                           <p className="text-2xl font-medium text-yellow-600">{courseProgress.summary.in_progress}</p>
-                          <p className="text-xs text-slate-500">In Progress</p>
+                          <p className="text-xs text-slate-500">{t("manager.inProgressLabel")}</p>
                         </div>
                         <div className="text-center p-4 bg-[#002FA7]/5 rounded-sm">
                           <p className="text-2xl font-medium text-[#002FA7]">{courseProgress.summary.average_score}%</p>
-                          <p className="text-xs text-slate-500">Avg Score</p>
+                          <p className="text-xs text-slate-500">{t("manager.avgScore")}</p>
                         </div>
                       </div>
                     </CardContent>
@@ -181,12 +181,12 @@ export const ManagerGroupProgressPage = () => {
                         <table className="w-full">
                           <thead className="bg-slate-50 border-b border-slate-200">
                             <tr>
-                              <th className="text-left p-4 font-medium text-slate-600 text-sm">Student</th>
-                              <th className="text-left p-4 font-medium text-slate-600 text-sm">Status</th>
-                              <th className="text-left p-4 font-medium text-slate-600 text-sm">Score</th>
-                              <th className="text-left p-4 font-medium text-slate-600 text-sm">Lessons</th>
-                              <th className="text-left p-4 font-medium text-slate-600 text-sm">Attempts</th>
-                              <th className="text-left p-4 font-medium text-slate-600 text-sm">Last Activity</th>
+                              <th className="text-left p-4 font-medium text-slate-600 text-sm">{t("manager.studentColumn")}</th>
+                              <th className="text-left p-4 font-medium text-slate-600 text-sm">{t("manager.statusColumn")}</th>
+                              <th className="text-left p-4 font-medium text-slate-600 text-sm">{t("manager.scoreColumn")}</th>
+                              <th className="text-left p-4 font-medium text-slate-600 text-sm">{t("manager.lessonsColumn")}</th>
+                              <th className="text-left p-4 font-medium text-slate-600 text-sm">{t("manager.attemptsColumn")}</th>
+                              <th className="text-left p-4 font-medium text-slate-600 text-sm">{t("manager.lastActivityColumn")}</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -212,9 +212,9 @@ export const ManagerGroupProgressPage = () => {
                                       : "bg-yellow-100 text-yellow-700"
                                   }`}>
                                     {student.completed ? (
-                                      <><CheckCircle className="w-3 h-3 mr-1" /> Completed</>
+                                      <><CheckCircle className="w-3 h-3 mr-1" /> {t("common.completed")}</>
                                     ) : (
-                                      <><Clock className="w-3 h-3 mr-1" /> In Progress</>
+                                      <><Clock className="w-3 h-3 mr-1" /> {t("dashboard.inProgress")}</>
                                     )}
                                   </Badge>
                                 </td>
@@ -252,7 +252,7 @@ export const ManagerGroupProgressPage = () => {
                 <Card className="bg-white border border-slate-200 rounded-sm">
                   <CardContent className="p-12 text-center">
                     <BarChart3 className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                    <p className="text-slate-600">Select a course to view detailed progress</p>
+                    <p className="text-slate-600">{t("manager.selectCoursePrompt")}</p>
                   </CardContent>
                 </Card>
               )}

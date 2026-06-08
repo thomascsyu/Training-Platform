@@ -52,7 +52,7 @@ export const ManagerDashboard = () => {
           <Card className="bg-white border border-slate-200 rounded-sm">
             <CardContent className="p-12 text-center">
               <BookOpen className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-              <p className="text-slate-600">No course enrollments to display yet.</p>
+              <p className="text-slate-600">{t("manager.noEnrollments")}</p>
             </CardContent>
           </Card>
         ) : (
@@ -72,19 +72,19 @@ export const ManagerDashboard = () => {
                   <div className="flex items-center gap-4 text-sm text-slate-600">
                     <span className="flex items-center gap-1">
                       <Users className="w-4 h-4" />
-                      {course.total_enrolled} enrolled
+                      {course.total_enrolled} {t("manager.enrolledLabel")}
                     </span>
-                    <span>{course.completed} completed</span>
+                    <span>{course.completed} {t("manager.completedLabel")}</span>
                   </div>
                   <div>
                     <div className="flex justify-between text-sm mb-1">
-                      <span>Completion rate</span>
+                      <span>{t("manager.completionRate")}</span>
                       <span>{course.completion_rate}%</span>
                     </div>
                     <Progress value={course.completion_rate} className="h-2" />
                   </div>
                   <Button variant="ghost" size="sm" className="w-full justify-between rounded-sm">
-                    View details <ChevronRight className="w-4 h-4" />
+                    {t("manager.viewDetails")} <ChevronRight className="w-4 h-4" />
                   </Button>
                 </CardContent>
               </Card>

@@ -97,10 +97,10 @@ Build a Kajabi-like course/content platform with:
 | Code | Name | UI Support |
 |------|------|------------|
 | en | English | ✅ Primary UI |
-| zh-TW | 繁體中文 | ✅ Partial UI (nav, auth, dashboards) |
-| zh-CN | 简体中文 | Course only |
-| ja | 日本語 | Course only |
-| ko | 한국어 | Course only |
+| zh-TW | 繁體中文 | ✅ Full UI |
+| zh-CN | 简体中文 | ✅ Full UI |
+| ja | 日本語 | ✅ Full UI |
+| ko | 한국어 | ✅ Full UI |
 
 ## Prioritized Backlog
 
@@ -124,7 +124,7 @@ Build a Kajabi-like course/content platform with:
 - [x] Certificate PDF download
 - [x] Course analytics dashboard
 - [x] Student performance reports (lesson progress in group views)
-- [ ] Full UI translation for zh-CN, ja, ko
+- [x] Full UI translation for zh-CN, ja, ko
 
 ### P3 (Low Priority)
 - [ ] Course categories/tags
@@ -133,6 +133,5 @@ Build a Kajabi-like course/content platform with:
 - [ ] Mobile app
 
 ## Next Tasks
-1. Add full UI translations for Simplified Chinese, Japanese, Korean
-2. Split `App.js` into page components under `src/pages/`
-3. P3 features: categories/tags, reviews, instructor profiles
+1. P3 features: categories/tags, reviews, instructor profiles
+2. Vite migration (replace CRA)

@@ -257,12 +257,11 @@ FRONTEND_URL=https://yourdomain.com
 
 ## Internationalization
 
-| Scope | English | 繁體中文 |
-|-------|---------|----------|
-| Landing & auth | ✅ | ✅ |
-| Navigation (public) | ✅ | ✅ |
-| Dashboards & admin | ❌ | ❌ |
-| Course / quiz UI | Partial | Partial |
+| Scope | English | 繁體中文 | 简体中文 | 日本語 | 한국어 |
+|-------|---------|----------|----------|--------|--------|
+| Landing & auth | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Navigation & dashboards | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Course / quiz / admin UI | ✅ | ✅ | ✅ | ✅ | ✅ |
 
 Course content supports **5 languages**: `en`, `zh-TW`, `zh-CN`, `ja`, `ko`. UI toggle persists in `localStorage`.
 
@@ -391,7 +390,7 @@ docker run -p 3000:3000 learnhub-web
 - [ ] Stripe live keys + webhook secret enforced
 - [ ] Brevo configured; `FRONTEND_URL` correct
 - [ ] HTTPS everywhere
-- [ ] MongoDB authentication enabled
+- [ ] MongoDB authentication enabled (optional via `MONGO_ROOT_USER` / `MONGO_ROOT_PASSWORD` in Docker)
 
 ---
 
@@ -444,8 +443,8 @@ Test accounts and role promotion steps: **[memory/test_credentials.md](memory/te
 
 ## Future Enhancements
 
-- [ ] Full UI translation (dashboards, admin, zh-CN / ja / ko)
-- [ ] Split `App.js` into `src/pages/` components
+- [x] Full UI translation (5 languages: EN, zh-TW, zh-CN, ja, ko)
+- [x] Split `App.js` into `src/pages/` components
 - [ ] Course categories/tags, ratings, instructor profiles
 - [ ] Mobile app (React Native)
 

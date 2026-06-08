@@ -96,11 +96,11 @@ export const AdminCoursesPage = () => {
   };
 
   const handleDelete = async (courseId) => {
-    if (!window.confirm("Are you sure you want to delete this course?")) return;
+    if (!window.confirm(t("toast.confirmDeleteCourse"))) return;
     
     try {
       await API.delete(`/courses/${courseId}`);
-      toast.success("Course deleted!");
+      toast.success(t("toast.courseDeleted"));
       fetchCourses();
     } catch (e) {
       toast.error(formatError(e));
@@ -257,7 +257,7 @@ export const AdminCoursesPage = () => {
                   className="w-full bg-[#002FA7] hover:bg-[#002585] text-white rounded-sm"
                   data-testid="submit-course-btn"
                 >
-                  {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : "Create Course"}
+                  {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : t("courses.createCourse")}
                 </Button>
               </div>
             </DialogContent>

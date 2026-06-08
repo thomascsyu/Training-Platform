@@ -164,9 +164,9 @@ export const StudentDashboard = () => {
           <Card className="bg-white border border-slate-200 rounded-sm">
             <CardContent className="p-12 text-center">
               <BookOpen className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-              <p className="text-slate-600 mb-4">You haven't enrolled in any courses yet</p>
+              <p className="text-slate-600 mb-4">{t("dashboard.noCoursesYet")}</p>
               <Button onClick={() => navigate("/courses")} className="bg-[#002FA7] hover:bg-[#002585] text-white rounded-sm" data-testid="start-learning-btn">
-                Start Learning
+                {t("dashboard.startLearning")}
               </Button>
             </CardContent>
           </Card>

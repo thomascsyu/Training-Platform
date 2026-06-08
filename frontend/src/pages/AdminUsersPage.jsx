@@ -32,6 +32,7 @@ import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { DashboardLayout } from "@/components/DashboardLayout";
 
 export const AdminUsersPage = () => {
+  const { t } = useLanguage();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -53,7 +54,7 @@ export const AdminUsersPage = () => {
   const handleRoleChange = async (userId, newRole) => {
     try {
       await API.put(`/users/${userId}/role?role=${newRole}`);
-      toast.success("Role updated!");
+      toast.success(t("toast.roleUpdated"));
       fetchUsers();
     } catch (e) {
       toast.error(formatError(e));
@@ -64,7 +65,7 @@ export const AdminUsersPage = () => {
     <DashboardLayout>
       <div className="p-6" data-testid="admin-users-page">
         <h1 className="text-2xl sm:text-3xl tracking-tight font-medium text-[#0A0B10] mb-8">
-          Manage Users
+          {t("users.manageUsers")}
         </h1>
 
         {loading ? (
@@ -77,10 +78,10 @@ export const AdminUsersPage = () => {
               <table className="w-full">
                 <thead className="bg-slate-50 border-b border-slate-200">
                   <tr>
-                    <th className="text-left p-4 font-medium text-slate-600">Name</th>
-                    <th className="text-left p-4 font-medium text-slate-600">Email</th>
-                    <th className="text-left p-4 font-medium text-slate-600">Role</th>
-                    <th className="text-left p-4 font-medium text-slate-600">Actions</th>
+                    <th className="text-left p-4 font-medium text-slate-600">{t("users.name")}</th>
+                    <th className="text-left p-4 font-medium text-slate-600">{t("users.email")}</th>
+                    <th className="text-left p-4 font-medium text-slate-600">{t("users.role")}</th>
+                    <th className="text-left p-4 font-medium text-slate-600">{t("users.actions")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -112,7 +113,7 @@ export const AdminUsersPage = () => {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="student">Student</SelectItem>
-                            <SelectItem value="client_manager">Client Manager</SelectItem>
+                            <SelectItem value="client_manager">{t("users.clientManager")}</SelectItem>
                             <SelectItem value="admin">Admin</SelectItem>
                           </SelectContent>
                         </Select>
