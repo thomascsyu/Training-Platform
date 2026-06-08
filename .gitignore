@@ -76,26 +76,12 @@ agenthub/agents/youtube/db
 # Build caches
 .cache/
 
-memory/test_credentials.md
+# Environment files (keep .env.example tracked)
+.env
+.env.local
+.env.*.local
+!.env.example
+!.env.docker.example
 
 # Mobile development
-android-sdk/-e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
+android-sdk/

@@ -1,785 +1,446 @@
-# LearnHub - Kajabi-like Course Platform
+# LearnHub — Kajabi-like Course Platform
 
-A comprehensive online learning platform built with React, FastAPI, and MongoDB. Features multi-language support, AI-powered translation, quizzes, certificates, and Stripe payments.
+Online learning platform built with **React**, **FastAPI**, and **MongoDB**. Supports multi-language courses, AI translation & chat (Deepseek), quizzes, certificates, Stripe payments, forums, and Brevo email notifications.
 
----
-
-## 🎯 Overview
-
-LearnHub is a full-featured Learning Management System (LMS) that enables organizations to create, manage, and deliver online courses to students worldwide. The platform supports multiple languages, AI-powered content translation, and comprehensive course management.
+**Quick links:** [Quick Start](#-quick-start) · [Architecture](#-architecture) · [API](#-api-endpoints) · [Environment](#environment-variables) · [Test Accounts](memory/test_credentials.md) · [License](LICENSE)
 
 ---
 
-## 🏗️ Architecture
+## Quick Start
 
+```bash
+# Clone and enter the repo (folder name may differ)
+git clone <repo-url> && cd learnhub
+
+# Backend
+cd backend
+python -m venv venv && source venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env   # edit MONGO_URL, JWT_SECRET, etc.
+uvicorn server:app --host 0.0.0.0 --port 8001 --reload
+
+# Frontend (new terminal)
+cd frontend
+yarn install
+cp .env.example .env   # set REACT_APP_BACKEND_URL=http://localhost:8001
+yarn start
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                         CLIENT LAYER                            │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │                   React Frontend                         │   │
-│  │  • Landing Page    • Course Player    • Admin Dashboard  │   │
-│  │  • Auth Pages      • Quiz System      • Certificate View │   │
-│  │  • i18n (EN/繁中)  • AI Chat          • Forum            │   │
-│  └─────────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                         API LAYER                               │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │                   FastAPI Backend                        │   │
-│  │  • REST API        • JWT Auth         • Role-based ACL   │   │
-│  │  • Course CRUD     • Quiz Engine      • Payment Handler  │   │
-│  │  • AI Translation  • Chatbot          • Webhook Handler  │   │
-│  └─────────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                       DATA LAYER                                │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐          │
-│  │   MongoDB    │  │  Deepseek AI │  │    Stripe    │          │
-│  │  (Database)  │  │  (Chat/Trans)│  │  (Payments)  │          │
-│  └──────────────┘  └──────────────┘  └──────────────┘          │
-└─────────────────────────────────────────────────────────────────┘
-```
+
+Open [http://localhost:3000](http://localhost:3000). Default admin is seeded from `ADMIN_EMAIL` / `ADMIN_PASSWORD` in backend `.env` — see [Test Accounts](memory/test_credentials.md).
 
 ---
 
-## 📁 File Structure
+## Overview
 
-```
-/app
-├── backend/
-│   ├── server.py              # Main FastAPI application (all routes & logic)
-│   ├── requirements.txt       # Python dependencies
-│   └── .env                   # Environment variables (DB, API keys)
-│
-├── frontend/
-│   ├── public/
-│   │   └── index.html         # HTML entry point
-│   ├── src/
-│   │   ├── App.js             # Main React application (all components)
-│   │   ├── App.css            # Custom styles
-│   │   ├── index.js           # React entry point
-│   │   ├── index.css          # Tailwind imports
-│   │   ├── i18n.js            # Internationalization (EN/繁中 translations)
-│   │   ├── hooks/
-│   │   │   └── use-toast.js   # Toast notification hook
-│   │   └── components/
-│   │       └── ui/            # Shadcn UI components
-│   │           ├── button.jsx
-│   │           ├── card.jsx
-│   │           ├── dialog.jsx
-│   │           ├── input.jsx
-│   │           ├── select.jsx
-│   │           ├── tabs.jsx
-│   │           └── ...
-│   ├── package.json           # Node.js dependencies
-│   ├── tailwind.config.js     # Tailwind CSS configuration
-│   └── .env                   # Frontend environment variables
-│
-├── memory/
-│   ├── PRD.md                 # Product Requirements Document
-│   └── test_credentials.md    # Test account credentials
-│
-├── test_reports/              # Automated test results
-│   └── iteration_*.json
-│
-└── README.md                  # This file
-```
+LearnHub is a full-featured LMS for creating, managing, and delivering courses. Organizations can run paid or free programs, track group progress, and issue certificates on quiz completion.
 
----
-
-## 💻 Tech Stack
-
-### Frontend
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| React | 18.x | UI Framework |
-| React Router | 6.x | Client-side routing |
-| Tailwind CSS | 3.x | Utility-first styling |
-| Shadcn UI | Latest | Component library |
-| Axios | Latest | HTTP client |
-| Lucide React | Latest | Icon library |
-| Sonner | Latest | Toast notifications |
-
-### Backend
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| Python | 3.11+ | Runtime |
-| FastAPI | 0.100+ | Web framework |
-| Motor | Latest | Async MongoDB driver |
-| PyJWT | Latest | JWT authentication |
-| Bcrypt | Latest | Password hashing |
-| OpenAI SDK | Latest | Deepseek AI integration |
-
-### Database
-| Technology | Purpose |
+| Capability | Summary |
 |------------|---------|
-| MongoDB | Primary database |
-| Collections | users, courses, lessons, quizzes, quiz_attempts, enrollments, certificates, forum_posts, chat_messages, payment_transactions |
-
-### External Services
-| Service | Purpose |
-|---------|---------|
-| Deepseek AI | Chatbot & Auto-translation |
-| Stripe | Payment processing |
+| Courses & lessons | YouTube/Vimeo embeds, materials, private courses |
+| Assessments | Multiple-choice quizzes, configurable pass threshold |
+| Credentials | Auto-generated certificates on pass |
+| Commerce | Stripe checkout + webhooks |
+| AI | Deepseek chatbot + course/quiz translation |
+| Comms | Brevo emails (enrollment, quiz progress, certificate) |
+| Roles | Admin, client manager (admin-assigned), student |
 
 ---
 
-## 🗄️ Database Schema
+## Architecture
 
-### Collections
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                         CLIENT (React SPA)                        │
+│  Landing · Auth · Dashboards · Course player · Quiz · Certs      │
+│  i18n: EN + 繁中 (partial — see Internationalization)            │
+└───────────────────────────────┬─────────────────────────────────┘
+                                │ HTTPS + cookies (JWT)
+                                ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                      API (FastAPI + Motor)                        │
+│  Auth · Courses · Quizzes · Enrollments · Payments · Groups      │
+│  Forums · Chat · Translate · Certificates · Stats              │
+└───────────────────────────────┬─────────────────────────────────┘
+                                │
+        ┌───────────────────────┼───────────────────────┐
+        ▼                       ▼                       ▼
+   MongoDB                 Deepseek AI              Stripe
+   (primary DB)            (chat / translate)      (payments)
+                                │
+                                ▼
+                           Brevo (transactional email)
+```
+
+### Backend layout
+
+| File | Role |
+|------|------|
+| `server.py` | Uvicorn entry point |
+| `app.py` | App factory, CORS, lifespan, indexes, admin seed |
+| `routes.py` | HTTP route handlers |
+| `config.py` | Environment configuration |
+| `database.py` | MongoDB client |
+| `models.py` | Pydantic request models |
+| `auth_utils.py` | JWT, passwords, cookies, RBAC helpers |
+| `email_service.py` | Brevo integration |
+
+### Frontend layout
+
+| Path | Role |
+|------|------|
+| `src/App.js` | Routes and page components |
+| `src/lib/api.js` | Axios client (`withCredentials: true`) |
+| `src/contexts/` | Auth and language providers |
+| `src/components/` | Shared UI (guards, language switcher) |
+| `src/i18n.js` | EN / 繁中 translation strings |
+| `src/components/ui/` | Shadcn UI primitives |
+
+See [frontend/README.md](frontend/README.md) for frontend-specific setup.
+
+---
+
+## Tech Stack
+
+| Layer | Technology | Notes |
+|-------|------------|-------|
+| Frontend | React 19, React Router 7 | CRA + CRACO |
+| Styling | Tailwind CSS 3, Shadcn UI | International Klein Blue `#002FA7` |
+| HTTP | Axios | Cookie-based auth |
+| Backend | Python 3.11+, FastAPI | Async via Motor |
+| Database | MongoDB 6+ | Document store |
+| Auth | PyJWT, bcrypt | HTTP-only cookies |
+| Payments | Stripe | Checkout sessions + webhooks |
+| AI | OpenAI SDK → Deepseek | Chat + translation |
+| Email | Brevo (httpx) | Optional; skipped if no API key |
+
+---
+
+## User Roles
+
+| Role | Capabilities |
+|------|--------------|
+| **Admin** | Courses, quizzes, users/roles, bulk enroll, analytics, AI translate, certificate styling |
+| **Client manager** | Enrollments, group progress dashboards (assigned by admin only) |
+| **Student** | Browse, enroll (free/paid), quiz, certificates, AI chat, forums |
+
+> Public registration always creates **student** accounts. Bulk enrollment is **admin-only**. Promote users via `PUT /api/users/{id}/role?role=client_manager`.
+
+---
+
+## API Endpoints
+
+Base path: `/api`
+
+### Authentication
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/auth/register` | Register (always `student`) |
+| POST | `/auth/login` | Login; sets access + refresh cookies |
+| POST | `/auth/logout` | Clear cookies |
+| POST | `/auth/refresh` | Renew access token from refresh cookie |
+| GET | `/auth/me` | Current user |
+
+### Courses & content
+
+| Method | Endpoint | Access |
+|--------|----------|--------|
+| GET | `/languages` | Public |
+| GET/POST | `/courses` | List public; create = admin |
+| GET/PUT/DELETE | `/courses/{id}` | Get public/private rules; mutate = admin |
+| POST | `/courses/{id}/create-translation` | Admin |
+| CRUD | `/lessons`, `/lessons/{id}` | Admin write |
+| CRUD | `/quizzes`, `/quizzes/{id}` | Admin write; students get quiz without answers |
+| POST | `/quizzes/{id}/submit` | Enrolled student |
+
+### Enrollments & groups
+
+| Method | Endpoint | Access |
+|--------|----------|--------|
+| POST | `/enrollments` | Self-enroll or admin bulk (`user_ids`) |
+| GET | `/enrollments/my` | Authenticated |
+| GET | `/enrollments/course/{id}` | Admin, client manager |
+| GET | `/groups/overview` | Admin, client manager |
+| GET | `/groups/course/{id}/progress` | Admin, client manager |
+| GET | `/groups/student/{id}/progress` | Admin, client manager |
+
+### Certificates
+
+| Method | Endpoint | Access |
+|--------|----------|--------|
+| GET | `/certificates/my` | Owner |
+| GET | `/certificates/{id}` | Owner, admin, or client manager |
+| PUT | `/certificates/{id}/customize` | Admin |
+
+**Customize request body:**
+
+```json
+{
+  "template": "default",
+  "primary_color": "#002FA7",
+  "secondary_color": "#0A0B10",
+  "apply_to_course": false
+}
+```
+
+Set `apply_to_course: true` to apply styling to all certificates for that certificate's course.
+
+### AI, forums, payments, admin
+
+| Area | Endpoints |
+|------|-----------|
+| Translation | `POST /translate/text`, `/translate/course/{id}`, `/translate/quiz/{id}` |
+| Chat | `POST /chat`, `GET /chat/{course_id}/history` |
+| Forums | `GET /forums/{course_id}`, `POST /forums/posts`, `DELETE /forums/posts/{id}` |
+| Payments | `POST /payments/checkout`, `GET /payments/status/{session_id}`, `POST /webhook/stripe` |
+| Users | `GET /users`, `PUT /users/{id}/role` |
+| Stats | `GET /stats/admin`, `GET /stats/student` |
+
+---
+
+## Authentication
+
+```
+Login/Register
+      │
+      ▼
+Access + refresh JWT → HTTP-only cookies (secure flag via COOKIE_SECURE)
+      │
+      ▼
+API requests include cookies automatically (axios withCredentials)
+      │
+      ├── Valid access token → 200
+      │
+      └── Expired access token → 401
+                │
+                ▼
+          POST /auth/refresh (refresh cookie)
+                │
+                ├── Success → new cookies → retry request
+                └── Failure → redirect to login
+```
+
+| Token | Lifetime | Notes |
+|-------|----------|-------|
+| Access | 60 min | HS256 |
+| Refresh | 7 days | Used only by `/auth/refresh` |
+
+> **Note:** The SPA automatically calls `/auth/refresh` on 401 (via Axios interceptor) and clears session state if refresh fails.
+
+---
+
+## Email (Brevo)
+
+Optional. If `BREVO_API_KEY` is unset, emails are skipped (logged only).
+
+| Event | Trigger |
+|-------|---------|
+| Enrollment | Self-enroll, bulk enroll, or paid checkout |
+| Progress | Failed quiz attempt (score sent as %) |
+| Certificate | First successful quiz pass |
+
+```env
+BREVO_API_KEY=xkeysib-...
+EMAIL_FROM=noreply@yourdomain.com
+EMAIL_FROM_NAME=LearnHub
+FRONTEND_URL=https://yourdomain.com
+```
+
+---
+
+## Internationalization
+
+| Scope | English | 繁體中文 |
+|-------|---------|----------|
+| Landing & auth | ✅ | ✅ |
+| Navigation (public) | ✅ | ✅ |
+| Dashboards & admin | ❌ | ❌ |
+| Course / quiz UI | Partial | Partial |
+
+Course content supports **5 languages**: `en`, `zh-TW`, `zh-CN`, `ja`, `ko`. UI toggle persists in `localStorage`.
+
+---
+
+## Database Collections
+
+`users` · `courses` · `lessons` · `quizzes` · `quiz_attempts` · `enrollments` · `certificates` · `forum_posts` · `chat_messages` · `payment_transactions`
+
+<details>
+<summary>Schema reference (expand)</summary>
 
 #### `users`
 ```javascript
-{
-  _id: ObjectId,
-  email: String (unique),
-  password_hash: String,
-  name: String,
-  role: String ["admin", "client_manager", "student"],
-  created_at: ISODate
-}
+{ email, password_hash, name, role: "admin"|"client_manager"|"student", created_at }
 ```
 
 #### `courses`
 ```javascript
 {
-  _id: ObjectId,
-  title: String,
-  description: String,
-  thumbnail_url: String,
-  video_url: String,
-  video_type: String ["youtube", "vimeo"],
-  price: Number,
-  is_free: Boolean,
-  is_private: Boolean,
-  passing_score: Number (0-100),
-  materials: Array [{name, url}],
-  language: String ["en", "zh-TW", "zh-CN", "ja", "ko"],
-  category: String,
-  translations: Object {lang_code: {title, description}},
-  source_course_id: String (for translated courses),
-  created_by: String (user_id),
-  created_at: ISODate,
-  updated_at: ISODate
-}
-```
-
-#### `lessons`
-```javascript
-{
-  _id: ObjectId,
-  course_id: String,
-  title: String,
-  description: String,
-  video_url: String,
-  video_type: String,
-  order: Number,
-  materials: Array [{name, url}],
-  created_at: ISODate
-}
-```
-
-#### `quizzes`
-```javascript
-{
-  _id: ObjectId,
-  course_id: String,
-  title: String,
-  questions: Array [{
-    question: String,
-    options: Array[String],
-    correct_answer: Number (index)
-  }],
-  translations: Object {lang_code: {title, questions}},
-  created_at: ISODate
-}
-```
-
-#### `quiz_attempts`
-```javascript
-{
-  _id: ObjectId,
-  quiz_id: String,
-  course_id: String,
-  user_id: String,
-  answers: Array[Number],
-  score: Number,
-  passed: Boolean,
-  created_at: ISODate
+  title, description, thumbnail_url, video_url, video_type: "youtube"|"vimeo",
+  price, is_free, is_private, passing_score, materials: [{name, url}],
+  language, category, translations, source_course_id, created_by, created_at, updated_at
 }
 ```
 
 #### `enrollments`
 ```javascript
-{
-  _id: ObjectId,
-  course_id: String,
-  user_id: String,
-  enrolled_by: String (for bulk enrollment),
-  completed: Boolean,
-  score: Number,
-  completed_at: ISODate,
-  created_at: ISODate
-}
+{ course_id, user_id, enrolled_by?, completed, score, completed_at?, created_at }
 ```
 
 #### `certificates`
 ```javascript
 {
-  _id: ObjectId,
-  certificate_id: String (8-char unique),
-  course_id: String,
-  user_id: String,
-  user_name: String,
-  course_title: String,
-  score: Number,
-  template: String,
-  primary_color: String,
-  secondary_color: String,
-  issued_at: ISODate
+  certificate_id, course_id, user_id, user_name, course_title, score,
+  template, primary_color, secondary_color, issued_at
 }
 ```
 
-#### `forum_posts`
-```javascript
-{
-  _id: ObjectId,
-  course_id: String,
-  content: String,
-  parent_id: String (for replies),
-  user_id: String,
-  user_name: String,
-  created_at: ISODate
-}
-```
-
-#### `chat_messages`
-```javascript
-{
-  _id: ObjectId,
-  course_id: String,
-  user_id: String,
-  role: String ["user", "assistant"],
-  content: String,
-  created_at: ISODate
-}
-```
-
-#### `payment_transactions`
-```javascript
-{
-  _id: ObjectId,
-  session_id: String (Stripe),
-  course_id: String,
-  user_id: String,
-  amount: Number,
-  currency: String,
-  payment_status: String ["pending", "paid"],
-  created_at: ISODate,
-  updated_at: ISODate
-}
-```
+</details>
 
 ---
 
-## 🔧 API Endpoints
+## Environment Variables
 
-### Authentication
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/auth/register` | Register new user |
-| POST | `/api/auth/login` | Login and get JWT |
-| POST | `/api/auth/logout` | Clear auth cookies |
-| GET | `/api/auth/me` | Get current user |
+Copy templates: `backend/.env.example`, `frontend/.env.example`, or for Docker Compose: `.env.docker.example` → `.env` at repo root.
 
-### Courses
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/courses` | List courses (with ?language=, ?search=) |
-| POST | `/api/courses` | Create course (admin) |
-| GET | `/api/courses/{id}` | Get course details |
-| PUT | `/api/courses/{id}` | Update course (admin) |
-| DELETE | `/api/courses/{id}` | Delete course (admin) |
-| GET | `/api/languages` | Get supported languages |
+### Backend
 
-### Lessons
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/lessons` | Create lesson (admin) |
-| GET | `/api/lessons/{id}` | Get lesson details |
-| PUT | `/api/lessons/{id}` | Update lesson (admin) |
-| DELETE | `/api/lessons/{id}` | Delete lesson (admin) |
-
-### Quizzes
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/quizzes` | Create quiz (admin) |
-| GET | `/api/quizzes/{id}` | Get quiz (hides answers for students) |
-| POST | `/api/quizzes/{id}/submit` | Submit quiz answers |
-
-### Enrollments
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/enrollments` | Enroll in course (self or bulk by admin) |
-| GET | `/api/enrollments/my` | Get my enrollments |
-| GET | `/api/enrollments/course/{id}` | Get course enrollments (admin/manager) |
-
-### Group Progress Tracking (Client Manager)
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/groups/overview` | Overview of all courses with progress stats |
-| GET | `/api/groups/course/{id}/progress` | Detailed student progress for a course |
-| GET | `/api/groups/student/{id}/progress` | Individual student progress across courses |
-
-### Certificates
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/certificates/my` | Get my certificates |
-| GET | `/api/certificates/{id}` | Get certificate details |
-| PUT | `/api/certificates/{id}/customize` | Customize certificate (admin) |
-
-### AI Translation (Deepseek)
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/translate/text` | Translate single text |
-| POST | `/api/translate/course/{id}` | Translate course to languages |
-| POST | `/api/translate/quiz/{id}` | Translate quiz questions |
-| POST | `/api/courses/{id}/create-translation` | Create translated course copy |
-
-### AI Chatbot (Deepseek)
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/chat` | Send message to AI |
-| GET | `/api/chat/{course_id}/history` | Get chat history |
-
-### Forums
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/forums/{course_id}` | Get forum posts |
-| POST | `/api/forums/posts` | Create post/reply |
-| DELETE | `/api/forums/posts/{id}` | Delete post |
-
-### Payments (Stripe)
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/payments/checkout` | Create checkout session |
-| GET | `/api/payments/status/{session_id}` | Check payment status |
-| POST | `/api/webhook/stripe` | Stripe webhook handler |
-
-### Users & Stats
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/users` | List users (admin/manager) |
-| PUT | `/api/users/{id}/role` | Change user role (admin) |
-| GET | `/api/stats/admin` | Admin dashboard stats |
-| GET | `/api/stats/student` | Student dashboard stats |
-
----
-
-## ✨ Features
-
-### 1. Course Management
-- Create courses with YouTube/Vimeo video embedding
-- Organize content into lessons with ordering
-- Upload downloadable materials (PDFs, resources)
-- Set pricing (free or paid via Stripe)
-- Mark courses as private (invitation only)
-
-### 2. Multi-Language Support
-- **5 Course Languages**: English, Traditional Chinese (繁體中文), Simplified Chinese (简体中文), Japanese (日本語), Korean (한국어)
-- **UI Languages**: English ↔ Traditional Chinese toggle
-- **Language Filter**: Filter courses by language on browse page
-- **Language Badges**: Visual indicators on course cards
-
-### 3. AI Auto-Translation (Deepseek)
-- One-click course translation to any supported language
-- Translates: course title, description, all lessons
-- Creates new course copy with translated content
-- Separate quiz translation endpoint
-- Real-time text translation API
-
-### 4. Quiz System
-- Multiple choice questions
-- Configurable passing score (default 70%)
-- Automatic scoring and feedback
-- Progress tracking
-- Certificate eligibility on pass
-
-### 5. Certificate Generation
-- Auto-generated on course completion
-- Customizable colors and templates
-- Unique certificate ID
-- Student name and score
-- Issue date tracking
-
-### 6. AI Chatbot (Deepseek)
-- Course-specific AI assistant
-- Context-aware responses
-- Chat history persistence
-- Available on course detail page
-
-### 7. Community Forums
-- Course-specific discussions
-- Threaded replies
-- User attribution
-- Admin moderation
-
-### 8. Payment Processing (Stripe)
-- Secure checkout sessions
-- Automatic enrollment on payment
-- Webhook-based confirmation
-- Test mode support
-
-### 9. User Roles & Permissions
-
-| Role | Capabilities |
-|------|--------------|
-| **Admin** | Full access: Create/edit/delete courses & quizzes, Bulk enroll students, Manage users, View analytics, AI translate content, Configure certificates |
-| **Client Manager** | View course enrollments, Monitor group training progress, View student completion rates & scores, Track individual student progress across courses |
-| **Student** | Browse courses, Enroll (free or via payment), Take quizzes, Earn certificates, Use AI chat, Participate in forums |
-
----
-
-## 📧 Email Notifications (Brevo)
-
-### Configuration
-```env
-BREVO_API_KEY=your-brevo-api-key
-EMAIL_FROM=noreply@learnhub.com
-EMAIL_FROM_NAME=LearnHub
-```
-
-### Email Types
-| Event | Recipient | Content |
-|-------|-----------|---------|
-| **Enrollment** | Student | Welcome email with course link |
-| **Progress** | Student | Progress update with percentage |
-| **Certificate** | Student | Congratulations with certificate details |
-
-### Getting Brevo API Key
-1. Sign up at [brevo.com](https://brevo.com)
-2. Go to SMTP & API → API Keys
-3. Create new API key
-4. Add to backend .env file
-
----
-
-## 🔐 Authentication Flow
-
-```
-1. User submits login credentials
-         │
-         ▼
-2. Backend validates against MongoDB
-         │
-         ▼
-3. JWT tokens generated (access + refresh)
-         │
-         ▼
-4. Tokens set as HTTP-only cookies
-         │
-         ▼
-5. Frontend includes cookies in API requests
-         │
-         ▼
-6. Backend validates JWT on protected routes
-```
-
-**Token Configuration:**
-- Access Token: 60 minutes expiry
-- Refresh Token: 7 days expiry
-- Algorithm: HS256
-- Storage: HTTP-only cookies
-
----
-
-## 🌐 Internationalization (i18n)
-
-### Supported UI Languages
-- **English (en)**: Full support
-- **Traditional Chinese (zh-TW)**: Full support
-
-### Translation Keys Structure
-```javascript
-translations = {
-  en: {
-    nav: { home, courses, dashboard, login, ... },
-    landing: { headline, subheadline, features, ... },
-    auth: { email, password, signIn, ... },
-    dashboard: { welcomeBack, enrolledCourses, ... },
-    courses: { allCourses, createCourse, ... },
-    quiz: { submit, congratulations, ... },
-    certificate: { myCertificates, download, ... },
-    ...
-  },
-  "zh-TW": {
-    nav: { home: "首頁", courses: "課程", ... },
-    ...
-  }
-}
-```
-
-### Language Switching
-- Toggle in header navigation
-- Persisted to localStorage
-- Applies immediately without reload
-
----
-
-## 🚀 Deployment Guide
-
-### Prerequisites
-- Node.js 18+
-- Python 3.11+
-- MongoDB 6+
-- Stripe account
-- Deepseek API key
-- Brevo account (for emails)
-
-### External Dependencies (Standard SDKs)
-This project uses **standard, publicly available packages** - no proprietary dependencies:
-
-| Package | Purpose | PyPI |
-|---------|---------|------|
-| `stripe` | Payment processing | ✅ `pip install stripe` |
-| `openai` | Deepseek AI (OpenAI-compatible) | ✅ `pip install openai` |
-| `httpx` | Brevo API calls | ✅ `pip install httpx` |
-
-### Environment Variables
-
-**Backend (.env)**
 ```bash
-# Database
 MONGO_URL=mongodb://localhost:27017
 DB_NAME=learnhub
+JWT_SECRET=                         # python -c "import secrets; print(secrets.token_hex(32))"
 
-# Security (generate: python -c "import secrets; print(secrets.token_hex(32))")
-JWT_SECRET=your-secure-random-secret
+ENVIRONMENT=development             # production enables stricter defaults
+COOKIE_SECURE=false                 # true in production (HTTPS)
+CORS_ORIGINS=http://localhost:3000  # comma-separated; never * with credentials
 
-# Admin Account
-ADMIN_EMAIL=admin@yourdomain.com
-ADMIN_PASSWORD=secure-password
+ADMIN_EMAIL=admin@learnhub.com
+ADMIN_PASSWORD=change-me
 
-# Stripe (https://dashboard.stripe.com/apikeys)
-STRIPE_API_KEY=sk_live_...
-STRIPE_WEBHOOK_SECRET=whsec_...
+STRIPE_API_KEY=
+STRIPE_WEBHOOK_SECRET=
+REQUIRE_STRIPE_WEBHOOK_SECRET=false # true in production
 
-# Deepseek AI (https://platform.deepseek.com)
-DEEPSEEK_API_KEY=sk-...
-
-# Brevo Email (https://app.brevo.com/settings/keys/api)
-BREVO_API_KEY=xkeysib-...
+DEEPSEEK_API_KEY=
+BREVO_API_KEY=
 EMAIL_FROM=noreply@yourdomain.com
 EMAIL_FROM_NAME=LearnHub
-
-# Frontend URL
-FRONTEND_URL=https://yourdomain.com
+FRONTEND_URL=http://localhost:3000
 ```
 
-**Frontend (.env)**
+### Frontend
+
 ```bash
-REACT_APP_BACKEND_URL=https://api.yourdomain.com
+REACT_APP_BACKEND_URL=http://localhost:8001
 ```
 
-### Installation Steps
+---
+
+## Deployment
+
+### Prerequisites
+
+Node.js 18+, Python 3.11+, MongoDB 6+, and accounts for Stripe, Deepseek, and (optionally) Brevo.
+
+### Docker
+
+**Full stack (MongoDB + API + web):**
 
 ```bash
-# 1. Clone the repository
-git clone <repo-url>
-cd learnhub
+cp .env.docker.example .env   # edit JWT_SECRET, ADMIN_PASSWORD
+docker compose up --build
+```
 
-# 2. Backend setup
-cd backend
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-pip install -r requirements.txt
-cp .env.example .env
-# Edit .env with your values
+| Service | URL |
+|---------|-----|
+| Frontend | http://localhost:3000 |
+| API | http://localhost:8001 |
+| MongoDB | localhost:27017 |
 
-# 3. Frontend setup
-cd ../frontend
-yarn install
-cp .env.example .env
-# Edit .env with your backend URL
+**Individual images:**
 
-# 4. Start MongoDB
-mongod --dbpath /path/to/data
+```bash
+# API only (requires external MongoDB)
+cd backend && docker build -t learnhub-api .
+docker run -p 8001:8001 --env-file .env learnhub-api
 
-# 5. Run backend
-cd backend
-uvicorn server:app --host 0.0.0.0 --port 8001 --reload
-
-# 6. Run frontend
+# Web only
 cd frontend
-yarn start
+docker build -t learnhub-web --build-arg REACT_APP_BACKEND_URL=http://localhost:8001 .
+docker run -p 3000:3000 learnhub-web
 ```
 
-### Docker Deployment
+### Stripe webhook
 
-```dockerfile
-# Backend Dockerfile
-FROM python:3.11-slim
-WORKDIR /app
-COPY requirements.txt .
-RUN pip install -r requirements.txt
-COPY . .
-CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "8001"]
+1. Dashboard → Webhooks → `https://yourdomain.com/api/webhook/stripe`
+2. Event: `checkout.session.completed`
+3. Set `STRIPE_WEBHOOK_SECRET`; use `REQUIRE_STRIPE_WEBHOOK_SECRET=true` in production
 
-# Frontend Dockerfile
-FROM node:18-alpine
-WORKDIR /app
-COPY package.json yarn.lock ./
-RUN yarn install
-COPY . .
-RUN yarn build
-CMD ["npx", "serve", "-s", "build", "-l", "3000"]
-```
+### Production checklist
 
-### Stripe Webhook Setup
-
-1. Go to Stripe Dashboard → Developers → Webhooks
-2. Add endpoint: `https://yourdomain.com/api/webhook/stripe`
-3. Select events: `checkout.session.completed`
-4. Copy webhook secret to `STRIPE_WEBHOOK_SECRET`
-
-### Production Checklist
-
-- [ ] Set strong `JWT_SECRET`
-- [ ] Configure real Stripe keys (not test)
-- [ ] Set up Stripe webhook
-- [ ] Configure Brevo for email
-- [ ] Set proper `FRONTEND_URL`
-- [ ] Enable HTTPS
-- [ ] Set up MongoDB authentication
-- [ ] Configure CORS properly
+- [ ] Strong `JWT_SECRET` and `ADMIN_PASSWORD`
+- [ ] `ENVIRONMENT=production`, `COOKIE_SECURE=true`
+- [ ] `CORS_ORIGINS` set to frontend origin(s)
+- [ ] Stripe live keys + webhook secret enforced
+- [ ] Brevo configured; `FRONTEND_URL` correct
+- [ ] HTTPS everywhere
+- [ ] MongoDB authentication enabled
 
 ---
 
-## 🧪 Test Credentials
+## Business Flows
 
-| Role | Email | Password |
-|------|-------|----------|
-| Admin | admin@learnhub.com | admin123 |
-| Student | student@test.com | test123 |
+### Enrollment
 
----
+Browse → free enroll **or** Stripe checkout → webhook/status confirms payment → enrollment record → optional Brevo welcome email.
 
-## 📊 Business Logic
+### Quiz & certificate
 
-### Course Enrollment Flow
-```
-1. Student browses courses
-         │
-         ▼
-2. Selects course → Check if free or paid
-         │
-    ┌────┴────┐
-    ▼         ▼
-  FREE      PAID
-    │         │
-    │         ▼
-    │    Stripe Checkout
-    │         │
-    │         ▼
-    │    Payment Success
-    │         │
-    └────┬────┘
-         ▼
-3. Create enrollment record
-         │
-         ▼
-4. Student accesses course content
-```
+Take quiz → score computed vs `passing_score` → **pass:** mark enrollment complete, issue certificate (once), send cert email → **fail:** send progress email with score %.
 
-### Quiz & Certificate Flow
-```
-1. Student completes watching lessons
-         │
-         ▼
-2. Takes quiz → Submits answers
-         │
-         ▼
-3. Backend calculates score
-         │
-    ┌────┴────┐
-    ▼         ▼
-  PASS      FAIL
-  (≥70%)   (<70%)
-    │         │
-    ▼         │
-4. Mark      │
-enrollment   │
-completed    │
-    │         │
-    ▼         │
-5. Generate  │
-certificate  │
-    │         │
-    └────┬────┘
-         ▼
-6. Show result to student
-```
+Lesson-level or video watch progress is **not** tracked yet (see Future Enhancements).
 
-### AI Translation Flow
-```
-1. Admin clicks translate on course
-         │
-         ▼
-2. Selects target language
-         │
-         ▼
-3. Backend calls Deepseek API
-         │
-    ┌────┴────┐
-    ▼         ▼
-  Title    Description
-    │         │
-    ▼         ▼
-4. Translate lessons (loop)
-         │
-         ▼
-5. Create new course with translations
-         │
-         ▼
-6. Return new course to admin
-```
+### AI translation
+
+Admin selects target language → Deepseek translates title, description, lessons → new course copy linked via `source_course_id`.
 
 ---
 
-## 🔒 Security Features
+## Security
 
-- **Password Hashing**: Bcrypt with salt
-- **JWT Authentication**: HTTP-only cookies
-- **Role-based Access Control**: Endpoint-level protection
-- **CORS Configuration**: Restricted origins
-- **Input Validation**: Pydantic models
-- **SQL Injection Prevention**: MongoDB parameterized queries
+- Bcrypt password hashing
+- JWT in HTTP-only cookies; `secure` flag from env
+- RBAC on endpoints; roles assigned by admin only
+- CORS restricted via `CORS_ORIGINS`
+- Pydantic input validation
+- MongoDB queries avoid passing raw user input into operators
+- Stripe webhook signature verification (required in production)
 
 ---
 
-## 📈 Future Enhancements
+## Testing
 
-- [ ] Email notifications (SendGrid)
+API integration tests: `backend_test.py`, `comprehensive_backend_test.py` (require running API + MongoDB).
+
+Test accounts and role promotion steps: **[memory/test_credentials.md](memory/test_credentials.md)**
+
+---
+
+## Future Enhancements
+
 - [ ] Certificate PDF download
-- [ ] Lesson progress tracking
-- [ ] Video watch time analytics
-- [ ] Course ratings & reviews
-- [ ] Instructor profiles
+- [ ] Lesson & video watch progress
+- [ ] Full UI translation (dashboards, admin, zh-CN / ja / ko)
+- [ ] Course analytics, ratings, instructor profiles
 - [ ] Mobile app (React Native)
-- [ ] Full UI translation (zh-CN, ja, ko)
+- [ ] Colocated pytest suite under `tests/`
 
 ---
 
-## 📄 License
+## License
 
-MIT License - See LICENSE file for details.
+MIT — see [LICENSE](LICENSE).
 
----
+## Support
 
-## 🤝 Support
-
-For issues and feature requests, please create an issue in the repository.
+Open an issue in the repository for bugs and feature requests.

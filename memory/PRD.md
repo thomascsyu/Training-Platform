@@ -24,7 +24,7 @@ Build a Kajabi-like course/content platform with:
 
 ## User Personas
 1. **Admin/Instructor**: Creates courses in multiple languages, quizzes, manages users
-2. **Client Manager**: Bulk enrolls groups of students to courses
+2. **Client Manager**: Monitors group training progress; assigned by admin (not self-registration)
 3. **Student**: Learns courses in preferred language, takes quizzes, earns certificates
 
 ## Core Requirements
@@ -43,7 +43,7 @@ Build a Kajabi-like course/content platform with:
 - [x] Community forums per course
 - [x] Downloadable course materials
 - [x] Private courses with group enrollment
-- [x] Client manager bulk enrollment
+- [x] Admin bulk enrollment (client managers view progress; admins enroll groups)
 
 ## What's Been Implemented (Jan 2026)
 
@@ -104,7 +104,7 @@ Build a Kajabi-like course/content platform with:
 - [x] AI Chatbot integration
 - [x] Stripe payments
 - [x] Forum functionality
-- [ ] Email notifications (SendGrid/Resend integration)
+- [x] Email notifications (Brevo: enrollment, quiz progress, certificate)
 
 ### P2 (Medium Priority)
 - [ ] Course progress tracking per lesson
@@ -121,8 +121,7 @@ Build a Kajabi-like course/content platform with:
 - [ ] Mobile app
 
 ## Next Tasks
-1. Add email notifications for enrollment and course completion
-2. Implement lesson-level progress tracking
-3. Add PDF certificate download
-4. Create course analytics dashboard
-5. Add full UI translations for Simplified Chinese, Japanese, Korean
+1. Implement lesson-level progress tracking
+2. Add PDF certificate download
+3. Create course analytics dashboard
+4. Add full UI translations for Simplified Chinese, Japanese, Korean

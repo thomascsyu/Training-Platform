@@ -421,12 +421,14 @@ class LearnHubAPITester:
         return False
 
     def test_client_manager_registration(self):
-        """Test client manager registration"""
+        """Register a student and promote to client_manager via admin API"""
         timestamp = datetime.now().strftime('%H%M%S')
         test_email = f"manager{timestamp}@test.com"
-        
+
+        self.run_test("Logout before manager signup", "POST", "auth/logout", 200)
+
         success, response = self.run_test(
-            "Client Manager Registration",
+            "Client Manager Registration (student)",
             "POST",
             "auth/register",
             200,
@@ -434,12 +436,28 @@ class LearnHubAPITester:
                 "email": test_email,
                 "password": "test123",
                 "name": f"Test Manager {timestamp}",
-                "role": "client_manager"
-            }
+                "role": "client_manager",
+            },
         )
-        if success and 'id' in response:
-            print(f"   Client Manager registered: {response.get('name')} ({response.get('email')})")
-            return True, test_email, response.get('id')
+        if not success or "id" not in response:
+            return False, None, None
+
+        user_id = response.get("id")
+        if response.get("role") != "student":
+            print(f"   Warning: registration returned role {response.get('role')}, expected student")
+
+        if not self.test_admin_login():
+            return False, None, None
+
+        promote_success, _ = self.run_test(
+            "Promote to Client Manager",
+            "PUT",
+            f"users/{user_id}/role?role=client_manager",
+            200,
+        )
+        if promote_success:
+            print(f"   Client Manager created: {response.get('name')} ({test_email})")
+            return True, test_email, user_id
         return False, None, None
 
     def test_client_manager_login(self, email):

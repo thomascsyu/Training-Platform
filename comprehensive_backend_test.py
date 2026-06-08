@@ -408,13 +408,14 @@ class ComprehensiveLearnHubTester:
         return False
 
     def test_client_manager_functionality(self):
-        """Test client manager user creation and bulk enrollment"""
-        # Create client manager
+        """Register a student, promote via admin, then verify client manager access"""
         timestamp = datetime.now().strftime('%H%M%S')
         manager_email = f"manager{timestamp}@test.com"
-        
-        success, response, cookies = self.run_test(
-            "Client Manager Registration",
+
+        self.run_test("Logout", "POST", "auth/logout", 200)
+
+        success, response, _ = self.run_test(
+            "Client Manager Registration (student)",
             "POST",
             "auth/register",
             200,
@@ -422,25 +423,46 @@ class ComprehensiveLearnHubTester:
                 "email": manager_email,
                 "password": "manager123",
                 "name": f"Test Manager {timestamp}",
-                "role": "client_manager"
-            }
+                "role": "client_manager",
+            },
         )
-        
-        if success:
-            print(f"   Client manager created: {response.get('name')}")
-            
-            # Test getting users (client manager should be able to do this)
-            success2, users, _ = self.run_test(
-                "Get Users (Client Manager)",
-                "GET",
-                "users",
-                200
-            )
-            
-            if success2:
-                user_count = len(users) if isinstance(users, list) else 0
-                print(f"   Client manager can see {user_count} users")
-                return True
+
+        if not success or "id" not in response:
+            return False
+
+        user_id = response.get("id")
+        if not self.test_admin_login():
+            return False
+
+        promote_success, _, _ = self.run_test(
+            "Promote to Client Manager",
+            "PUT",
+            f"users/{user_id}/role?role=client_manager",
+            200,
+        )
+        if not promote_success:
+            return False
+
+        login_success, login_response, cookies = self.run_test(
+            "Client Manager Login",
+            "POST",
+            "auth/login",
+            200,
+            data={"email": manager_email, "password": "manager123"},
+        )
+        if login_success and cookies:
+            self.session.cookies.update(cookies)
+
+        success2, users, _ = self.run_test(
+            "Get Users (Client Manager)",
+            "GET",
+            "users",
+            200,
+        )
+        if success2:
+            user_count = len(users) if isinstance(users, list) else 0
+            print(f"   Client manager can see {user_count} users")
+            return True
         return False
 
 def main():

@@ -257,18 +257,18 @@ const LandingPage = () => {
       {/* Features */}
       <section className="py-24 px-6 md:px-12 lg:px-24 bg-white">
         <div className="container mx-auto">
-          <p className="text-xs tracking-[0.2em] uppercase font-bold text-slate-500 mb-4 text-center">Features</p>
+          <p className="text-xs tracking-[0.2em] uppercase font-bold text-slate-500 mb-4 text-center">{t("landing.featuresOverline")}</p>
           <h2 className="text-2xl sm:text-3xl lg:text-4xl tracking-tight font-medium text-[#0A0B10] mb-12 text-center">
-            Everything You Need to Succeed
+            {t("landing.featuresTitle")}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
-              { icon: Video, title: "Video Courses", desc: "Learn with high-quality video content from industry experts" },
-              { icon: FileText, title: "Quizzes & Tests", desc: "Test your knowledge and track your progress with interactive quizzes" },
-              { icon: Award, title: "Certificates", desc: "Earn customizable certificates upon successful course completion" },
-              { icon: MessageSquare, title: "Community Forums", desc: "Connect with fellow learners and discuss course topics" },
-              { icon: Bot, title: "AI Assistant", desc: "Get instant help from our AI-powered course assistant" },
-              { icon: Download, title: "Downloadable Materials", desc: "Access course materials anytime, even offline" }
+              { icon: Video, title: t("landing.features.videoCourses"), desc: t("landing.features.videoCoursesDesc") },
+              { icon: FileText, title: t("landing.features.quizzes"), desc: t("landing.features.quizzesDesc") },
+              { icon: Award, title: t("landing.features.certificates"), desc: t("landing.features.certificatesDesc") },
+              { icon: MessageSquare, title: t("landing.features.forums"), desc: t("landing.features.forumsDesc") },
+              { icon: Bot, title: t("landing.features.aiAssistant"), desc: t("landing.features.aiAssistantDesc") },
+              { icon: Download, title: t("landing.features.materials"), desc: t("landing.features.materialsDesc") },
             ].map((f, i) => (
               <Card key={i} className="bg-white border border-slate-200 rounded-sm hover:-translate-y-1 hover:shadow-md transition-all duration-200" data-testid={`feature-card-${i}`}>
                 <CardContent className="p-6">
@@ -288,13 +288,13 @@ const LandingPage = () => {
           <div className="container mx-auto">
             <div className="flex justify-between items-center mb-12">
               <div>
-                <p className="text-xs tracking-[0.2em] uppercase font-bold text-slate-500 mb-2">Popular Courses</p>
+                <p className="text-xs tracking-[0.2em] uppercase font-bold text-slate-500 mb-2">{t("landing.popularCourses")}</p>
                 <h2 className="text-2xl sm:text-3xl tracking-tight font-medium text-[#0A0B10]">
-                  Start Your Learning Journey
+                  {t("landing.startJourney")}
                 </h2>
               </div>
               <Button variant="outline" onClick={() => navigate("/courses")} className="border-slate-200 rounded-sm" data-testid="view-all-courses-btn">
-                View All <ChevronRight className="w-4 h-4 ml-1" />
+                {t("landing.viewAll")} <ChevronRight className="w-4 h-4 ml-1" />
               </Button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -313,7 +313,7 @@ const LandingPage = () => {
             <GraduationCap className="w-6 h-6 text-[#002FA7]" />
             <span className="font-medium">LearnHub</span>
           </div>
-          <p className="text-slate-400 text-sm">© 2026 LearnHub. All rights reserved.</p>
+          <p className="text-slate-400 text-sm">{t("landing.footer")}</p>
         </div>
       </footer>
     </div>
@@ -388,6 +388,7 @@ const CourseCard = ({ course, enrolled = false, showProgress = false, progress =
 // ============ AUTH PAGES ============
 const LoginPage = () => {
   const { login } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -398,7 +399,7 @@ const LoginPage = () => {
     setLoading(true);
     try {
       await login(email, password);
-      toast.success("Welcome back!");
+      toast.success(t("auth.welcomeBack"));
       navigate("/dashboard");
     } catch (err) {
       toast.error(formatError(err));
@@ -415,13 +416,13 @@ const LoginPage = () => {
             <GraduationCap className="w-8 h-8 text-[#002FA7]" />
             <span className="text-xl font-medium text-[#0A0B10]">LearnHub</span>
           </Link>
-          <CardTitle className="text-2xl tracking-tight">Welcome Back</CardTitle>
-          <CardDescription>Sign in to continue learning</CardDescription>
+          <CardTitle className="text-2xl tracking-tight">{t("auth.welcomeBack")}</CardTitle>
+          <CardDescription>{t("auth.signInContinue")}</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t("auth.email")}</Label>
               <Input 
                 id="email" 
                 type="email" 
@@ -433,7 +434,7 @@ const LoginPage = () => {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{t("auth.password")}</Label>
               <Input 
                 id="password" 
                 type="password" 
@@ -450,13 +451,13 @@ const LoginPage = () => {
               disabled={loading}
               data-testid="login-submit-btn"
             >
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Sign In"}
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : t("auth.signIn")}
             </Button>
           </form>
           <p className="text-center text-sm text-slate-600 mt-4">
-            Don't have an account?{" "}
+            {t("auth.noAccount")}{" "}
             <Link to="/register" className="text-[#002FA7] hover:underline" data-testid="register-link">
-              Sign up
+              {t("auth.signUp")}
             </Link>
           </p>
         </CardContent>
@@ -467,19 +468,19 @@ const LoginPage = () => {
 
 const RegisterPage = () => {
   const { register } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("student");
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
-      await register(email, password, name, role);
-      toast.success("Account created!");
+      await register(email, password, name);
+      toast.success(t("auth.signUp"));
       navigate("/dashboard");
     } catch (err) {
       toast.error(formatError(err));
@@ -496,16 +497,16 @@ const RegisterPage = () => {
             <GraduationCap className="w-8 h-8 text-[#002FA7]" />
             <span className="text-xl font-medium text-[#0A0B10]">LearnHub</span>
           </Link>
-          <CardTitle className="text-2xl tracking-tight">Create Account</CardTitle>
-          <CardDescription>Join LearnHub and start learning</CardDescription>
+          <CardTitle className="text-2xl tracking-tight">{t("auth.createAccount")}</CardTitle>
+          <CardDescription>{t("auth.joinLearnHub")}</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
-              <Input 
-                id="name" 
-                value={name} 
+              <Label htmlFor="name">{t("auth.fullName")}</Label>
+              <Input
+                id="name"
+                value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="rounded-sm border-slate-300 focus:ring-[#002FA7]/20 focus:border-[#002FA7]"
                 required
@@ -513,11 +514,11 @@ const RegisterPage = () => {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input 
-                id="email" 
-                type="email" 
-                value={email} 
+              <Label htmlFor="email">{t("auth.email")}</Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="rounded-sm border-slate-300 focus:ring-[#002FA7]/20 focus:border-[#002FA7]"
                 required
@@ -525,11 +526,11 @@ const RegisterPage = () => {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input 
-                id="password" 
-                type="password" 
-                value={password} 
+              <Label htmlFor="password">{t("auth.password")}</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="rounded-sm border-slate-300 focus:ring-[#002FA7]/20 focus:border-[#002FA7]"
                 required
@@ -537,31 +538,19 @@ const RegisterPage = () => {
                 data-testid="register-password-input"
               />
             </div>
-            <div className="space-y-2">
-              <Label>Account Type</Label>
-              <Select value={role} onValueChange={setRole}>
-                <SelectTrigger className="rounded-sm border-slate-300" data-testid="register-role-select">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="student">Student</SelectItem>
-                  <SelectItem value="client_manager">Client Manager</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               className="w-full bg-[#002FA7] hover:bg-[#002585] text-white rounded-sm"
               disabled={loading}
               data-testid="register-submit-btn"
             >
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Create Account"}
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : t("auth.signUp")}
             </Button>
           </form>
           <p className="text-center text-sm text-slate-600 mt-4">
-            Already have an account?{" "}
+            {t("auth.haveAccount")}{" "}
             <Link to="/login" className="text-[#002FA7] hover:underline" data-testid="login-link">
-              Sign in
+              {t("auth.signIn")}
             </Link>
           </p>
         </CardContent>

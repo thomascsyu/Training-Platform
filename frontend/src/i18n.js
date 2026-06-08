@@ -26,6 +26,7 @@ export const translations = {
       subheadline: "Access high-quality courses, take quizzes to test your knowledge, and earn certificates upon completion. Join thousands of learners today.",
       startLearning: "Start Learning",
       browseCourses: "Browse Courses",
+      featuresOverline: "Features",
       featuresTitle: "Everything You Need to Succeed",
       features: {
         videoCourses: "Video Courses",
@@ -240,6 +241,7 @@ export const translations = {
       subheadline: "訪問高質量課程，通過測驗檢驗知識，完成後獲得證書。立即加入數千名學習者的行列。",
       startLearning: "開始學習",
       browseCourses: "瀏覽課程",
+      featuresOverline: "功能",
       featuresTitle: "成功所需的一切",
       features: {
         videoCourses: "視頻課程",
