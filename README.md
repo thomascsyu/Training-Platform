@@ -49,44 +49,41 @@ LearnHub is a full-featured Learning Management System (LMS) that enables organi
 ## 📁 File Structure
 
 ```
-/app
+learnhub/
 ├── backend/
-│   ├── server.py              # Main FastAPI application (all routes & logic)
+│   ├── app.py                 # FastAPI app factory, middleware, lifespan
+│   ├── server.py              # Uvicorn entry point (imports app)
+│   ├── routes.py              # API route handlers
+│   ├── config.py              # Environment configuration
+│   ├── database.py            # MongoDB connection
+│   ├── models.py              # Pydantic request/response models
+│   ├── auth_utils.py          # JWT, password hashing, auth helpers
+│   ├── email_service.py       # Brevo email integration
 │   ├── requirements.txt       # Python dependencies
-│   └── .env                   # Environment variables (DB, API keys)
+│   ├── Dockerfile             # Backend container image
+│   └── .env.example           # Environment variable template
 │
 ├── frontend/
 │   ├── public/
 │   │   └── index.html         # HTML entry point
 │   ├── src/
-│   │   ├── App.js             # Main React application (all components)
-│   │   ├── App.css            # Custom styles
-│   │   ├── index.js           # React entry point
-│   │   ├── index.css          # Tailwind imports
-│   │   ├── i18n.js            # Internationalization (EN/繁中 translations)
-│   │   ├── hooks/
-│   │   │   └── use-toast.js   # Toast notification hook
-│   │   └── components/
-│   │       └── ui/            # Shadcn UI components
-│   │           ├── button.jsx
-│   │           ├── card.jsx
-│   │           ├── dialog.jsx
-│   │           ├── input.jsx
-│   │           ├── select.jsx
-│   │           ├── tabs.jsx
-│   │           └── ...
-│   ├── package.json           # Node.js dependencies
-│   ├── tailwind.config.js     # Tailwind CSS configuration
-│   └── .env                   # Frontend environment variables
+│   │   ├── App.js             # Routes and page components
+│   │   ├── lib/api.js         # Axios client and error helpers
+│   │   ├── contexts/          # Auth and language React contexts
+│   │   ├── components/        # Shared UI (layout, guards, switcher)
+│   │   ├── i18n.js            # Internationalization (EN/繁中)
+│   │   └── components/ui/     # Shadcn UI components
+│   ├── package.json
+│   ├── Dockerfile             # Frontend container image
+│   └── .env.example
 │
 ├── memory/
-│   ├── PRD.md                 # Product Requirements Document
+│   ├── PRD.md
 │   └── test_credentials.md    # Test account credentials
 │
-├── test_reports/              # Automated test results
-│   └── iteration_*.json
-│
-└── README.md                  # This file
+├── LICENSE
+├── test_reports/
+└── README.md
 ```
 
 ---
@@ -291,9 +288,10 @@ LearnHub is a full-featured Learning Management System (LMS) that enables organi
 ### Authentication
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/api/auth/register` | Register new user |
+| POST | `/api/auth/register` | Register new user (always creates `student` role) |
 | POST | `/api/auth/login` | Login and get JWT |
 | POST | `/api/auth/logout` | Clear auth cookies |
+| POST | `/api/auth/refresh` | Refresh access token using refresh cookie |
 | GET | `/api/auth/me` | Get current user |
 
 ### Courses
@@ -339,8 +337,8 @@ LearnHub is a full-featured Learning Management System (LMS) that enables organi
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/api/certificates/my` | Get my certificates |
-| GET | `/api/certificates/{id}` | Get certificate details |
-| PUT | `/api/certificates/{id}/customize` | Customize certificate (admin) |
+| GET | `/api/certificates/{id}` | Get certificate details (owner, admin, or client manager) |
+| PUT | `/api/certificates/{id}/customize` | Customize certificate styling (admin) |
 
 ### AI Translation (Deepseek)
 | Method | Endpoint | Description |
@@ -438,9 +436,11 @@ LearnHub is a full-featured Learning Management System (LMS) that enables organi
 
 | Role | Capabilities |
 |------|--------------|
-| **Admin** | Full access: Create/edit/delete courses & quizzes, Bulk enroll students, Manage users, View analytics, AI translate content, Configure certificates |
+| **Admin** | Full access: Create/edit/delete courses & quizzes, Bulk enroll students, Manage users & roles, View analytics, AI translate content, Configure certificates |
 | **Client Manager** | View course enrollments, Monitor group training progress, View student completion rates & scores, Track individual student progress across courses |
 | **Student** | Browse courses, Enroll (free or via payment), Take quizzes, Earn certificates, Use AI chat, Participate in forums |
+
+> **Note:** Bulk enrollment is restricted to **admin** only. Client managers are assigned by an admin via `PUT /api/users/{id}/role`. Public registration always creates **student** accounts.
 
 ---
 
@@ -457,7 +457,7 @@ EMAIL_FROM_NAME=LearnHub
 | Event | Recipient | Content |
 |-------|-----------|---------|
 | **Enrollment** | Student | Welcome email with course link |
-| **Progress** | Student | Progress update with percentage |
+| **Progress** | Student | Quiz attempt progress update (score as percentage) |
 | **Certificate** | Student | Congratulations with certificate details |
 
 ### Getting Brevo API Key
@@ -551,7 +551,7 @@ This project uses **standard, publicly available packages** - no proprietary dep
 
 ### Environment Variables
 
-**Backend (.env)**
+**Backend (.env)** — copy from `backend/.env.example`:
 ```bash
 # Database
 MONGO_URL=mongodb://localhost:27017
@@ -560,13 +560,19 @@ DB_NAME=learnhub
 # Security (generate: python -c "import secrets; print(secrets.token_hex(32))")
 JWT_SECRET=your-secure-random-secret
 
-# Admin Account
+# Environment
+ENVIRONMENT=development
+COOKIE_SECURE=false
+CORS_ORIGINS=http://localhost:3000
+
+# Admin Account (seeded on startup if missing)
 ADMIN_EMAIL=admin@yourdomain.com
 ADMIN_PASSWORD=secure-password
 
 # Stripe (https://dashboard.stripe.com/apikeys)
 STRIPE_API_KEY=sk_live_...
 STRIPE_WEBHOOK_SECRET=whsec_...
+REQUIRE_STRIPE_WEBHOOK_SECRET=false
 
 # Deepseek AI (https://platform.deepseek.com)
 DEEPSEEK_API_KEY=sk-...
@@ -580,7 +586,7 @@ EMAIL_FROM_NAME=LearnHub
 FRONTEND_URL=https://yourdomain.com
 ```
 
-**Frontend (.env)**
+**Frontend (.env)** — copy from `frontend/.env.example`:
 ```bash
 REACT_APP_BACKEND_URL=https://api.yourdomain.com
 ```
@@ -620,23 +626,18 @@ yarn start
 
 ### Docker Deployment
 
-```dockerfile
-# Backend Dockerfile
-FROM python:3.11-slim
-WORKDIR /app
-COPY requirements.txt .
-RUN pip install -r requirements.txt
-COPY . .
-CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "8001"]
+Dockerfiles are included in `backend/Dockerfile` and `frontend/Dockerfile`.
 
-# Frontend Dockerfile
-FROM node:18-alpine
-WORKDIR /app
-COPY package.json yarn.lock ./
-RUN yarn install
-COPY . .
-RUN yarn build
-CMD ["npx", "serve", "-s", "build", "-l", "3000"]
+```bash
+# Backend
+cd backend
+docker build -t learnhub-api .
+docker run -p 8001:8001 --env-file .env learnhub-api
+
+# Frontend
+cd frontend
+docker build -t learnhub-web --build-arg REACT_APP_BACKEND_URL=http://localhost:8001 .
+docker run -p 3000:3000 learnhub-web
 ```
 
 ### Stripe Webhook Setup
@@ -648,9 +649,11 @@ CMD ["npx", "serve", "-s", "build", "-l", "3000"]
 
 ### Production Checklist
 
-- [ ] Set strong `JWT_SECRET`
+- [ ] Set strong `JWT_SECRET` and `ADMIN_PASSWORD`
+- [ ] Set `ENVIRONMENT=production`, `COOKIE_SECURE=true`
+- [ ] Set `CORS_ORIGINS` to your frontend domain (not `*`)
 - [ ] Configure real Stripe keys (not test)
-- [ ] Set up Stripe webhook
+- [ ] Set up Stripe webhook with `REQUIRE_STRIPE_WEBHOOK_SECRET=true`
 - [ ] Configure Brevo for email
 - [ ] Set proper `FRONTEND_URL`
 - [ ] Enable HTTPS
@@ -753,17 +756,17 @@ certificate  │
 ## 🔒 Security Features
 
 - **Password Hashing**: Bcrypt with salt
-- **JWT Authentication**: HTTP-only cookies
-- **Role-based Access Control**: Endpoint-level protection
-- **CORS Configuration**: Restricted origins
+- **JWT Authentication**: HTTP-only cookies with configurable `secure` flag
+- **Token Refresh**: `/api/auth/refresh` endpoint for session renewal
+- **Role-based Access Control**: Endpoint-level protection; roles assigned by admin only
+- **CORS Configuration**: Restricted origins via `CORS_ORIGINS`
 - **Input Validation**: Pydantic models
-- **SQL Injection Prevention**: MongoDB parameterized queries
+- **NoSQL Injection Mitigation**: Parameterized MongoDB queries (no raw user input in operators)
 
 ---
 
 ## 📈 Future Enhancements
 
-- [ ] Email notifications (SendGrid)
 - [ ] Certificate PDF download
 - [ ] Lesson progress tracking
 - [ ] Video watch time analytics
