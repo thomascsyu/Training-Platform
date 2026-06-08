@@ -1,8 +1,8 @@
-from bson import ObjectId
 from fastapi import APIRouter, HTTPException, Request
 
-from auth_utils import get_current_user, require_roles
+from auth_utils import get_current_user
 from database import db
+from db_utils import parse_object_id
 from models import LessonProgressUpdate
 from progress_utils import (
     get_course_lesson_progress,
@@ -25,7 +25,7 @@ async def update_lesson_progress(
     lesson_id: str, data: LessonProgressUpdate, request: Request
 ):
     user = await get_current_user(request)
-    lesson = await db.lessons.find_one({"_id": ObjectId(lesson_id)})
+    lesson = await db.lessons.find_one({"_id": parse_object_id(lesson_id, "lesson")})
     if not lesson:
         raise HTTPException(status_code=404, detail="Lesson not found")
 
@@ -46,7 +46,7 @@ async def update_lesson_progress(
 @router.post("/progress/lessons/{lesson_id}/complete")
 async def complete_lesson(lesson_id: str, request: Request):
     user = await get_current_user(request)
-    lesson = await db.lessons.find_one({"_id": ObjectId(lesson_id)})
+    lesson = await db.lessons.find_one({"_id": parse_object_id(lesson_id, "lesson")})
     if not lesson:
         raise HTTPException(status_code=404, detail="Lesson not found")
 

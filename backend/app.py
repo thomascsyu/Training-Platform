@@ -12,6 +12,7 @@ from config import (
     logger,
 )
 from database import close_db_client, db
+from rate_limit import RateLimitMiddleware
 from routes import api_router
 
 
@@ -43,6 +44,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="LearnHub - Course Platform", lifespan=lifespan)
 app.include_router(api_router)
+app.add_middleware(RateLimitMiddleware)
 
 app.add_middleware(
     CORSMiddleware,

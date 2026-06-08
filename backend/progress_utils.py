@@ -78,6 +78,45 @@ async def get_bulk_lesson_progress(user_ids: list[str], course_id: str) -> dict[
     return result
 
 
+async def get_user_lesson_progress_by_courses(
+    user_id: str, course_ids: list[str]
+) -> dict[str, dict]:
+    """Return lesson progress summary per course for a single user (batch)."""
+    if not course_ids:
+        return {}
+
+    total_by_course: dict[str, int] = {}
+    async for row in db.lessons.aggregate([
+        {"$match": {"course_id": {"$in": course_ids}}},
+        {"$group": {"_id": "$course_id", "total": {"$sum": 1}}},
+    ]):
+        total_by_course[row["_id"]] = row["total"]
+
+    completed_by_course: dict[str, int] = {}
+    async for row in db.lesson_progress.aggregate([
+        {
+            "$match": {
+                "user_id": user_id,
+                "course_id": {"$in": course_ids},
+                "completed": True,
+            }
+        },
+        {"$group": {"_id": "$course_id", "completed": {"$sum": 1}}},
+    ]):
+        completed_by_course[row["_id"]] = row["completed"]
+
+    result = {}
+    for cid in course_ids:
+        total = total_by_course.get(cid, 0)
+        completed = completed_by_course.get(cid, 0)
+        result[cid] = {
+            "total_lessons": total,
+            "completed_lessons": completed,
+            "progress_percent": round((completed / total) * 100) if total > 0 else 0,
+        }
+    return result
+
+
 async def require_enrollment(user_id: str, course_id: str):
     enrollment = await db.enrollments.find_one({"course_id": course_id, "user_id": user_id})
     if not enrollment:

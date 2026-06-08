@@ -1,8 +1,8 @@
-from bson import ObjectId
 from fastapi import APIRouter, Request
 
 from auth_utils import get_current_user, require_roles
 from database import db
+from db_utils import parse_object_id
 from progress_utils import get_bulk_lesson_progress
 
 router = APIRouter(tags=["stats"])
@@ -48,7 +48,9 @@ async def get_admin_analytics(request: Request):
         {"$sort": {"enrollments": -1}},
         {"$limit": 5},
     ]):
-        course = await db.courses.find_one({"_id": ObjectId(row["_id"])}, {"title": 1})
+        course = await db.courses.find_one(
+            {"_id": parse_object_id(row["_id"], "course")}, {"title": 1}
+        )
         if course:
             top_courses.append({
                 "course_id": row["_id"],

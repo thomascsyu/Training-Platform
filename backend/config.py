@@ -15,7 +15,14 @@ logger = logging.getLogger(__name__)
 MONGO_URL = os.environ["MONGO_URL"]
 DB_NAME = os.environ["DB_NAME"]
 
-JWT_SECRET = os.environ.get("JWT_SECRET", secrets.token_hex(32))
+_jwt_from_env = os.environ.get("JWT_SECRET")
+if _jwt_from_env:
+    JWT_SECRET = _jwt_from_env
+else:
+    JWT_SECRET = secrets.token_hex(32)
+    logger.warning(
+        "JWT_SECRET not set — using an ephemeral secret; tokens invalidate on restart"
+    )
 JWT_ALGORITHM = "HS256"
 
 DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY")
