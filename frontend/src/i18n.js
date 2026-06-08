@@ -1,5 +1,7 @@
 // i18n translations for LearnHub
-// Supported: English (en), Traditional Chinese (zh-TW)
+import { toSimplifiedChinese, ja, ko } from "./i18n/extraLocales";
+
+// Supported UI languages: en, zh-TW, zh-CN, ja, ko
 
 export const translations = {
   en: {
@@ -138,7 +140,23 @@ export const translations = {
       overview: "Overview",
       materials: "Materials",
       aiAssistant: "AI Assistant",
-      forum: "Forum"
+      forum: "Forum",
+      editCourse: "Edit Course",
+      saveChanges: "Save Changes",
+      backToCourses: "Back to Courses",
+      courseUpdated: "Course updated",
+      addLesson: "Add Lesson",
+      lessonTitle: "Lesson title",
+      lessonDescription: "Lesson description",
+      lessonAdded: "Lesson added",
+      lessonDeleted: "Lesson deleted",
+      confirmDeleteLesson: "Delete this lesson?",
+      categoryPlaceholder: "e.g. Business",
+      hasVideo: "Has video",
+      lessonProgress: "Lesson Progress",
+      markComplete: "Mark Complete",
+      logWatchProgress: "Log 50% watched",
+      watched: "watched"
     },
     
     // Quiz
@@ -224,6 +242,33 @@ export const translations = {
       completed: "Completed",
       youtube: "YouTube",
       vimeo: "Vimeo"
+    },
+
+    progress: {
+      groupTrainingProgress: "Group Training Progress",
+      monitorProgress: "Monitor student progress across all courses",
+      studentProgress: "Student Progress",
+      lessons: "Lessons",
+      attempts: "Attempts",
+      lastActivity: "Last Activity",
+      selectCourseHint: "Select a course to view detailed progress"
+    },
+
+    analytics: {
+      subtitle: "Platform-wide performance and engagement metrics",
+      completionRate: "Course Completion Rate",
+      avgLessonProgress: "Avg Lesson Progress",
+      certificatesIssued: "Certificates Issued",
+      lessonsCompleted: "Lessons Completed",
+      quizPerformance: "Quiz Performance",
+      platformOverview: "Platform Overview",
+      topCourses: "Top Courses by Enrollment",
+      totalAttempts: "Total Attempts",
+      passed: "Passed",
+      failed: "Failed",
+      totalEnrollments: "Total Enrollments",
+      completedEnrollments: "Completed Enrollments",
+      rate: "Rate"
     }
   },
   
@@ -363,7 +408,23 @@ export const translations = {
       overview: "概覽",
       materials: "資料",
       aiAssistant: "AI 助手",
-      forum: "論壇"
+      forum: "論壇",
+      editCourse: "編輯課程",
+      saveChanges: "保存更改",
+      backToCourses: "返回課程列表",
+      courseUpdated: "課程已更新",
+      addLesson: "添加課時",
+      lessonTitle: "課時標題",
+      lessonDescription: "課時描述",
+      lessonAdded: "課時已添加",
+      lessonDeleted: "課時已刪除",
+      confirmDeleteLesson: "確定刪除此課時？",
+      categoryPlaceholder: "例如：商業",
+      hasVideo: "含視頻",
+      lessonProgress: "課時進度",
+      markComplete: "標記完成",
+      logWatchProgress: "記錄 50% 觀看",
+      watched: "已觀看"
     },
     
     // Quiz
@@ -449,9 +510,42 @@ export const translations = {
       completed: "已完成",
       youtube: "YouTube",
       vimeo: "Vimeo"
+    },
+
+    progress: {
+      groupTrainingProgress: "群組培訓進度",
+      monitorProgress: "監控所有課程的學生進度",
+      studentProgress: "學生進度",
+      lessons: "課時",
+      attempts: "嘗試次數",
+      lastActivity: "最後活動",
+      selectCourseHint: "選擇課程查看詳細進度"
+    },
+
+    analytics: {
+      subtitle: "平台整體表現與參與度指標",
+      completionRate: "課程完成率",
+      avgLessonProgress: "平均課時進度",
+      certificatesIssued: "已頒發證書",
+      lessonsCompleted: "已完成課時",
+      quizPerformance: "測驗表現",
+      platformOverview: "平台概覽",
+      topCourses: "報名最多課程",
+      totalAttempts: "總嘗試次數",
+      passed: "通過",
+      failed: "未通過",
+      totalEnrollments: "總報名數",
+      completedEnrollments: "已完成報名",
+      rate: "比率"
     }
   }
 };
+
+translations["zh-CN"] = toSimplifiedChinese(translations["zh-TW"]);
+translations.ja = ja;
+translations.ko = ko;
+
+export const UI_LANGUAGES = ["en", "zh-TW", "zh-CN", "ja", "ko"];
 
 // Language names for display
 export const languageNames = {

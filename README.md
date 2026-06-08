@@ -98,7 +98,7 @@ LearnHub is a full-featured LMS for creating, managing, and delivering courses. 
 | `src/contexts/` | Auth and language providers |
 | `src/components/` | Shared UI (guards, language switcher) |
 | `src/i18n.js` | EN / 繁中 translation strings |
-| `src/components/ui/` | Shadcn UI primitives |
+| `src/pages/` | Extracted pages (`DashboardLayout`, `AdminCourseEditPage`) |
 
 See [frontend/README.md](frontend/README.md) for frontend-specific setup.
 
