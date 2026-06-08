@@ -16,7 +16,9 @@ export const translations = {
       certificates: "Certificates",
       users: "Users",
       analytics: "Analytics",
-      manageGroups: "Manage Groups"
+      manageGroups: "Manage Groups",
+      bulkEnroll: "Bulk Enroll",
+      groupProgress: "Group Progress"
     },
     
     // Landing Page
@@ -85,7 +87,15 @@ export const translations = {
       startLearning: "Start Learning",
       noCoursesYet: "You haven't enrolled in any courses yet",
       inProgress: "In Progress",
-      score: "Score"
+      score: "Score",
+      myCourses: "My Courses",
+      certificatesLabel: "Certificates",
+      completedLabel: "Completed",
+      bulkEnrollTitle: "Bulk Enroll Students",
+      selectCourse: "Select Course",
+      selectStudents: "Select Students",
+      chooseCourse: "Choose a course...",
+      enrollCount: "Enroll {count} Students"
     },
     
     // Courses
@@ -189,7 +199,7 @@ export const translations = {
       selectCourse: "Select Course",
       selectStudents: "Select Students",
       chooseCourse: "Choose a course...",
-      selected: "selected",
+      selectCourseAndStudents: "Please select a course and at least one student",
       enrollStudents: "Enroll Students"
     },
     
@@ -231,7 +241,9 @@ export const translations = {
       certificates: "證書",
       users: "用戶管理",
       analytics: "數據分析",
-      manageGroups: "群組管理"
+      manageGroups: "群組管理",
+      bulkEnroll: "批量報名",
+      groupProgress: "群組進度"
     },
     
     // Landing Page
@@ -300,7 +312,15 @@ export const translations = {
       startLearning: "開始學習",
       noCoursesYet: "您還沒有報名任何課程",
       inProgress: "進行中",
-      score: "分數"
+      score: "分數",
+      myCourses: "我的課程",
+      certificatesLabel: "證書",
+      completedLabel: "已完成",
+      bulkEnrollTitle: "批量報名學生",
+      selectCourse: "選擇課程",
+      selectStudents: "選擇學生",
+      chooseCourse: "選擇課程...",
+      enrollCount: "報名 {count} 名學生"
     },
     
     // Courses
@@ -404,7 +424,7 @@ export const translations = {
       selectCourse: "選擇課程",
       selectStudents: "選擇學生",
       chooseCourse: "選擇一門課程...",
-      selected: "已選擇",
+      selectCourseAndStudents: "請選擇課程和至少一名學生",
       enrollStudents: "報名學生"
     },
     

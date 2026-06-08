@@ -28,6 +28,8 @@ yarn start
 
 Open [http://localhost:3000](http://localhost:3000). Default admin is seeded from `ADMIN_EMAIL` / `ADMIN_PASSWORD` in backend `.env` — see [Test Accounts](memory/test_credentials.md).
 
+**Docker (all services):** `cp .env.docker.example .env && docker compose up --build` — see [Docker](#docker).
+
 ---
 
 ## Overview
@@ -77,7 +79,10 @@ LearnHub is a full-featured LMS for creating, managing, and delivering courses. 
 |------|------|
 | `server.py` | Uvicorn entry point |
 | `app.py` | App factory, CORS, lifespan, indexes, admin seed |
-| `routes.py` | HTTP route handlers |
+| `routes.py` | Aggregates routers under `/api` |
+| `routers/` | Domain route modules (`auth`, `courses`, `lessons`, `quizzes`, `enrollments`, `groups`, `certificates`, `forums`, `chat`, `translate`, `payments`, `users`, `stats`, `root`) |
+| `clients.py` | Shared Deepseek + Stripe client init |
+| `course_utils.py` | Course cascade-delete helpers |
 | `config.py` | Environment configuration |
 | `database.py` | MongoDB client |
 | `models.py` | Pydantic request models |
@@ -88,7 +93,7 @@ LearnHub is a full-featured LMS for creating, managing, and delivering courses. 
 
 | Path | Role |
 |------|------|
-| `src/App.js` | Routes and page components |
+| `src/App.js` | Routes and page components (uses `lib/api.js` for auth + token refresh) |
 | `src/lib/api.js` | Axios client (`withCredentials: true`) |
 | `src/contexts/` | Auth and language providers |
 | `src/components/` | Shared UI (guards, language switcher) |
@@ -103,7 +108,7 @@ See [frontend/README.md](frontend/README.md) for frontend-specific setup.
 
 | Layer | Technology | Notes |
 |-------|------------|-------|
-| Frontend | React 19, React Router 7 | CRA + CRACO |
+| Frontend | React 19, React Router 7 | CRA + CRACO; optional `@emergentbase/visual-edits` (proprietary tarball in `package.json`) |
 | Styling | Tailwind CSS 3, Shadcn UI | International Klein Blue `#002FA7` |
 | HTTP | Axios | Cookie-based auth |
 | Backend | Python 3.11+, FastAPI | Async via Motor |
@@ -420,7 +425,16 @@ Admin selects target language → Deepseek translates title, description, lesson
 
 ## Testing
 
-API integration tests: `backend_test.py`, `comprehensive_backend_test.py` (require running API + MongoDB).
+**Unit tests (no running server):**
+
+```bash
+pip install -r backend/requirements.txt pytest
+python -m pytest tests/ -q
+```
+
+`tests/conftest.py` sets minimal env vars (`MONGO_URL`, `DB_NAME`, `JWT_SECRET`) before importing backend modules.
+
+**Integration tests:** `backend_test.py`, `comprehensive_backend_test.py` (require running API + MongoDB).
 
 Test accounts and role promotion steps: **[memory/test_credentials.md](memory/test_credentials.md)**
 
@@ -433,7 +447,6 @@ Test accounts and role promotion steps: **[memory/test_credentials.md](memory/te
 - [ ] Full UI translation (dashboards, admin, zh-CN / ja / ko)
 - [ ] Course analytics, ratings, instructor profiles
 - [ ] Mobile app (React Native)
-- [ ] Colocated pytest suite under `tests/`
 
 ---
 

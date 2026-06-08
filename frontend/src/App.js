@@ -1,7 +1,6 @@
-import { useState, useEffect, createContext, useContext } from "react";
+import { useState, useEffect } from "react";
 import "@/App.css";
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useParams, useSearchParams, Link } from "react-router-dom";
-import axios from "axios";
 import { Toaster, toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,150 +16,18 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
-import { 
-  BookOpen, GraduationCap, Users, PlayCircle, Award, MessageSquare, 
-  Menu, X, LogOut, Settings, ChevronRight, Plus, Trash2, Edit, 
-  Download, Send, Bot, FileText, Video, CheckCircle, Clock, 
+import {
+  BookOpen, GraduationCap, Users, PlayCircle, Award, MessageSquare,
+  Menu, X, LogOut, Settings, ChevronRight, Plus, Trash2, Edit,
+  Download, Send, Bot, FileText, Video, CheckCircle, Clock,
   DollarSign, Lock, Globe, BarChart3, Home, Loader2, Search, Languages
 } from "lucide-react";
-import { translations, courseLanguages, languageNames } from "@/i18n";
-
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = axios.create({
-  baseURL: `${BACKEND_URL}/api`,
-  withCredentials: true
-});
-
-// Language Context
-const LanguageContext = createContext(null);
-
-const useLanguage = () => useContext(LanguageContext);
-
-const LanguageProvider = ({ children }) => {
-  const [lang, setLang] = useState(() => {
-    const saved = localStorage.getItem("learnhub_lang");
-    return saved || "en";
-  });
-
-  const t = (key) => {
-    const keys = key.split(".");
-    let value = translations[lang];
-    for (const k of keys) {
-      value = value?.[k];
-    }
-    return value || key;
-  };
-
-  const switchLanguage = (newLang) => {
-    if (["en", "zh-TW"].includes(newLang)) {
-      setLang(newLang);
-      localStorage.setItem("learnhub_lang", newLang);
-    }
-  };
-
-  return (
-    <LanguageContext.Provider value={{ lang, t, switchLanguage }}>
-      {children}
-    </LanguageContext.Provider>
-  );
-};
-
-// Auth Context
-const AuthContext = createContext(null);
-
-const useAuth = () => useContext(AuthContext);
-
-const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    checkAuth();
-  }, []);
-
-  const checkAuth = async () => {
-    try {
-      const { data } = await API.get("/auth/me");
-      setUser(data);
-    } catch {
-      setUser(false);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const login = async (email, password) => {
-    const { data } = await API.post("/auth/login", { email, password });
-    setUser(data);
-    return data;
-  };
-
-  const register = async (email, password, name, role = "student") => {
-    const { data } = await API.post("/auth/register", { email, password, name, role });
-    setUser(data);
-    return data;
-  };
-
-  const logout = async () => {
-    await API.post("/auth/logout");
-    setUser(false);
-  };
-
-  return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, checkAuth }}>
-      {children}
-    </AuthContext.Provider>
-  );
-};
-
-const ProtectedRoute = ({ children, roles = [] }) => {
-  const { user, loading } = useAuth();
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F4F5F7]">
-        <Loader2 className="w-8 h-8 animate-spin text-[#002FA7]" />
-      </div>
-    );
-  }
-
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
-
-  if (roles.length > 0 && !roles.includes(user.role)) {
-    return <Navigate to="/dashboard" replace />;
-  }
-
-  return children;
-};
-
-// Format API errors
-const formatError = (error) => {
-  const detail = error.response?.data?.detail;
-  if (!detail) return error.message || "Something went wrong";
-  if (typeof detail === "string") return detail;
-  if (Array.isArray(detail)) return detail.map(e => e.msg || JSON.stringify(e)).join(" ");
-  return String(detail);
-};
-
-// Language Switcher Component
-const LanguageSwitcher = () => {
-  const { lang, switchLanguage } = useLanguage();
-  
-  return (
-    <Select value={lang} onValueChange={switchLanguage}>
-      <SelectTrigger className="w-[120px] rounded-sm border-slate-200" data-testid="language-switcher">
-        <Languages className="w-4 h-4 mr-2" />
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="en">English</SelectItem>
-        <SelectItem value="zh-TW">繁體中文</SelectItem>
-      </SelectContent>
-    </Select>
-  );
-};
+import { courseLanguages, languageNames } from "@/i18n";
+import { API, formatError } from "@/lib/api";
+import { LanguageProvider, useLanguage } from "@/contexts/LanguageContext";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 // ============ LANDING PAGE ============
 const LandingPage = () => {
@@ -562,24 +429,25 @@ const RegisterPage = () => {
 // ============ DASHBOARD LAYOUT ============
 const DashboardLayout = ({ children }) => {
   const { user, logout } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const navItems = user?.role === "admin" ? [
-    { icon: Home, label: "Dashboard", path: "/dashboard" },
-    { icon: BookOpen, label: "Courses", path: "/admin/courses" },
-    { icon: Users, label: "Users", path: "/admin/users" },
-    { icon: Users, label: "Bulk Enroll", path: "/admin/bulk-enroll" },
-    { icon: BarChart3, label: "Group Progress", path: "/manager/progress" },
-    { icon: BarChart3, label: "Analytics", path: "/admin/analytics" }
+    { icon: Home, label: t("nav.dashboard"), path: "/dashboard" },
+    { icon: BookOpen, label: t("dashboard.manageCourses"), path: "/admin/courses" },
+    { icon: Users, label: t("nav.users"), path: "/admin/users" },
+    { icon: Users, label: t("nav.bulkEnroll"), path: "/admin/bulk-enroll" },
+    { icon: BarChart3, label: t("nav.groupProgress"), path: "/manager/progress" },
+    { icon: BarChart3, label: t("nav.analytics"), path: "/admin/analytics" }
   ] : user?.role === "client_manager" ? [
-    { icon: Home, label: "Dashboard", path: "/dashboard" },
-    { icon: BarChart3, label: "Group Progress", path: "/manager/progress" },
-    { icon: BookOpen, label: "Courses", path: "/courses" }
+    { icon: Home, label: t("nav.dashboard"), path: "/dashboard" },
+    { icon: BarChart3, label: t("nav.groupProgress"), path: "/manager/progress" },
+    { icon: BookOpen, label: t("nav.courses"), path: "/courses" }
   ] : [
-    { icon: Home, label: "Dashboard", path: "/dashboard" },
-    { icon: BookOpen, label: "My Courses", path: "/my-courses" },
-    { icon: Award, label: "Certificates", path: "/certificates" }
+    { icon: Home, label: t("nav.dashboard"), path: "/dashboard" },
+    { icon: BookOpen, label: t("nav.myCourses"), path: "/my-courses" },
+    { icon: Award, label: t("nav.certificates"), path: "/certificates" }
   ];
 
   return (
@@ -632,7 +500,7 @@ const DashboardLayout = ({ children }) => {
             data-testid="logout-btn"
           >
             <LogOut className="w-5 h-5" />
-            {sidebarOpen && <span className="ml-3">Logout</span>}
+            {sidebarOpen && <span className="ml-3">{t("nav.logout")}</span>}
           </Button>
         </div>
       </aside>
@@ -648,6 +516,7 @@ const DashboardLayout = ({ children }) => {
 // ============ STUDENT DASHBOARD ============
 const StudentDashboard = () => {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [stats, setStats] = useState(null);
   const [enrollments, setEnrollments] = useState([]);
@@ -684,9 +553,9 @@ const StudentDashboard = () => {
     <div className="p-6" data-testid="student-dashboard">
       <div className="mb-8">
         <h1 className="text-2xl sm:text-3xl tracking-tight font-medium text-[#0A0B10]">
-          Welcome back, {user?.name}!
+          {t("dashboard.welcomeBack")}, {user?.name}!
         </h1>
-        <p className="text-slate-600">Continue your learning journey</p>
+        <p className="text-slate-600">{t("dashboard.continueJourney")}</p>
       </div>
 
       {/* Stats */}
@@ -698,7 +567,7 @@ const StudentDashboard = () => {
             </div>
             <div>
               <p className="text-2xl font-medium">{stats?.enrolled_courses || 0}</p>
-              <p className="text-sm text-slate-600">Enrolled Courses</p>
+              <p className="text-sm text-slate-600">{t("dashboard.enrolledCourses")}</p>
             </div>
           </CardContent>
         </Card>
@@ -709,7 +578,7 @@ const StudentDashboard = () => {
             </div>
             <div>
               <p className="text-2xl font-medium">{stats?.completed_courses || 0}</p>
-              <p className="text-sm text-slate-600">Completed</p>
+              <p className="text-sm text-slate-600">{t("dashboard.completedLabel")}</p>
             </div>
           </CardContent>
         </Card>
@@ -720,7 +589,7 @@ const StudentDashboard = () => {
             </div>
             <div>
               <p className="text-2xl font-medium">{stats?.certificates || 0}</p>
-              <p className="text-sm text-slate-600">Certificates</p>
+              <p className="text-sm text-slate-600">{t("dashboard.certificatesLabel")}</p>
             </div>
           </CardContent>
         </Card>
@@ -729,9 +598,9 @@ const StudentDashboard = () => {
       {/* Recent Enrollments */}
       <div className="mb-8">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-medium">My Courses</h2>
+          <h2 className="text-xl font-medium">{t("dashboard.myCourses")}</h2>
           <Button variant="outline" onClick={() => navigate("/courses")} className="rounded-sm" data-testid="browse-more-btn">
-            Browse More <ChevronRight className="w-4 h-4 ml-1" />
+            {t("dashboard.browseMore")} <ChevronRight className="w-4 h-4 ml-1" />
           </Button>
         </div>
         {enrollments.length > 0 ? (
@@ -753,16 +622,16 @@ const StudentDashboard = () => {
                   )}
                   {e.completed && (
                     <Badge className="absolute top-2 right-2 bg-green-600 text-white rounded-sm">
-                      <CheckCircle className="w-3 h-3 mr-1" /> Completed
+                      <CheckCircle className="w-3 h-3 mr-1" /> {t("common.completed")}
                     </Badge>
                   )}
                 </div>
                 <CardContent className="p-4">
                   <h3 className="font-medium text-[#0A0B10] mb-2">{e.course_title}</h3>
                   {e.completed ? (
-                    <p className="text-sm text-green-600">Score: {e.score}%</p>
+                    <p className="text-sm text-green-600">{t("dashboard.score")}: {e.score}%</p>
                   ) : (
-                    <p className="text-sm text-slate-600">In Progress</p>
+                    <p className="text-sm text-slate-600">{t("dashboard.inProgress")}</p>
                   )}
                 </CardContent>
               </Card>
@@ -787,6 +656,7 @@ const StudentDashboard = () => {
 // ============ ADMIN DASHBOARD ============
 const AdminDashboard = () => {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -818,9 +688,9 @@ const AdminDashboard = () => {
     <div className="p-6" data-testid="admin-dashboard">
       <div className="mb-8">
         <h1 className="text-2xl sm:text-3xl tracking-tight font-medium text-[#0A0B10]">
-          Admin Dashboard
+          {t("dashboard.adminDashboard")}
         </h1>
-        <p className="text-slate-600">Manage your learning platform</p>
+        <p className="text-slate-600">{t("dashboard.managePlatform")}</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -832,7 +702,7 @@ const AdminDashboard = () => {
               </div>
               <div>
                 <p className="text-2xl font-medium">{stats?.total_courses || 0}</p>
-                <p className="text-sm text-slate-600">Total Courses</p>
+                <p className="text-sm text-slate-600">{t("dashboard.totalCourses")}</p>
               </div>
             </div>
           </CardContent>
@@ -845,7 +715,7 @@ const AdminDashboard = () => {
               </div>
               <div>
                 <p className="text-2xl font-medium">{stats?.total_students || 0}</p>
-                <p className="text-sm text-slate-600">Students</p>
+                <p className="text-sm text-slate-600">{t("dashboard.totalStudents")}</p>
               </div>
             </div>
           </CardContent>
@@ -858,7 +728,7 @@ const AdminDashboard = () => {
               </div>
               <div>
                 <p className="text-2xl font-medium">{stats?.total_enrollments || 0}</p>
-                <p className="text-sm text-slate-600">Enrollments</p>
+                <p className="text-sm text-slate-600">{t("dashboard.totalEnrollments")}</p>
               </div>
             </div>
           </CardContent>
@@ -871,7 +741,7 @@ const AdminDashboard = () => {
               </div>
               <div>
                 <p className="text-2xl font-medium">{stats?.completed_courses || 0}</p>
-                <p className="text-sm text-slate-600">Completions</p>
+                <p className="text-sm text-slate-600">{t("dashboard.completions")}</p>
               </div>
             </div>
           </CardContent>
@@ -881,14 +751,14 @@ const AdminDashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card className="bg-white border border-slate-200 rounded-sm">
           <CardHeader>
-            <CardTitle className="text-lg">Quick Actions</CardTitle>
+            <CardTitle className="text-lg">{t("dashboard.quickActions")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <Button onClick={() => navigate("/admin/courses")} className="w-full justify-start bg-[#002FA7] hover:bg-[#002585] text-white rounded-sm" data-testid="manage-courses-btn">
-              <BookOpen className="w-4 h-4 mr-2" /> Manage Courses
+              <BookOpen className="w-4 h-4 mr-2" /> {t("dashboard.manageCourses")}
             </Button>
             <Button onClick={() => navigate("/admin/users")} variant="outline" className="w-full justify-start rounded-sm" data-testid="manage-users-btn">
-              <Users className="w-4 h-4 mr-2" /> Manage Users
+              <Users className="w-4 h-4 mr-2" /> {t("dashboard.manageUsers")}
             </Button>
           </CardContent>
         </Card>
@@ -2589,6 +2459,7 @@ const ManagerGroupProgressPage = () => {
 
 // ============ ADMIN BULK ENROLL PAGE ============
 const AdminBulkEnrollPage = () => {
+  const { t } = useLanguage();
   const [courses, setCourses] = useState([]);
   const [students, setStudents] = useState([]);
   const [selectedCourse, setSelectedCourse] = useState("");
@@ -2617,7 +2488,7 @@ const AdminBulkEnrollPage = () => {
 
   const handleBulkEnroll = async () => {
     if (!selectedCourse || selectedStudents.length === 0) {
-      toast.error("Please select a course and at least one student");
+      toast.error(t("groups.selectCourseAndStudents"));
       return;
     }
     
@@ -2640,7 +2511,7 @@ const AdminBulkEnrollPage = () => {
     <DashboardLayout>
       <div className="p-6" data-testid="admin-bulk-enroll-page">
         <h1 className="text-2xl sm:text-3xl tracking-tight font-medium text-[#0A0B10] mb-8">
-          Bulk Enroll Students
+          {t("dashboard.bulkEnrollTitle")}
         </h1>
 
         {loading ? (
@@ -2651,12 +2522,12 @@ const AdminBulkEnrollPage = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card className="bg-white border border-slate-200 rounded-sm">
               <CardHeader>
-                <CardTitle className="text-lg">Select Course</CardTitle>
+                <CardTitle className="text-lg">{t("dashboard.selectCourse")}</CardTitle>
               </CardHeader>
               <CardContent>
                 <Select value={selectedCourse} onValueChange={setSelectedCourse}>
                   <SelectTrigger className="rounded-sm" data-testid="select-course-dropdown">
-                    <SelectValue placeholder="Choose a course..." />
+                    <SelectValue placeholder={t("dashboard.chooseCourse")} />
                   </SelectTrigger>
                   <SelectContent>
                     {courses.map((c) => (
@@ -2669,7 +2540,7 @@ const AdminBulkEnrollPage = () => {
 
             <Card className="bg-white border border-slate-200 rounded-sm">
               <CardHeader>
-                <CardTitle className="text-lg">Select Students</CardTitle>
+                <CardTitle className="text-lg">{t("dashboard.selectStudents")}</CardTitle>
                 <CardDescription>
                   {selectedStudents.length} selected
                 </CardDescription>
@@ -2712,7 +2583,7 @@ const AdminBulkEnrollPage = () => {
                   className="w-full mt-4 bg-[#002FA7] hover:bg-[#002585] text-white rounded-sm"
                   data-testid="bulk-enroll-btn"
                 >
-                  {enrolling ? <Loader2 className="w-4 h-4 animate-spin" /> : `Enroll ${selectedStudents.length} Students`}
+                  {enrolling ? <Loader2 className="w-4 h-4 animate-spin" /> : t("dashboard.enrollCount").replace("{count}", selectedStudents.length)}
                 </Button>
               </CardContent>
             </Card>
