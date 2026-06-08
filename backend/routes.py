@@ -9,6 +9,7 @@ from routers.forums import router as forums_router
 from routers.groups import router as groups_router
 from routers.lessons import router as lessons_router
 from routers.payments import router as payments_router
+from routers.progress import router as progress_router
 from routers.quizzes import router as quizzes_router
 from routers.root import router as root_router
 from routers.stats import router as stats_router
@@ -28,6 +29,7 @@ api_router.include_router(forums_router)
 api_router.include_router(chat_router)
 api_router.include_router(translate_router)
 api_router.include_router(payments_router)
+api_router.include_router(progress_router)
 api_router.include_router(users_router)
 api_router.include_router(stats_router)
 api_router.include_router(root_router)

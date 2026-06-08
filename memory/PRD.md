@@ -72,7 +72,8 @@ Build a Kajabi-like course/content platform with:
 - `/api/courses/{id}/create-translation` - Create translated course copy
 - `/api/payments/*` - Stripe checkout
 - `/api/users/*` - User management
-- `/api/stats/*` - Dashboard statistics
+- `/api/progress/*` - Lesson-level progress (complete, watch tracking, course summary)
+- `/api/stats/*` - Dashboard statistics + admin analytics
 
 ### Frontend Pages
 - Landing page with hero and features (bilingual)
@@ -88,6 +89,9 @@ Build a Kajabi-like course/content platform with:
 - Certificates page
 - Payment success page
 - Admin bulk enrollment UI (client managers view group progress only)
+- Admin analytics dashboard (`/admin/analytics`)
+- Lesson viewer with per-lesson progress tracking
+- Certificate PDF download
 
 ### Supported Languages
 | Code | Name | UI Support |
@@ -115,11 +119,11 @@ Build a Kajabi-like course/content platform with:
 - [x] Email notifications (Brevo: enrollment, quiz progress, certificate)
 
 ### P2 (Medium Priority)
-- [ ] Course progress tracking per lesson
-- [ ] Video watch time tracking
-- [ ] Certificate PDF download
-- [ ] Course analytics dashboard
-- [ ] Student performance reports
+- [x] Course progress tracking per lesson
+- [x] Video watch time tracking (watch_percent + last_position_sec)
+- [x] Certificate PDF download
+- [x] Course analytics dashboard
+- [x] Student performance reports (lesson progress in group views)
 - [ ] Full UI translation for zh-CN, ja, ko
 
 ### P3 (Low Priority)
@@ -129,7 +133,6 @@ Build a Kajabi-like course/content platform with:
 - [ ] Mobile app
 
 ## Next Tasks
-1. Implement lesson-level progress tracking
-2. Add PDF certificate download
-3. Create course analytics dashboard
-4. Add full UI translations for Simplified Chinese, Japanese, Korean
+1. Add full UI translations for Simplified Chinese, Japanese, Korean
+2. Split `App.js` into page components under `src/pages/`
+3. P3 features: categories/tags, reviews, instructor profiles

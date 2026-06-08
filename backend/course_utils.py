@@ -10,3 +10,4 @@ async def delete_course_related_data(course_id: str):
     await db.chat_messages.delete_many({"course_id": course_id})
     await db.payment_transactions.delete_many({"course_id": course_id})
     await db.quiz_attempts.delete_many({"course_id": course_id})
+    await db.lesson_progress.delete_many({"course_id": course_id})

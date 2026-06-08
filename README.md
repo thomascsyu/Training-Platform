@@ -175,6 +175,7 @@ Base path: `/api`
 |--------|----------|--------|
 | GET | `/certificates/my` | Owner |
 | GET | `/certificates/{id}` | Owner, admin, or client manager |
+| GET | `/certificates/{id}/pdf` | Owner, admin, or client manager — PDF download |
 | PUT | `/certificates/{id}/customize` | Admin |
 
 **Customize request body:**
@@ -199,7 +200,8 @@ Set `apply_to_course: true` to apply styling to all certificates for that certif
 | Forums | `GET /forums/{course_id}`, `POST /forums/posts`, `DELETE /forums/posts/{id}` |
 | Payments | `POST /payments/checkout`, `GET /payments/status/{session_id}`, `POST /webhook/stripe` |
 | Users | `GET /users`, `PUT /users/{id}/role` |
-| Stats | `GET /stats/admin`, `GET /stats/student` |
+| Stats | `GET /stats/admin`, `GET /stats/admin/analytics`, `GET /stats/student` |
+| Progress | `GET /progress/course/{id}`, `PATCH /progress/lessons/{id}`, `POST /progress/lessons/{id}/complete` |
 
 ---
 
@@ -399,11 +401,11 @@ docker run -p 3000:3000 learnhub-web
 
 Browse → free enroll **or** Stripe checkout → webhook/status confirms payment → enrollment record → optional Brevo welcome email.
 
+Students track **lesson progress** per course (mark complete, watch percent). Group dashboards show lesson completion alongside quiz status.
+
 ### Quiz & certificate
 
-Take quiz → score computed vs `passing_score` → **pass:** mark enrollment complete, issue certificate (once), send cert email → **fail:** send progress email with score %.
-
-Lesson-level or video watch progress is **not** tracked yet (see Future Enhancements).
+Take quiz → score computed vs `passing_score` → **pass:** mark enrollment complete, issue certificate (once), send cert email → **fail:** send progress email with score %. Certificates can be downloaded as PDF from `/certificates/{id}/pdf`.
 
 ### AI translation
 
@@ -442,10 +444,9 @@ Test accounts and role promotion steps: **[memory/test_credentials.md](memory/te
 
 ## Future Enhancements
 
-- [ ] Certificate PDF download
-- [ ] Lesson & video watch progress
 - [ ] Full UI translation (dashboards, admin, zh-CN / ja / ko)
-- [ ] Course analytics, ratings, instructor profiles
+- [ ] Split `App.js` into `src/pages/` components
+- [ ] Course categories/tags, ratings, instructor profiles
 - [ ] Mobile app (React Native)
 
 ---

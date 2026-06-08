@@ -631,7 +631,15 @@ const StudentDashboard = () => {
                   {e.completed ? (
                     <p className="text-sm text-green-600">{t("dashboard.score")}: {e.score}%</p>
                   ) : (
-                    <p className="text-sm text-slate-600">{t("dashboard.inProgress")}</p>
+                    <>
+                      <p className="text-sm text-slate-600 mb-2">{t("dashboard.inProgress")}</p>
+                      {e.lessons_total > 0 && (
+                        <div className="flex items-center gap-2">
+                          <Progress value={e.progress_percent || 0} className="h-2 flex-1" />
+                          <span className="text-xs text-slate-500">{e.progress_percent || 0}%</span>
+                        </div>
+                      )}
+                    </>
                   )}
                 </CardContent>
               </Card>
@@ -763,6 +771,148 @@ const AdminDashboard = () => {
           </CardContent>
         </Card>
       </div>
+    </div>
+  );
+};
+
+// ============ ADMIN ANALYTICS PAGE ============
+const AdminAnalyticsPage = () => {
+  const { t } = useLanguage();
+  const [analytics, setAnalytics] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchAnalytics();
+  }, []);
+
+  const fetchAnalytics = async () => {
+    try {
+      const { data } = await API.get("/stats/admin/analytics");
+      setAnalytics(data);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <Loader2 className="w-8 h-8 animate-spin text-[#002FA7]" />
+      </div>
+    );
+  }
+
+  const overview = analytics?.overview || {};
+
+  return (
+    <div className="p-6" data-testid="admin-analytics-page">
+      <div className="mb-8">
+        <h1 className="text-2xl sm:text-3xl tracking-tight font-medium text-[#0A0B10]">
+          {t("nav.analytics")}
+        </h1>
+        <p className="text-slate-600">Platform-wide performance and engagement metrics</p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <Card className="bg-white border border-slate-200 rounded-sm">
+          <CardContent className="p-6">
+            <p className="text-2xl font-medium">{overview.completion_rate || 0}%</p>
+            <p className="text-sm text-slate-600">Course Completion Rate</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-white border border-slate-200 rounded-sm">
+          <CardContent className="p-6">
+            <p className="text-2xl font-medium">{overview.avg_lesson_progress_percent || 0}%</p>
+            <p className="text-sm text-slate-600">Avg Lesson Progress</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-white border border-slate-200 rounded-sm">
+          <CardContent className="p-6">
+            <p className="text-2xl font-medium">{overview.total_certificates || 0}</p>
+            <p className="text-sm text-slate-600">Certificates Issued</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-white border border-slate-200 rounded-sm">
+          <CardContent className="p-6">
+            <p className="text-2xl font-medium">{overview.total_lesson_completions || 0}</p>
+            <p className="text-sm text-slate-600">Lessons Completed</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <Card className="bg-white border border-slate-200 rounded-sm">
+          <CardHeader>
+            <CardTitle className="text-lg">Quiz Performance</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex justify-between text-sm">
+              <span className="text-slate-600">Total Attempts</span>
+              <span className="font-medium">{analytics?.quiz_stats?.total_attempts || 0}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-slate-600">Passed</span>
+              <span className="font-medium text-green-600">{analytics?.quiz_stats?.passed || 0}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-slate-600">Failed</span>
+              <span className="font-medium text-red-600">{analytics?.quiz_stats?.failed || 0}</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-white border border-slate-200 rounded-sm">
+          <CardHeader>
+            <CardTitle className="text-lg">Platform Overview</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex justify-between text-sm">
+              <span className="text-slate-600">Total Enrollments</span>
+              <span className="font-medium">{overview.total_enrollments || 0}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-slate-600">Completed Enrollments</span>
+              <span className="font-medium">{overview.completed_enrollments || 0}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-slate-600">Total Students</span>
+              <span className="font-medium">{overview.total_students || 0}</span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card className="bg-white border border-slate-200 rounded-sm">
+        <CardHeader>
+          <CardTitle className="text-lg">Top Courses by Enrollment</CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-slate-50 border-b border-slate-200">
+                <tr>
+                  <th className="text-left p-4 font-medium text-slate-600 text-sm">Course</th>
+                  <th className="text-left p-4 font-medium text-slate-600 text-sm">Enrollments</th>
+                  <th className="text-left p-4 font-medium text-slate-600 text-sm">Completed</th>
+                  <th className="text-left p-4 font-medium text-slate-600 text-sm">Rate</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(analytics?.top_courses || []).map((course) => (
+                  <tr key={course.course_id} className="border-b border-slate-100">
+                    <td className="p-4 text-sm font-medium">{course.course_title}</td>
+                    <td className="p-4 text-sm">{course.enrollments}</td>
+                    <td className="p-4 text-sm">{course.completed}</td>
+                    <td className="p-4 text-sm">{course.completion_rate}%</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
@@ -899,10 +1049,22 @@ const CourseDetailPage = () => {
   const [chatLoading, setChatLoading] = useState(false);
   const [forumPosts, setForumPosts] = useState([]);
   const [forumInput, setForumInput] = useState("");
+  const [lessonProgress, setLessonProgress] = useState(null);
+  const [activeLesson, setActiveLesson] = useState(null);
+  const [completingLesson, setCompletingLesson] = useState(false);
 
   useEffect(() => {
     fetchCourse();
   }, [id]);
+
+  const fetchLessonProgress = async () => {
+    try {
+      const { data } = await API.get(`/progress/course/${id}`);
+      setLessonProgress(data);
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const fetchCourse = async () => {
     try {
@@ -914,6 +1076,10 @@ const CourseDetailPage = () => {
         const enrollRes = await API.get("/enrollments/my");
         const enrolled = enrollRes.data.find(e => e.course_id === id);
         setEnrollment(enrolled);
+
+        if (enrolled) {
+          await fetchLessonProgress();
+        }
         
         // Load chat and forum
         try {
@@ -1017,6 +1183,38 @@ const CourseDetailPage = () => {
     return url;
   };
 
+  const getLessonProgress = (lessonId) =>
+    lessonProgress?.lessons?.find((l) => l.lesson_id === lessonId);
+
+  const openLesson = (lesson) => {
+    setActiveLesson(lesson);
+    setActiveTab("lessons");
+  };
+
+  const markLessonComplete = async (lessonId) => {
+    setCompletingLesson(true);
+    try {
+      const { data } = await API.post(`/progress/lessons/${lessonId}/complete`);
+      setLessonProgress(data);
+      toast.success("Lesson marked complete!");
+    } catch (e) {
+      toast.error(formatError(e));
+    } finally {
+      setCompletingLesson(false);
+    }
+  };
+
+  const updateWatchProgress = async (lessonId, watchPercent) => {
+    try {
+      const { data } = await API.patch(`/progress/lessons/${lessonId}`, {
+        watch_percent: watchPercent,
+      });
+      setLessonProgress(data);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#F4F5F7]">
@@ -1088,6 +1286,18 @@ const CourseDetailPage = () => {
                     {enrollment.completed && (
                       <div className="mb-4">
                         <p className="text-sm text-slate-600">Your Score: <span className="font-medium text-[#0A0B10]">{enrollment.score}%</span></p>
+                      </div>
+                    )}
+                    {lessonProgress && lessonProgress.total_lessons > 0 && (
+                      <div className="mb-4">
+                        <div className="flex justify-between text-sm mb-1">
+                          <span className="text-slate-600">Lesson Progress</span>
+                          <span className="font-medium">{lessonProgress.progress_percent}%</span>
+                        </div>
+                        <Progress value={lessonProgress.progress_percent} className="h-2" />
+                        <p className="text-xs text-slate-500 mt-1">
+                          {lessonProgress.completed_lessons} / {lessonProgress.total_lessons} lessons
+                        </p>
                       </div>
                     )}
                     <Button 
@@ -1163,21 +1373,92 @@ const CourseDetailPage = () => {
           </TabsContent>
 
           <TabsContent value="lessons" className="mt-6">
+            {activeLesson && (
+              <Card className="bg-white border border-slate-200 rounded-sm mb-6">
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between mb-4">
+                    <div>
+                      <h3 className="text-lg font-medium">{activeLesson.title}</h3>
+                      <p className="text-sm text-slate-600">{activeLesson.description}</p>
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={() => setActiveLesson(null)} className="rounded-sm">
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  {activeLesson.video_url && (
+                    <div className="aspect-video bg-black rounded-sm overflow-hidden mb-4">
+                      <iframe
+                        src={getVideoEmbed(activeLesson.video_url, activeLesson.video_type || "youtube")}
+                        className="w-full h-full"
+                        allowFullScreen
+                        title={activeLesson.title}
+                      />
+                    </div>
+                  )}
+                  {enrollment && (
+                    <div className="flex items-center gap-3">
+                      {getLessonProgress(activeLesson.id)?.completed ? (
+                        <Badge className="bg-green-100 text-green-700 rounded-sm">
+                          <CheckCircle className="w-3 h-3 mr-1" /> Completed
+                        </Badge>
+                      ) : (
+                        <>
+                          <Button
+                            onClick={() => markLessonComplete(activeLesson.id)}
+                            disabled={completingLesson}
+                            className="bg-[#002FA7] hover:bg-[#002585] text-white rounded-sm"
+                            data-testid={`complete-lesson-${activeLesson.id}`}
+                          >
+                            {completingLesson ? <Loader2 className="w-4 h-4 animate-spin" /> : "Mark Complete"}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() => updateWatchProgress(activeLesson.id, 50)}
+                            className="rounded-sm"
+                          >
+                            Log 50% watched
+                          </Button>
+                        </>
+                      )}
+                      {getLessonProgress(activeLesson.id)?.watch_percent > 0 && (
+                        <span className="text-sm text-slate-500">
+                          {getLessonProgress(activeLesson.id).watch_percent}% watched
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
             <div className="space-y-4">
-              {course.lessons?.length > 0 ? course.lessons.map((lesson, idx) => (
-                <Card key={lesson.id} className="bg-white border border-slate-200 rounded-sm">
+              {course.lessons?.length > 0 ? course.lessons.map((lesson, idx) => {
+                const prog = getLessonProgress(lesson.id);
+                return (
+                <Card
+                  key={lesson.id}
+                  className={`bg-white border rounded-sm cursor-pointer transition-all ${
+                    activeLesson?.id === lesson.id ? "border-[#002FA7] ring-2 ring-[#002FA7]/20" : "border-slate-200 hover:border-slate-300"
+                  }`}
+                  onClick={() => openLesson(lesson)}
+                  data-testid={`lesson-card-${lesson.id}`}
+                >
                   <CardContent className="p-4 flex items-center gap-4">
-                    <div className="w-10 h-10 bg-[#002FA7]/10 rounded-sm flex items-center justify-center text-[#002FA7] font-medium">
-                      {idx + 1}
+                    <div className={`w-10 h-10 rounded-sm flex items-center justify-center font-medium ${
+                      prog?.completed ? "bg-green-100 text-green-700" : "bg-[#002FA7]/10 text-[#002FA7]"
+                    }`}>
+                      {prog?.completed ? <CheckCircle className="w-5 h-5" /> : idx + 1}
                     </div>
                     <div className="flex-1">
                       <h4 className="font-medium">{lesson.title}</h4>
                       <p className="text-sm text-slate-600">{lesson.description}</p>
+                      {prog?.watch_percent > 0 && !prog?.completed && (
+                        <Progress value={prog.watch_percent} className="h-1 mt-2 w-32" />
+                      )}
                     </div>
                     {lesson.video_url && <Video className="w-5 h-5 text-slate-400" />}
                   </CardContent>
                 </Card>
-              )) : (
+              );}) : (
                 <Card className="bg-white border border-slate-200 rounded-sm">
                   <CardContent className="p-12 text-center">
                     <p className="text-slate-600">No lessons added yet</p>
@@ -1547,6 +1828,20 @@ const CertificatesPage = () => {
     }
   };
 
+  const downloadCertificate = async (certId, certCode) => {
+    try {
+      const response = await API.get(`/certificates/${certId}/pdf`, { responseType: "blob" });
+      const url = window.URL.createObjectURL(new Blob([response.data], { type: "application/pdf" }));
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `certificate-${certCode}.pdf`;
+      link.click();
+      window.URL.revokeObjectURL(url);
+    } catch (e) {
+      toast.error(formatError(e));
+    }
+  };
+
   return (
     <DashboardLayout>
       <div className="p-6" data-testid="certificates-page">
@@ -1584,8 +1879,13 @@ const CertificatesPage = () => {
                         Issued: {new Date(cert.issued_at).toLocaleDateString()}
                       </p>
                     </div>
-                    <Button variant="outline" className="rounded-sm" data-testid={`download-cert-${cert.id}`}>
-                      <Download className="w-4 h-4 mr-2" /> Download
+                    <Button
+                      variant="outline"
+                      className="rounded-sm"
+                      onClick={() => downloadCertificate(cert.id, cert.certificate_id)}
+                      data-testid={`download-cert-${cert.id}`}
+                    >
+                      <Download className="w-4 h-4 mr-2" /> Download PDF
                     </Button>
                   </div>
                 </CardContent>
@@ -2385,6 +2685,7 @@ const ManagerGroupProgressPage = () => {
                               <th className="text-left p-4 font-medium text-slate-600 text-sm">Student</th>
                               <th className="text-left p-4 font-medium text-slate-600 text-sm">Status</th>
                               <th className="text-left p-4 font-medium text-slate-600 text-sm">Score</th>
+                              <th className="text-left p-4 font-medium text-slate-600 text-sm">Lessons</th>
                               <th className="text-left p-4 font-medium text-slate-600 text-sm">Attempts</th>
                               <th className="text-left p-4 font-medium text-slate-600 text-sm">Last Activity</th>
                             </tr>
@@ -2425,6 +2726,13 @@ const ManagerGroupProgressPage = () => {
                                     }`}>
                                       {student.score}%
                                     </span>
+                                  ) : (
+                                    <span className="text-slate-400">-</span>
+                                  )}
+                                </td>
+                                <td className="p-4 text-sm text-slate-600">
+                                  {student.lessons_total > 0 ? (
+                                    <span>{student.lessons_completed}/{student.lessons_total} ({student.lesson_progress_percent}%)</span>
                                   ) : (
                                     <span className="text-slate-400">-</span>
                                   )}
@@ -2645,7 +2953,7 @@ function App() {
             } />
             <Route path="/admin/analytics" element={
               <ProtectedRoute roles={["admin"]}>
-                <DashboardLayout><AdminDashboard /></DashboardLayout>
+                <DashboardLayout><AdminAnalyticsPage /></DashboardLayout>
               </ProtectedRoute>
             } />
             <Route path="/admin/bulk-enroll" element={
