@@ -51,7 +51,7 @@ from auth_utils import (
     set_auth_cookies,
     verify_password,
 )
-from course_utils import delete_course_related_data
+from progress_utils import get_bulk_lesson_progress
 from email_service import (
     send_certificate_email,
     send_enrollment_email,
@@ -140,16 +140,21 @@ async def get_course_group_progress(course_id: str, request: Request):
         if len(quiz_attempts_by_user[uid]) < 10:  # Keep max 10 per user
             quiz_attempts_by_user[uid].append(qa)
     
+    # Batch fetch lesson progress for all enrolled students
+    user_id_list = [e["user_id"] for e in enrollments]
+    lesson_progress_map = await get_bulk_lesson_progress(user_id_list, course_id)
+
     students = []
     for e in enrollments:
         student = user_map.get(e["user_id"])
         if student:
             quiz_attempts = quiz_attempts_by_user.get(e["user_id"], [])
-            
+            lp = lesson_progress_map.get(e["user_id"], {})
+
             last_activity = e.get("completed_at") or e.get("created_at")
             if quiz_attempts:
                 last_activity = quiz_attempts[0].get("created_at", last_activity)
-            
+
             students.append({
                 "user_id": e["user_id"],
                 "user_name": student.get("name"),
@@ -159,6 +164,9 @@ async def get_course_group_progress(course_id: str, request: Request):
                 "completed_at": e.get("completed_at"),
                 "score": e.get("score", 0),
                 "quiz_attempts": len(quiz_attempts),
+                "lessons_completed": lp.get("lessons_completed", 0),
+                "lessons_total": lp.get("total_lessons", 0),
+                "lesson_progress_percent": lp.get("progress_percent", 0),
                 "last_activity": last_activity,
                 "status": "completed" if e.get("completed") else "in_progress"
             })
@@ -217,6 +225,13 @@ async def get_student_progress(user_id: str, request: Request):
     course_docs = await db.courses.find({"_id": {"$in": course_ids}}).to_list(100)
     course_map = {str(c["_id"]): c for c in course_docs}
 
+    progress_by_course = {}
+    for e in enrollments:
+        cid = e["course_id"]
+        if cid not in progress_by_course:
+            progress_by_course[cid] = await get_bulk_lesson_progress([user_id], cid)
+    lp_for_user = {cid: m.get(user_id, {}) for cid, m in progress_by_course.items()}
+
     quiz_attempts = await db.quiz_attempts.find({"user_id": user_id}).to_list(1000)
     attempts_by_course = {}
     for qa in quiz_attempts:
@@ -249,6 +264,9 @@ async def get_student_progress(user_id: str, request: Request):
             "score": e.get("score", 0),
             "passing_score": course.get("passing_score", 70),
             "quiz_attempts": attempts_by_course.get(e["course_id"], 0),
+            "lessons_completed": lp_for_user.get(e["course_id"], {}).get("lessons_completed", 0),
+            "lessons_total": lp_for_user.get(e["course_id"], {}).get("total_lessons", 0),
+            "lesson_progress_percent": lp_for_user.get(e["course_id"], {}).get("progress_percent", 0),
             "certificate": certificate,
         })
 

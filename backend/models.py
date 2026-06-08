@@ -114,6 +114,12 @@ class TranslateCourseRequest(BaseModel):
     target_languages: List[str]
 
 
+class LessonProgressUpdate(BaseModel):
+    watch_percent: Optional[int] = None
+    last_position_sec: Optional[int] = None
+    completed: Optional[bool] = None
+
+
 class TranslateQuizRequest(BaseModel):
     quiz_id: str
     target_languages: List[str]

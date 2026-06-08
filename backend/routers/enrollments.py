@@ -51,7 +51,7 @@ from auth_utils import (
     set_auth_cookies,
     verify_password,
 )
-from course_utils import delete_course_related_data
+from progress_utils import get_course_lesson_progress
 from email_service import (
     send_certificate_email,
     send_enrollment_email,
@@ -144,6 +144,7 @@ async def get_my_enrollments(request: Request):
     for e in enrollments:
         course = course_map.get(e["course_id"])
         if course:
+            progress = await get_course_lesson_progress(user["id"], e["course_id"])
             result.append({
                 "id": str(e.get("_id", "")),
                 "course_id": e["course_id"],
@@ -151,7 +152,10 @@ async def get_my_enrollments(request: Request):
                 "course_thumbnail": course.get("thumbnail_url"),
                 "completed": e.get("completed", False),
                 "score": e.get("score", 0),
-                "created_at": e.get("created_at")
+                "created_at": e.get("created_at"),
+                "lessons_total": progress["total_lessons"],
+                "lessons_completed": progress["completed_lessons"],
+                "progress_percent": progress["progress_percent"],
             })
     return result
 

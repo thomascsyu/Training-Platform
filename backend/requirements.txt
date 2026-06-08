@@ -11,4 +11,5 @@ stripe==14.4.1
 pydantic==2.12.5
 email-validator==2.3.0
 python-multipart==0.0.22
+reportlab==4.2.5
 pytest==9.0.2
