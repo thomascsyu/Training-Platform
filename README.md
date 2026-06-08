@@ -225,7 +225,7 @@ API requests include cookies automatically (axios withCredentials)
 | Access | 60 min | HS256 |
 | Refresh | 7 days | Used only by `/auth/refresh` |
 
-> **Note:** The refresh endpoint is implemented on the backend. Automatic refresh on 401 in the frontend is recommended for production but not yet wired in the SPA.
+> **Note:** The SPA automatically calls `/auth/refresh` on 401 (via Axios interceptor) and clears session state if refresh fails.
 
 ---
 
@@ -301,7 +301,7 @@ Course content supports **5 languages**: `en`, `zh-TW`, `zh-CN`, `ja`, `ko`. UI 
 
 ## Environment Variables
 
-Copy templates: `backend/.env.example` → `backend/.env`, `frontend/.env.example` → `frontend/.env`.
+Copy templates: `backend/.env.example`, `frontend/.env.example`, or for Docker Compose: `.env.docker.example` → `.env` at repo root.
 
 ### Backend
 
@@ -344,14 +344,29 @@ Node.js 18+, Python 3.11+, MongoDB 6+, and accounts for Stripe, Deepseek, and (o
 
 ### Docker
 
+**Full stack (MongoDB + API + web):**
+
 ```bash
-# API
+cp .env.docker.example .env   # edit JWT_SECRET, ADMIN_PASSWORD
+docker compose up --build
+```
+
+| Service | URL |
+|---------|-----|
+| Frontend | http://localhost:3000 |
+| API | http://localhost:8001 |
+| MongoDB | localhost:27017 |
+
+**Individual images:**
+
+```bash
+# API only (requires external MongoDB)
 cd backend && docker build -t learnhub-api .
 docker run -p 8001:8001 --env-file .env learnhub-api
 
-# Web
+# Web only
 cd frontend
-docker build -t learnhub-web --build-arg REACT_APP_BACKEND_URL=https://api.yourdomain.com .
+docker build -t learnhub-web --build-arg REACT_APP_BACKEND_URL=http://localhost:8001 .
 docker run -p 3000:3000 learnhub-web
 ```
 
@@ -413,13 +428,12 @@ Test accounts and role promotion steps: **[memory/test_credentials.md](memory/te
 
 ## Future Enhancements
 
-- [ ] Frontend auto-refresh on token expiry
 - [ ] Certificate PDF download
 - [ ] Lesson & video watch progress
 - [ ] Full UI translation (dashboards, admin, zh-CN / ja / ko)
 - [ ] Course analytics, ratings, instructor profiles
 - [ ] Mobile app (React Native)
-- [ ] `docker-compose.yml` for local full stack
+- [ ] Colocated pytest suite under `tests/`
 
 ---
 

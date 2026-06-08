@@ -50,7 +50,18 @@ The dev server runs at [http://localhost:3000](http://localhost:3000).
 
 ## Docker
 
+From the **repo root** (full stack with MongoDB):
+
 ```bash
-docker build -t learnhub-web --build-arg REACT_APP_BACKEND_URL=https://api.example.com .
+cp .env.docker.example .env
+docker compose up --build
+```
+
+Or build this service only:
+
+```bash
+docker build -t learnhub-web --build-arg REACT_APP_BACKEND_URL=http://localhost:8001 .
 docker run -p 3000:3000 learnhub-web
 ```
+
+> `REACT_APP_BACKEND_URL` must be reachable from the **browser** (usually `http://localhost:8001`), not an internal Docker hostname.

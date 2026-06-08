@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { API } from "@/lib/api";
+import { API, setSessionExpiredHandler } from "@/lib/api";
 
 const AuthContext = createContext(null);
 
@@ -8,6 +8,11 @@ export const useAuth = () => useContext(AuthContext);
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setSessionExpiredHandler(() => setUser(false));
+    return () => setSessionExpiredHandler(null);
+  }, []);
 
   useEffect(() => {
     checkAuth();

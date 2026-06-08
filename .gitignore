@@ -81,6 +81,7 @@ agenthub/agents/youtube/db
 .env.local
 .env.*.local
 !.env.example
+!.env.docker.example
 
 # Mobile development
 android-sdk/
