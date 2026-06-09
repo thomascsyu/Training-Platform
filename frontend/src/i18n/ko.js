@@ -1,0 +1,265 @@
+export default {
+    // Navigation
+    nav: {
+      home: "홈",
+      courses: "코스",
+      dashboard: "대시보드",
+      login: "로그인",
+      register: "회원가입",
+      logout: "로그아웃",
+      getStarted: "시작하기",
+      myCourses: "내 코스",
+      certificates: "수료증",
+      users: "사용자",
+      analytics: "분석",
+      manageGroups: "그룹 관리",
+      bulkEnroll: "일괄 등록",
+      groupProgress: "그룹 진행 상황"
+    },
+    
+    // Landing Page
+    landing: {
+      overline: "온라인 학습 플랫폼",
+      headline: "전문가 강의로 새로운 기술을 마스터하세요",
+      subheadline: "고품질 코스에 접근하고, 퀴즈로 지식을 테스트하며, 완료 시 수료증을 받으세요. 지금 수천 명의 학습자와 함께하세요.",
+      startLearning: "학습 시작",
+      browseCourses: "코스 둘러보기",
+      featuresOverline: "기능",
+      featuresTitle: "성공에 필요한 모든 것",
+      features: {
+        videoCourses: "동영상 코스",
+        videoCoursesDesc: "업계 전문가의 고품질 동영상 콘텐츠로 학습",
+        quizzes: "퀴즈 및 테스트",
+        quizzesDesc: "인터랙티브 퀴즈로 지식을 테스트하고 진행 상황을 추적",
+        certificates: "수료증",
+        certificatesDesc: "코스 완료 후 맞춤형 수료증 획득",
+        forums: "커뮤니티 포럼",
+        forumsDesc: "다른 학습자와 소통하고 코스 주제를 토론",
+        aiAssistant: "AI 어시스턴트",
+        aiAssistantDesc: "AI 기반 코스 어시스턴트로 즉시 도움 받기",
+        materials: "다운로드 가능한 자료",
+        materialsDesc: "오프라인에서도 언제든지 코스 자료에 접근"
+      },
+      popularCourses: "인기 코스",
+      startJourney: "학습 여정을 시작하세요",
+      viewAll: "전체 보기",
+      footer: "© 2026 LearnHub. All rights reserved."
+    },
+    
+    // Auth
+    auth: {
+      welcomeBack: "다시 오신 것을 환영합니다",
+      signInContinue: "로그인하여 학습을 계속하세요",
+      createAccount: "계정 만들기",
+      joinLearnHub: "LearnHub에 가입하고 학습을 시작하세요",
+      email: "이메일",
+      password: "비밀번호",
+      fullName: "이름",
+      accountType: "계정 유형",
+      signIn: "로그인",
+      signUp: "회원가입",
+      noAccount: "계정이 없으신가요?",
+      haveAccount: "이미 계정이 있으신가요?",
+      student: "학생",
+      clientManager: "클라이언트 매니저"
+    },
+    
+    // Dashboard
+    dashboard: {
+      welcomeBack: "다시 오신 것을 환영합니다",
+      continueJourney: "학습 여정을 계속하세요",
+      adminDashboard: "관리자 대시보드",
+      managePlatform: "학습 플랫폼 관리",
+      enrolledCourses: "등록된 코스",
+      completedCourses: "완료한 코스",
+      totalCourses: "전체 코스",
+      totalStudents: "학생",
+      totalEnrollments: "등록 수",
+      completions: "완료 수",
+      quickActions: "빠른 작업",
+      manageCourses: "코스 관리",
+      manageUsers: "사용자 관리",
+      browseMore: "더 둘러보기",
+      startLearning: "학습 시작",
+      noCoursesYet: "아직 등록한 코스가 없습니다",
+      inProgress: "진행 중",
+      score: "점수",
+      myCourses: "내 코스",
+      certificatesLabel: "수료증",
+      completedLabel: "완료",
+      bulkEnrollTitle: "학생 일괄 등록",
+      selectCourse: "코스 선택",
+      selectStudents: "학생 선택",
+      chooseCourse: "코스를 선택하세요...",
+      enrollCount: "{count}명의 학생 등록",
+      lessonsCompleted: "완료한 레슨",
+      analyticsTitle: "분석",
+      analyticsOverview: "플랫폼 전체 성과 및 참여 지표"
+    },
+    
+    // Courses
+    courses: {
+      allCourses: "모든 코스",
+      createCourse: "코스 만들기",
+      createNew: "새 코스 만들기",
+      fillDetails: "세부 정보를 입력하여 새 코스를 만드세요",
+      title: "제목",
+      description: "설명",
+      thumbnailUrl: "썸네일 URL",
+      videoUrl: "동영상 URL",
+      videoType: "동영상 유형",
+      price: "가격",
+      passingScore: "합격 점수",
+      freeCourse: "무료 코스",
+      privateCourse: "비공개 코스",
+      language: "언어",
+      category: "카테고리",
+      filter: "필터",
+      search: "코스 검색...",
+      allLanguages: "모든 언어",
+      noCourses: "아직 이용 가능한 코스가 없습니다",
+      noCoursesCreated: "아직 생성된 코스가 없습니다",
+      createFirst: "첫 번째 코스 만들기",
+      free: "무료",
+      private: "비공개",
+      enrolled: "등록됨",
+      enrollNow: "지금 등록",
+      buyNow: "지금 구매",
+      viewCertificate: "수료증 보기",
+      completeToGet: "수료증을 받으려면 완료하세요",
+      lessons: "레슨",
+      quizzes: "퀴즈",
+      aboutCourse: "이 코스에 대하여",
+      noLessons: "아직 추가된 레슨이 없습니다",
+      noQuizzes: "아직 이용 가능한 퀴즈가 없습니다",
+      noMaterials: "다운로드 가능한 자료가 없습니다",
+      takeQuiz: "퀴즈 풀기",
+      overview: "개요",
+      materials: "자료",
+      aiAssistant: "AI 어시스턴트",
+      forum: "포럼",
+      markComplete: "완료로 표시",
+      enrollFree: "무료 등록",
+      deleteCourse: "코스 삭제"
+    },
+    
+    // Quiz
+    quiz: {
+      answerAll: "퀴즈를 완료하려면 모든 문제에 답하세요",
+      submit: "퀴즈 제출",
+      congratulations: "축하합니다!",
+      tryAgain: "다시 시도",
+      yourScore: "내 점수",
+      correct: "정답",
+      passingScoreLabel: "합격 점수",
+      viewCertificate: "수료증 보기",
+      backToDashboard: "대시보드로 돌아가기",
+      pleaseAnswer: "모든 문제에 답해 주세요"
+    },
+    
+    // Certificate
+    certificate: {
+      myCertificates: "내 수료증",
+      certificateOf: "수료 증명서",
+      awardedTo: "수여 대상",
+      noCertificates: "아직 수료증이 없습니다. 코스를 완료하여 첫 번째 수료증을 받으세요!",
+      download: "다운로드",
+      issuedOn: "발급일"
+    },
+    
+    // Chat
+    chat: {
+      aiCourseAssistant: "AI 코스 어시스턴트",
+      askQuestions: "코스 내용에 대해 질문하세요",
+      startConversation: "AI 어시스턴트와 대화를 시작하세요",
+      askQuestion: "질문을 입력하세요..."
+    },
+    
+    // Forum
+    forum: {
+      communityForum: "커뮤니티 포럼",
+      shareThoughts: "생각을 공유하거나 질문을 올려보세요...",
+      post: "게시",
+      noDiscussions: "아직 토론이 없습니다. 첫 번째로 게시해 보세요!"
+    },
+    
+    // Users
+    users: {
+      manageUsers: "사용자 관리",
+      name: "이름",
+      email: "이메일",
+      role: "역할",
+      actions: "작업",
+      admin: "관리자",
+      student: "학생",
+      clientManager: "클라이언트 매니저"
+    },
+    
+    // Groups
+    groups: {
+      manageGroupEnrollments: "그룹 등록 관리",
+      selectCourse: "코스 선택",
+      selectStudents: "학생 선택",
+      chooseCourse: "코스를 선택하세요...",
+      selectCourseAndStudents: "코스와 최소 한 명의 학생을 선택하세요",
+      enrollStudents: "학생 등록"
+    },
+    
+    // Manager
+    manager: {
+      monitorProgress: "모든 코스에서 학생 진행 상황 모니터링",
+      noEnrollments: "아직 등록이 없습니다",
+      completionRate: "완료율",
+      viewDetails: "상세 보기",
+      enrolledLabel: "등록됨",
+      completedLabel: "완료",
+      coursesTitle: "코스",
+      noCoursesWithEnrollments: "등록이 있는 코스가 없습니다",
+      selectCoursePrompt: "코스를 선택하여 상세 진행 상황 보기",
+      totalEnrolled: "총 등록 수",
+      inProgressLabel: "진행 중",
+      avgScore: "평균 점수",
+      studentColumn: "학생",
+      statusColumn: "상태",
+      scoreColumn: "점수",
+      lessonsColumn: "레슨",
+      attemptsColumn: "시도 횟수",
+      lastActivityColumn: "최근 활동"
+    },
+
+    // Toast
+    toast: {
+      roleUpdated: "역할이 업데이트되었습니다!",
+      courseDeleted: "코스가 삭제되었습니다!",
+      confirmDeleteCourse: "이 코스를 삭제하시겠습니까?",
+      enrolledSuccess: "등록이 완료되었습니다!",
+      posted: "게시되었습니다!",
+      lessonComplete: "레슨이 완료로 표시되었습니다!",
+      passedQuiz: "축하합니다! 합격하셨습니다!",
+      failedQuiz: "불합격입니다. 다시 시도해 보세요!",
+      answerAll: "모든 문제에 답해 주세요"
+    },
+
+    // Payment
+    payment: {
+      processing: "결제 처리 중...",
+      pleaseWait: "결제를 확인하는 동안 잠시 기다려 주세요.",
+      successful: "결제가 완료되었습니다!",
+      enrolledInCourse: "코스에 등록되었습니다.",
+      goToCourses: "내 코스로 이동",
+      somethingWrong: "문제가 발생했습니다",
+      contactSupport: "문제가 계속되면 고객 지원에 문의하세요."
+    },
+    
+    // Common
+    common: {
+      loading: "로딩 중...",
+      save: "저장",
+      cancel: "취소",
+      delete: "삭제",
+      edit: "편집",
+      completed: "완료",
+      youtube: "YouTube",
+      vimeo: "Vimeo"
+    }
+  };

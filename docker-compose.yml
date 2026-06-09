@@ -4,10 +4,16 @@ services:
     restart: unless-stopped
     ports:
       - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:-}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-}
     volumes:
       - mongo_data:/data/db
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      test: >
+        mongosh --quiet
+        ${MONGO_ROOT_USER:+--username $$MONGO_ROOT_USER --password $$MONGO_ROOT_PASSWORD --authenticationDatabase admin}
+        --eval "db.adminCommand('ping')"
       interval: 10s
       timeout: 5s
       retries: 5
@@ -21,7 +27,7 @@ services:
     ports:
       - "8001:8001"
     environment:
-      MONGO_URL: mongodb://mongo:27017
+      MONGO_URL: ${MONGO_URL:-mongodb://mongo:27017}
       DB_NAME: learnhub
       JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
       ENVIRONMENT: ${ENVIRONMENT:-development}

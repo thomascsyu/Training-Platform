@@ -1,64 +1,14 @@
 import uuid
 from datetime import datetime, timezone
-from typing import Optional
 
-import stripe
-from bson import ObjectId
 from fastapi import APIRouter, HTTPException, Request
-from openai import OpenAI
 
-import jwt
-from config import (
-    ADMIN_EMAIL,
-    ADMIN_PASSWORD,
-    DEEPSEEK_API_KEY,
-    JWT_ALGORITHM,
-    JWT_SECRET,
-    LANGUAGE_NAMES,
-    REQUIRE_STRIPE_WEBHOOK_SECRET,
-    STRIPE_API_KEY,
-    STRIPE_WEBHOOK_SECRET,
-    SUPPORTED_LANGUAGES,
-    logger,
-)
+from auth_utils import require_roles
+from clients import deepseek_client
+from config import LANGUAGE_NAMES, SUPPORTED_LANGUAGES, logger
 from database import db
-from models import (
-    CertificateCustomize,
-    ChatMessageCreate,
-    CourseCreate,
-    CourseUpdate,
-    EnrollmentCreate,
-    ForumPostCreate,
-    LessonCreate,
-    LessonUpdate,
-    PaymentCreate,
-    QuizAttemptCreate,
-    QuizCreate,
-    TranslateCourseRequest,
-    TranslateQuizRequest,
-    TranslateRequest,
-    UserCreate,
-    UserLogin,
-)
-from auth_utils import (
-    clear_auth_cookies,
-    create_access_token,
-    create_refresh_token,
-    get_current_user,
-    get_optional_user,
-    hash_password,
-    require_roles,
-    set_auth_cookies,
-    verify_password,
-)
-from course_utils import delete_course_related_data
-from email_service import (
-    send_certificate_email,
-    send_enrollment_email,
-    send_progress_email,
-)
-
-deepseek_client = None
+from db_utils import parse_object_id
+from models import TranslateCourseRequest, TranslateQuizRequest, TranslateRequest
 
 
 router = APIRouter(tags=["translate"])
@@ -107,7 +57,7 @@ async def translate_course(course_id: str, data: TranslateCourseRequest, request
     if not deepseek_client:
         raise HTTPException(status_code=503, detail="AI service not configured")
     
-    course = await db.courses.find_one({"_id": ObjectId(course_id)})
+    course = await db.courses.find_one({"_id": parse_object_id(course_id, "course")})
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
     
@@ -168,7 +118,7 @@ async def translate_course(course_id: str, data: TranslateCourseRequest, request
     
     # Store translations in the course document
     await db.courses.update_one(
-        {"_id": ObjectId(course_id)},
+        {"_id": parse_object_id(course_id, "course")},
         {"$set": {"translations": translations, "updated_at": datetime.now(timezone.utc).isoformat()}}
     )
     
@@ -186,12 +136,12 @@ async def translate_quiz(quiz_id: str, data: TranslateQuizRequest, request: Requ
     if not deepseek_client:
         raise HTTPException(status_code=503, detail="AI service not configured")
     
-    quiz = await db.quizzes.find_one({"_id": ObjectId(quiz_id)})
+    quiz = await db.quizzes.find_one({"_id": parse_object_id(quiz_id, "quiz")})
     if not quiz:
         raise HTTPException(status_code=404, detail="Quiz not found")
     
     # Get course language
-    course = await db.courses.find_one({"_id": ObjectId(quiz.get("course_id"))})
+    course = await db.courses.find_one({"_id": parse_object_id(quiz.get("course_id"), "course")})
     source_lang = course.get("language", "en") if course else "en"
     source_name = LANGUAGE_NAMES.get(source_lang, source_lang)
     
@@ -269,7 +219,7 @@ async def translate_quiz(quiz_id: str, data: TranslateQuizRequest, request: Requ
     
     # Store translations in the quiz document
     await db.quizzes.update_one(
-        {"_id": ObjectId(quiz_id)},
+        {"_id": parse_object_id(quiz_id, "quiz")},
         {"$set": {"translations": translations}}
     )
     
@@ -290,7 +240,7 @@ async def create_translated_course(course_id: str, target_language: str, request
     if target_language not in SUPPORTED_LANGUAGES:
         raise HTTPException(status_code=400, detail=f"Unsupported language: {target_language}")
     
-    course = await db.courses.find_one({"_id": ObjectId(course_id)})
+    course = await db.courses.find_one({"_id": parse_object_id(course_id, "course")})
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
     
