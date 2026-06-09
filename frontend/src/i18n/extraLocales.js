@@ -1,0 +1,272 @@
+/** Simplified Chinese derived from Traditional Chinese locale strings. */
+const SIMPLIFY_PAIRS = [
+  ["註", "注"], ["歡", "欢"], ["學", "学"], ["體", "体"], ["國", "国"], ["臺", "台"],
+  ["帳", "账"], ["戶", "户"], ["創", "创"], ["課", "课"], ["視", "视"], ["頻", "频"],
+  ["質", "质"], ["專", "专"], ["業", "业"], ["檢", "检"], ["驗", "验"], ["識", "识"],
+  ["證", "证"], ["書", "书"], ["獲", "获"], ["與", "与"], ["討", "讨"], ["論", "论"],
+  ["壇", "坛"], ["從", "从"], ["獲", "获"], ["時", "时"], ["訪", "访"], ["問", "问"],
+  ["資料", "资料"], ["離", "离"], ["線", "线"], ["權", "权"], ["瀏", "浏"], ["覽", "览"],
+  ["報", "报"], ["選", "选"], ["擇", "选择"], ["擇", "择"], ["進", "进"], ["行", "行"],
+  ["數", "数"], ["據", "据"], ["總", "总"], ["學生", "学生"], ["無", "无"], ["還", "还"],
+  ["沒", "没"], ["這", "这"], ["個", "个"], ["為", "为"], ["來", "来"], ["開始", "开始"],
+  ["聯", "联"], ["繫", "系"], ["處", "处"], ["載", "载"], ["發", "发"], ["布", "布"],
+  ["請", "请"], ["選擇", "选择"], ["門", "门"], ["參", "参"], ["加", "加"], ["過", "过"],
+  ["關", "关"], ["於", "于"], ["縮", "缩"], ["圖", "图"], ["網", "网"], ["址", "址"],
+  ["顯", "显"], ["示", "示"], ["標", "标"], ["題", "题"], ["確", "确"], ["認", "认"],
+  ["刪", "删"], ["除", "除"], ["後", "后"], ["儲", "储"], ["變", "变"], ["更", "更"],
+  ["頒", "颁"], ["發", "发"], ["載", "载"], ["頁", "页"], ["顆", "颗"], ["顆", "颗"],
+];
+
+export function toSimplifiedChinese(obj) {
+  if (typeof obj === "string") {
+    return SIMPLIFY_PAIRS.reduce((s, [trad, simp]) => s.replaceAll(trad, simp), obj);
+  }
+  if (obj && typeof obj === "object") {
+    return Object.fromEntries(
+      Object.entries(obj).map(([k, v]) => [k, toSimplifiedChinese(v)])
+    );
+  }
+  return obj;
+}
+
+export const ja = {
+  nav: {
+    home: "ホーム", courses: "コース", dashboard: "ダッシュボード", login: "ログイン",
+    register: "登録", logout: "ログアウト", getStarted: "始める", myCourses: "マイコース",
+    certificates: "証明書", users: "ユーザー", analytics: "分析", manageGroups: "グループ管理",
+    bulkEnroll: "一括登録", groupProgress: "グループ進捗",
+  },
+  landing: {
+    overline: "オンライン学習プラットフォーム",
+    headline: "専門家のコースで新しいスキルを習得",
+    subheadline: "高品質なコース、クイズ、修了証明書。今すぐ参加しましょう。",
+    startLearning: "学習を始める", browseCourses: "コースを見る",
+    featuresOverline: "機能", featuresTitle: "成功に必要なすべて",
+    features: {
+      videoCourses: "動画コース", videoCoursesDesc: "業界の専門家による高品質な動画",
+      quizzes: "クイズとテスト", quizzesDesc: "インタラクティブなクイズで知識を確認",
+      certificates: "証明書", certificatesDesc: "修了後にカスタマイズ可能な証明書を取得",
+      forums: "コミュニティフォーラム", forumsDesc: "学習者同士で議論",
+      aiAssistant: "AIアシスタント", aiAssistantDesc: "AI搭載のコースアシスタント",
+      materials: "ダウンロード資料", materialsDesc: "オフラインでも資料にアクセス",
+    },
+    popularCourses: "人気コース", startJourney: "学習の旅を始めよう",
+    viewAll: "すべて見る", footer: "© 2026 LearnHub. All rights reserved.",
+  },
+  auth: {
+    welcomeBack: "おかえりなさい", signInContinue: "ログインして学習を続ける",
+    createAccount: "アカウント作成", joinLearnHub: "LearnHubに参加",
+    email: "メール", password: "パスワード", fullName: "氏名", accountType: "アカウント種別",
+    signIn: "ログイン", signUp: "登録", noAccount: "アカウントをお持ちでない方",
+    haveAccount: "すでにアカウントをお持ちの方", student: "受講生", clientManager: "クライアントマネージャー",
+  },
+  dashboard: {
+    welcomeBack: "おかえりなさい", continueJourney: "学習を続けましょう",
+    adminDashboard: "管理者ダッシュボード", managePlatform: "プラットフォームを管理",
+    enrolledCourses: "登録コース", completedCourses: "修了コース", totalCourses: "コース総数",
+    totalStudents: "受講生", totalEnrollments: "登録数", completions: "修了数",
+    quickActions: "クイック操作", manageCourses: "コース管理", manageUsers: "ユーザー管理",
+    browseMore: "もっと見る", startLearning: "学習を始める",
+    noCoursesYet: "まだコースに登録していません", inProgress: "進行中", score: "スコア",
+    myCourses: "マイコース", certificatesLabel: "証明書", completedLabel: "修了済み",
+    bulkEnrollTitle: "一括登録", selectCourse: "コースを選択", selectStudents: "受講生を選択",
+    chooseCourse: "コースを選ぶ...", enrollCount: "{count}名を登録",
+  },
+  courses: {
+    allCourses: "すべてのコース", createCourse: "コース作成", createNew: "新規コース",
+    fillDetails: "新しいコースの詳細を入力", title: "タイトル", description: "説明",
+    thumbnailUrl: "サムネイルURL", videoUrl: "動画URL", videoType: "動画タイプ",
+    price: "価格", passingScore: "合格点", freeCourse: "無料コース", privateCourse: "非公開コース",
+    language: "言語", category: "カテゴリ", filter: "フィルター", search: "コースを検索...",
+    allLanguages: "すべての言語", noCourses: "コースがありません",
+    noCoursesCreated: "まだコースが作成されていません", createFirst: "最初のコースを作成",
+    free: "無料", private: "非公開", enrolled: "登録済み", enrollNow: "今すぐ登録",
+    buyNow: "購入する", viewCertificate: "証明書を見る", completeToGet: "修了後に証明書を取得",
+    lessons: "レッスン", quizzes: "クイズ", aboutCourse: "コースについて",
+    noLessons: "レッスンがまだありません", noQuizzes: "クイズがまだありません",
+    noMaterials: "ダウンロード資料がありません", takeQuiz: "クイズを受ける",
+    overview: "概要", materials: "資料", aiAssistant: "AIアシスタント", forum: "フォーラム",
+    editCourse: "コースを編集", saveChanges: "変更を保存", backToCourses: "コース一覧に戻る",
+    courseUpdated: "コースを更新しました", addLesson: "レッスンを追加",
+    lessonTitle: "レッスンタイトル", lessonDescription: "レッスン説明",
+    lessonAdded: "レッスンを追加しました", lessonDeleted: "レッスンを削除しました",
+    confirmDeleteLesson: "このレッスンを削除しますか？", categoryPlaceholder: "例：ビジネス",
+    hasVideo: "動画あり", lessonProgress: "レッスン進捗", markComplete: "完了にする",
+    logWatchProgress: "50%視聴を記録", watched: "視聴済み",
+  },
+  quiz: {
+    answerAll: "すべての質問に答えてください", submit: "クイズを提出",
+    congratulations: "おめでとう！", tryAgain: "再挑戦", yourScore: "スコア",
+    correct: "正解", passingScoreLabel: "合格点", viewCertificate: "証明書を見る",
+    backToDashboard: "ダッシュボードに戻る", pleaseAnswer: "すべての質問に答えてください",
+  },
+  certificate: {
+    myCertificates: "マイ証明書", certificateOf: "修了証明書", awardedTo: "授与先",
+    noCertificates: "証明書がまだありません。コースを修了して取得しましょう！",
+    download: "PDFをダウンロード", issuedOn: "発行日",
+  },
+  chat: {
+    aiCourseAssistant: "AIコースアシスタント", askQuestions: "コース内容について質問",
+    startConversation: "AIアシスタントと会話を始める", askQuestion: "質問を入力...",
+  },
+  forum: {
+    communityForum: "コミュニティフォーラム", shareThoughts: "考えを共有または質問...",
+    post: "投稿", noDiscussions: "まだ議論がありません。最初の投稿者になりましょう！",
+  },
+  users: {
+    manageUsers: "ユーザー管理", name: "名前", email: "メール", role: "役割",
+    actions: "操作", admin: "管理者", student: "受講生", clientManager: "クライアントマネージャー",
+  },
+  groups: {
+    manageGroupEnrollments: "グループ登録管理", selectCourse: "コースを選択",
+    selectStudents: "受講生を選択", chooseCourse: "コースを選ぶ...",
+    selectCourseAndStudents: "コースと少なくとも1名の受講生を選択してください",
+    enrollStudents: "受講生を登録",
+  },
+  payment: {
+    processing: "支払い処理中...", pleaseWait: "支払いを確認しています。",
+    successful: "支払い成功！", enrolledInCourse: "コースに登録されました。",
+    goToCourses: "マイコースへ", somethingWrong: "問題が発生しました",
+    contactSupport: "問題が続く場合はサポートにお問い合わせください。",
+  },
+  common: {
+    loading: "読み込み中...", save: "保存", cancel: "キャンセル", delete: "削除",
+    edit: "編集", completed: "完了", youtube: "YouTube", vimeo: "Vimeo",
+  },
+  progress: {
+    groupTrainingProgress: "グループ研修進捗",
+    monitorProgress: "全コースの受講生進捗を監視",
+    studentProgress: "受講生進捗", lessons: "レッスン", attempts: "受験回数",
+    lastActivity: "最終活動", selectCourseHint: "コースを選択して詳細を表示",
+  },
+  analytics: {
+    subtitle: "プラットフォーム全体のパフォーマンス指標",
+    completionRate: "コース修了率", avgLessonProgress: "平均レッスン進捗",
+    certificatesIssued: "発行証明書数", lessonsCompleted: "完了レッスン数",
+    quizPerformance: "クイズ成績", platformOverview: "プラットフォーム概要",
+    topCourses: "登録数トップコース", totalAttempts: "総受験回数",
+    passed: "合格", failed: "不合格", totalEnrollments: "総登録数",
+    completedEnrollments: "修了登録数", rate: "率",
+  },
+};
+
+export const ko = {
+  nav: {
+    home: "홈", courses: "코스", dashboard: "대시보드", login: "로그인",
+    register: "회원가입", logout: "로그아웃", getStarted: "시작하기", myCourses: "내 코스",
+    certificates: "수료증", users: "사용자", analytics: "분석", manageGroups: "그룹 관리",
+    bulkEnroll: "일괄 등록", groupProgress: "그룹 진도",
+  },
+  landing: {
+    overline: "온라인 학습 플랫폼",
+    headline: "전문가 코스로 새로운 기술을 마스터하세요",
+    subheadline: "고품질 코스, 퀴즈, 수료증. 지금 참여하세요.",
+    startLearning: "학습 시작", browseCourses: "코스 둘러보기",
+    featuresOverline: "기능", featuresTitle: "성공에 필요한 모든 것",
+    features: {
+      videoCourses: "동영상 코스", videoCoursesDesc: "업계 전문가의 고품질 콘텐츠",
+      quizzes: "퀴즈 및 테스트", quizzesDesc: "인터랙티브 퀴즈로 지식 확인",
+      certificates: "수료증", certificatesDesc: "수료 후 맞춤형 수료증 발급",
+      forums: "커뮤니티 포럼", forumsDesc: "학습자들과 토론",
+      aiAssistant: "AI 어시스턴트", aiAssistantDesc: "AI 기반 코스 도우미",
+      materials: "다운로드 자료", materialsDesc: "오프라인에서도 자료 접근",
+    },
+    popularCourses: "인기 코스", startJourney: "학습 여정을 시작하세요",
+    viewAll: "전체 보기", footer: "© 2026 LearnHub. All rights reserved.",
+  },
+  auth: {
+    welcomeBack: "다시 오신 것을 환영합니다", signInContinue: "로그인하여 학습을 계속하세요",
+    createAccount: "계정 만들기", joinLearnHub: "LearnHub에 가입하세요",
+    email: "이메일", password: "비밀번호", fullName: "이름", accountType: "계정 유형",
+    signIn: "로그인", signUp: "가입", noAccount: "계정이 없으신가요?",
+    haveAccount: "이미 계정이 있으신가요?", student: "학생", clientManager: "클라이언트 매니저",
+  },
+  dashboard: {
+    welcomeBack: "다시 오신 것을 환영합니다", continueJourney: "학습을 계속하세요",
+    adminDashboard: "관리자 대시보드", managePlatform: "플랫폼 관리",
+    enrolledCourses: "등록된 코스", completedCourses: "완료된 코스", totalCourses: "전체 코스",
+    totalStudents: "학생", totalEnrollments: "등록 수", completions: "완료 수",
+    quickActions: "빠른 작업", manageCourses: "코스 관리", manageUsers: "사용자 관리",
+    browseMore: "더 보기", startLearning: "학습 시작",
+    noCoursesYet: "아직 등록한 코스가 없습니다", inProgress: "진행 중", score: "점수",
+    myCourses: "내 코스", certificatesLabel: "수료증", completedLabel: "완료",
+    bulkEnrollTitle: "일괄 등록", selectCourse: "코스 선택", selectStudents: "학생 선택",
+    chooseCourse: "코스 선택...", enrollCount: "{count}명 등록",
+  },
+  courses: {
+    allCourses: "모든 코스", createCourse: "코스 만들기", createNew: "새 코스",
+    fillDetails: "새 코스 세부 정보를 입력하세요", title: "제목", description: "설명",
+    thumbnailUrl: "썸네일 URL", videoUrl: "동영상 URL", videoType: "동영상 유형",
+    price: "가격", passingScore: "합격 점수", freeCourse: "무료 코스", privateCourse: "비공개 코스",
+    language: "언어", category: "카테고리", filter: "필터", search: "코스 검색...",
+    allLanguages: "모든 언어", noCourses: "사용 가능한 코스가 없습니다",
+    noCoursesCreated: "아직 생성된 코스가 없습니다", createFirst: "첫 코스 만들기",
+    free: "무료", private: "비공개", enrolled: "등록됨", enrollNow: "지금 등록",
+    buyNow: "구매하기", viewCertificate: "수료증 보기", completeToGet: "완료 후 수료증 받기",
+    lessons: "레슨", quizzes: "퀴즈", aboutCourse: "코스 소개",
+    noLessons: "아직 레슨이 없습니다", noQuizzes: "아직 퀴즈가 없습니다",
+    noMaterials: "다운로드 자료가 없습니다", takeQuiz: "퀴즈 풀기",
+    overview: "개요", materials: "자료", aiAssistant: "AI 어시스턴트", forum: "포럼",
+    editCourse: "코스 편집", saveChanges: "변경 사항 저장", backToCourses: "코스 목록으로",
+    courseUpdated: "코스가 업데이트되었습니다", addLesson: "레슨 추가",
+    lessonTitle: "레슨 제목", lessonDescription: "레슨 설명",
+    lessonAdded: "레슨이 추가되었습니다", lessonDeleted: "레슨이 삭제되었습니다",
+    confirmDeleteLesson: "이 레슨을 삭제하시겠습니까?", categoryPlaceholder: "예: 비즈니스",
+    hasVideo: "동영상 있음", lessonProgress: "레슨 진도", markComplete: "완료 표시",
+    logWatchProgress: "50% 시청 기록", watched: "시청함",
+  },
+  quiz: {
+    answerAll: "모든 질문에 답하세요", submit: "퀴즈 제출",
+    congratulations: "축하합니다!", tryAgain: "다시 시도", yourScore: "점수",
+    correct: "정답", passingScoreLabel: "합격 점수", viewCertificate: "수료증 보기",
+    backToDashboard: "대시보드로", pleaseAnswer: "모든 질문에 답하세요",
+  },
+  certificate: {
+    myCertificates: "내 수료증", certificateOf: "수료증", awardedTo: "수여 대상",
+    noCertificates: "아직 수료증이 없습니다. 코스를 완료하여 받으세요!",
+    download: "PDF 다운로드", issuedOn: "발급일",
+  },
+  chat: {
+    aiCourseAssistant: "AI 코스 어시스턴트", askQuestions: "코스 내용에 대해 질문",
+    startConversation: "AI 어시스턴트와 대화 시작", askQuestion: "질문 입력...",
+  },
+  forum: {
+    communityForum: "커뮤니티 포럼", shareThoughts: "생각을 공유하거나 질문...",
+    post: "게시", noDiscussions: "아직 토론이 없습니다. 첫 게시자가 되세요!",
+  },
+  users: {
+    manageUsers: "사용자 관리", name: "이름", email: "이메일", role: "역할",
+    actions: "작업", admin: "관리자", student: "학생", clientManager: "클라이언트 매니저",
+  },
+  groups: {
+    manageGroupEnrollments: "그룹 등록 관리", selectCourse: "코스 선택",
+    selectStudents: "학생 선택", chooseCourse: "코스 선택...",
+    selectCourseAndStudents: "코스와 최소 1명의 학생을 선택하세요",
+    enrollStudents: "학생 등록",
+  },
+  payment: {
+    processing: "결제 처리 중...", pleaseWait: "결제를 확인하고 있습니다.",
+    successful: "결제 성공!", enrolledInCourse: "코스에 등록되었습니다.",
+    goToCourses: "내 코스로", somethingWrong: "문제가 발생했습니다",
+    contactSupport: "문제가 지속되면 지원팀에 문의하세요.",
+  },
+  common: {
+    loading: "로딩 중...", save: "저장", cancel: "취소", delete: "삭제",
+    edit: "편집", completed: "완료", youtube: "YouTube", vimeo: "Vimeo",
+  },
+  progress: {
+    groupTrainingProgress: "그룹 교육 진도",
+    monitorProgress: "모든 코스의 학생 진도 모니터링",
+    studentProgress: "학생 진도", lessons: "레슨", attempts: "시도 횟수",
+    lastActivity: "마지막 활동", selectCourseHint: "코스를 선택하여 상세 보기",
+  },
+  analytics: {
+    subtitle: "플랫폼 전체 성과 지표",
+    completionRate: "코스 완료율", avgLessonProgress: "평균 레슨 진도",
+    certificatesIssued: "발급된 수료증", lessonsCompleted: "완료된 레슨",
+    quizPerformance: "퀴즈 성과", platformOverview: "플랫폼 개요",
+    topCourses: "등록 상위 코스", totalAttempts: "총 시도",
+    passed: "합격", failed: "불합격", totalEnrollments: "총 등록",
+    completedEnrollments: "완료 등록", rate: "비율",
+  },
+};

@@ -1,11 +1,20 @@
 import { createContext, useContext, useState } from "react";
-import { translations } from "@/i18n";
+import { translations, UI_LANGUAGES } from "@/i18n";
 
 const UI_LANGUAGES = ["en", "zh-TW", "zh-CN", "ja", "ko"];
 
 const LanguageContext = createContext(null);
 
 export const useLanguage = () => useContext(LanguageContext);
+
+const lookup = (lang, key) => {
+  const keys = key.split(".");
+  let value = translations[lang];
+  for (const k of keys) {
+    value = value?.[k];
+  }
+  return value;
+};
 
 export const LanguageProvider = ({ children }) => {
   const [lang, setLang] = useState(() => {
