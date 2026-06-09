@@ -124,7 +124,7 @@ Build a Kajabi-like course/content platform with:
 - [x] Certificate PDF download
 - [x] Course analytics dashboard
 - [x] Student performance reports (lesson progress in group views)
-- [ ] Full UI translation for zh-CN, ja, ko
+- [x] Full UI translation for zh-CN, ja, ko (UI language switcher + i18n with en fallback)
 
 ### P3 (Low Priority)
 - [ ] Course categories/tags

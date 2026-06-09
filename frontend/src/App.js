@@ -28,6 +28,8 @@ import { LanguageProvider, useLanguage } from "@/contexts/LanguageContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { DashboardLayout } from "@/pages/DashboardLayout";
+import { AdminCourseEditPage } from "@/pages/AdminCourseEditPage";
 
 // ============ LANDING PAGE ============
 const LandingPage = () => {
@@ -426,93 +428,6 @@ const RegisterPage = () => {
   );
 };
 
-// ============ DASHBOARD LAYOUT ============
-const DashboardLayout = ({ children }) => {
-  const { user, logout } = useAuth();
-  const { t } = useLanguage();
-  const navigate = useNavigate();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-
-  const navItems = user?.role === "admin" ? [
-    { icon: Home, label: t("nav.dashboard"), path: "/dashboard" },
-    { icon: BookOpen, label: t("dashboard.manageCourses"), path: "/admin/courses" },
-    { icon: Users, label: t("nav.users"), path: "/admin/users" },
-    { icon: Users, label: t("nav.bulkEnroll"), path: "/admin/bulk-enroll" },
-    { icon: BarChart3, label: t("nav.groupProgress"), path: "/manager/progress" },
-    { icon: BarChart3, label: t("nav.analytics"), path: "/admin/analytics" }
-  ] : user?.role === "client_manager" ? [
-    { icon: Home, label: t("nav.dashboard"), path: "/dashboard" },
-    { icon: BarChart3, label: t("nav.groupProgress"), path: "/manager/progress" },
-    { icon: BookOpen, label: t("nav.courses"), path: "/courses" }
-  ] : [
-    { icon: Home, label: t("nav.dashboard"), path: "/dashboard" },
-    { icon: BookOpen, label: t("nav.myCourses"), path: "/my-courses" },
-    { icon: Award, label: t("nav.certificates"), path: "/certificates" }
-  ];
-
-  return (
-    <div className="min-h-screen bg-[#F4F5F7] flex">
-      {/* Sidebar */}
-      <aside className={`${sidebarOpen ? "w-64" : "w-20"} bg-white border-r border-slate-200 transition-all duration-200 flex flex-col`}>
-        <div className="p-4 border-b border-slate-200 flex items-center justify-between">
-          {sidebarOpen && (
-            <Link to="/" className="flex items-center gap-2">
-              <GraduationCap className="w-6 h-6 text-[#002FA7]" />
-              <span className="font-medium text-[#0A0B10]">LearnHub</span>
-            </Link>
-          )}
-          <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(!sidebarOpen)} className="rounded-sm" data-testid="toggle-sidebar-btn">
-            <Menu className="w-5 h-5" />
-          </Button>
-        </div>
-        <nav className="flex-1 p-4 space-y-2">
-          {navItems.map((item) => (
-            <Button
-              key={item.path}
-              variant="ghost"
-              className={`w-full justify-start rounded-sm ${sidebarOpen ? "" : "px-0 justify-center"}`}
-              onClick={() => navigate(item.path)}
-              data-testid={`nav-${item.label.toLowerCase().replace(" ", "-")}`}
-            >
-              <item.icon className="w-5 h-5" />
-              {sidebarOpen && <span className="ml-3">{item.label}</span>}
-            </Button>
-          ))}
-        </nav>
-        <div className="p-4 border-t border-slate-200">
-          <div className={`flex items-center gap-3 ${sidebarOpen ? "" : "justify-center"}`}>
-            <Avatar className="w-8 h-8">
-              <AvatarFallback className="bg-[#002FA7] text-white text-sm">
-                {user?.name?.charAt(0)?.toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            {sidebarOpen && (
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{user?.name}</p>
-                <p className="text-xs text-slate-500 capitalize">{user?.role?.replace("_", " ")}</p>
-              </div>
-            )}
-          </div>
-          <Button 
-            variant="ghost" 
-            className={`w-full mt-3 text-slate-600 rounded-sm ${sidebarOpen ? "justify-start" : "px-0 justify-center"}`}
-            onClick={logout}
-            data-testid="logout-btn"
-          >
-            <LogOut className="w-5 h-5" />
-            {sidebarOpen && <span className="ml-3">{t("nav.logout")}</span>}
-          </Button>
-        </div>
-      </aside>
-
-      {/* Main Content */}
-      <main className="flex-1 overflow-auto">
-        {children}
-      </main>
-    </div>
-  );
-};
-
 // ============ STUDENT DASHBOARD ============
 const StudentDashboard = () => {
   const { user } = useAuth();
@@ -778,7 +693,6 @@ const AdminDashboard = () => {
 // ============ ADMIN ANALYTICS PAGE ============
 const AdminAnalyticsPage = () => {
   const { t } = useLanguage();
-  const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -812,32 +726,32 @@ const AdminAnalyticsPage = () => {
         <h1 className="text-2xl sm:text-3xl tracking-tight font-medium text-[#0A0B10]">
           {t("nav.analytics")}
         </h1>
-        <p className="text-slate-600">Platform-wide performance and engagement metrics</p>
+        <p className="text-slate-600">{t("analytics.subtitle")}</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <Card className="bg-white border border-slate-200 rounded-sm">
           <CardContent className="p-6">
             <p className="text-2xl font-medium">{overview.completion_rate || 0}%</p>
-            <p className="text-sm text-slate-600">Course Completion Rate</p>
+            <p className="text-sm text-slate-600">{t("analytics.completionRate")}</p>
           </CardContent>
         </Card>
         <Card className="bg-white border border-slate-200 rounded-sm">
           <CardContent className="p-6">
             <p className="text-2xl font-medium">{overview.avg_lesson_progress_percent || 0}%</p>
-            <p className="text-sm text-slate-600">Avg Lesson Progress</p>
+            <p className="text-sm text-slate-600">{t("analytics.avgLessonProgress")}</p>
           </CardContent>
         </Card>
         <Card className="bg-white border border-slate-200 rounded-sm">
           <CardContent className="p-6">
             <p className="text-2xl font-medium">{overview.total_certificates || 0}</p>
-            <p className="text-sm text-slate-600">Certificates Issued</p>
+            <p className="text-sm text-slate-600">{t("analytics.certificatesIssued")}</p>
           </CardContent>
         </Card>
         <Card className="bg-white border border-slate-200 rounded-sm">
           <CardContent className="p-6">
             <p className="text-2xl font-medium">{overview.total_lesson_completions || 0}</p>
-            <p className="text-sm text-slate-600">Lessons Completed</p>
+            <p className="text-sm text-slate-600">{t("analytics.lessonsCompleted")}</p>
           </CardContent>
         </Card>
       </div>
@@ -845,7 +759,7 @@ const AdminAnalyticsPage = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         <Card className="bg-white border border-slate-200 rounded-sm">
           <CardHeader>
-            <CardTitle className="text-lg">Quiz Performance</CardTitle>
+            <CardTitle className="text-lg">{t("analytics.quizPerformance")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex justify-between text-sm">
@@ -865,7 +779,7 @@ const AdminAnalyticsPage = () => {
 
         <Card className="bg-white border border-slate-200 rounded-sm">
           <CardHeader>
-            <CardTitle className="text-lg">Platform Overview</CardTitle>
+            <CardTitle className="text-lg">{t("analytics.platformOverview")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex justify-between text-sm">
@@ -886,7 +800,7 @@ const AdminAnalyticsPage = () => {
 
       <Card className="bg-white border border-slate-200 rounded-sm">
         <CardHeader>
-          <CardTitle className="text-lg">Top Courses by Enrollment</CardTitle>
+          <CardTitle className="text-lg">{t("analytics.topCourses")}</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
@@ -1038,6 +952,7 @@ const CoursesPage = () => {
 const CourseDetailPage = () => {
   const { id } = useParams();
   const { user } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [course, setCourse] = useState(null);
   const [enrollment, setEnrollment] = useState(null);
@@ -1281,7 +1196,7 @@ const CourseDetailPage = () => {
                   <>
                     <div className="flex items-center gap-2 text-green-600 mb-4">
                       <CheckCircle className="w-5 h-5" />
-                      <span className="font-medium">Enrolled</span>
+                      <span className="font-medium">{t("courses.enrolled")}</span>
                     </div>
                     {enrollment.completed && (
                       <div className="mb-4">
@@ -1291,7 +1206,7 @@ const CourseDetailPage = () => {
                     {lessonProgress && lessonProgress.total_lessons > 0 && (
                       <div className="mb-4">
                         <div className="flex justify-between text-sm mb-1">
-                          <span className="text-slate-600">Lesson Progress</span>
+                          <span className="text-slate-600">{t("courses.lessonProgress")}</span>
                           <span className="font-medium">{lessonProgress.progress_percent}%</span>
                         </div>
                         <Progress value={lessonProgress.progress_percent} className="h-2" />
@@ -1355,12 +1270,12 @@ const CourseDetailPage = () => {
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="bg-white border border-slate-200 rounded-sm">
-            <TabsTrigger value="overview" className="rounded-sm" data-testid="tab-overview">Overview</TabsTrigger>
-            <TabsTrigger value="lessons" className="rounded-sm" data-testid="tab-lessons">Lessons</TabsTrigger>
-            {enrollment && <TabsTrigger value="quizzes" className="rounded-sm" data-testid="tab-quizzes">Quizzes</TabsTrigger>}
-            {enrollment && <TabsTrigger value="materials" className="rounded-sm" data-testid="tab-materials">Materials</TabsTrigger>}
-            {enrollment && <TabsTrigger value="chat" className="rounded-sm" data-testid="tab-chat">AI Assistant</TabsTrigger>}
-            {enrollment && <TabsTrigger value="forum" className="rounded-sm" data-testid="tab-forum">Forum</TabsTrigger>}
+            <TabsTrigger value="overview" className="rounded-sm" data-testid="tab-overview">{t("courses.overview")}</TabsTrigger>
+            <TabsTrigger value="lessons" className="rounded-sm" data-testid="tab-lessons">{t("courses.lessons")}</TabsTrigger>
+            {enrollment && <TabsTrigger value="quizzes" className="rounded-sm" data-testid="tab-quizzes">{t("courses.quizzes")}</TabsTrigger>}
+            {enrollment && <TabsTrigger value="materials" className="rounded-sm" data-testid="tab-materials">{t("courses.materials")}</TabsTrigger>}
+            {enrollment && <TabsTrigger value="chat" className="rounded-sm" data-testid="tab-chat">{t("courses.aiAssistant")}</TabsTrigger>}
+            {enrollment && <TabsTrigger value="forum" className="rounded-sm" data-testid="tab-forum">{t("courses.forum")}</TabsTrigger>}
           </TabsList>
 
           <TabsContent value="overview" className="mt-6">
@@ -1409,20 +1324,20 @@ const CourseDetailPage = () => {
                             className="bg-[#002FA7] hover:bg-[#002585] text-white rounded-sm"
                             data-testid={`complete-lesson-${activeLesson.id}`}
                           >
-                            {completingLesson ? <Loader2 className="w-4 h-4 animate-spin" /> : "Mark Complete"}
+                            {completingLesson ? <Loader2 className="w-4 h-4 animate-spin" /> : t("courses.markComplete")}
                           </Button>
                           <Button
                             variant="outline"
                             onClick={() => updateWatchProgress(activeLesson.id, 50)}
                             className="rounded-sm"
                           >
-                            Log 50% watched
+                            {t("courses.logWatchProgress")}
                           </Button>
                         </>
                       )}
                       {getLessonProgress(activeLesson.id)?.watch_percent > 0 && (
                         <span className="text-sm text-slate-500">
-                          {getLessonProgress(activeLesson.id).watch_percent}% watched
+                          {getLessonProgress(activeLesson.id).watch_percent}% {t("courses.watched")}
                         </span>
                       )}
                     </div>
@@ -1810,6 +1725,7 @@ const QuizPage = () => {
 
 // ============ CERTIFICATES PAGE ============
 const CertificatesPage = () => {
+  const { t } = useLanguage();
   const [certificates, setCertificates] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -1846,7 +1762,7 @@ const CertificatesPage = () => {
     <DashboardLayout>
       <div className="p-6" data-testid="certificates-page">
         <h1 className="text-2xl sm:text-3xl tracking-tight font-medium text-[#0A0B10] mb-8">
-          My Certificates
+          {t("certificate.myCertificates")}
         </h1>
         
         {loading ? (
@@ -1865,9 +1781,9 @@ const CertificatesPage = () => {
                   }}
                 >
                   <Award className="w-16 h-16 mb-4" style={{ color: cert.primary_color }} />
-                  <p className="text-xs tracking-[0.2em] uppercase font-bold text-slate-500 mb-2">Certificate of Completion</p>
+                  <p className="text-xs tracking-[0.2em] uppercase font-bold text-slate-500 mb-2">{t("certificate.certificateOf")}</p>
                   <h3 className="text-xl font-medium text-[#0A0B10] mb-2">{cert.course_title}</h3>
-                  <p className="text-slate-600">Awarded to</p>
+                  <p className="text-slate-600">{t("certificate.awardedTo")}</p>
                   <p className="text-lg font-medium" style={{ color: cert.primary_color }}>{cert.user_name}</p>
                   <p className="text-sm text-slate-500 mt-4">Score: {cert.score}%</p>
                 </div>
@@ -1885,7 +1801,7 @@ const CertificatesPage = () => {
                       onClick={() => downloadCertificate(cert.id, cert.certificate_id)}
                       data-testid={`download-cert-${cert.id}`}
                     >
-                      <Download className="w-4 h-4 mr-2" /> Download PDF
+                      <Download className="w-4 h-4 mr-2" /> {t("certificate.download")}
                     </Button>
                   </div>
                 </CardContent>
@@ -1896,7 +1812,7 @@ const CertificatesPage = () => {
           <Card className="bg-white border border-slate-200 rounded-sm">
             <CardContent className="p-12 text-center">
               <Award className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-              <p className="text-slate-600 mb-4">No certificates yet. Complete a course to earn your first certificate!</p>
+              <p className="text-slate-600 mb-4">{t("certificate.noCertificates")}</p>
             </CardContent>
           </Card>
         )}
@@ -2578,9 +2494,9 @@ const ManagerGroupProgressPage = () => {
     <DashboardLayout>
       <div className="p-6" data-testid="manager-progress-page">
         <h1 className="text-2xl sm:text-3xl tracking-tight font-medium text-[#0A0B10] mb-2">
-          Group Training Progress
+          {t("progress.groupTrainingProgress")}
         </h1>
-        <p className="text-slate-600 mb-8">Monitor student progress across all courses</p>
+        <p className="text-slate-600 mb-8">{t("progress.monitorProgress")}</p>
 
         {loading ? (
           <div className="flex justify-center py-12">
@@ -2675,7 +2591,7 @@ const ManagerGroupProgressPage = () => {
                   {/* Student List */}
                   <Card className="bg-white border border-slate-200 rounded-sm">
                     <CardHeader>
-                      <CardTitle className="text-lg">Student Progress</CardTitle>
+                      <CardTitle className="text-lg">{t("progress.studentProgress")}</CardTitle>
                     </CardHeader>
                     <CardContent className="p-0">
                       <div className="overflow-x-auto">
@@ -2685,9 +2601,9 @@ const ManagerGroupProgressPage = () => {
                               <th className="text-left p-4 font-medium text-slate-600 text-sm">Student</th>
                               <th className="text-left p-4 font-medium text-slate-600 text-sm">Status</th>
                               <th className="text-left p-4 font-medium text-slate-600 text-sm">Score</th>
-                              <th className="text-left p-4 font-medium text-slate-600 text-sm">Lessons</th>
-                              <th className="text-left p-4 font-medium text-slate-600 text-sm">Attempts</th>
-                              <th className="text-left p-4 font-medium text-slate-600 text-sm">Last Activity</th>
+                              <th className="text-left p-4 font-medium text-slate-600 text-sm">{t("progress.lessons")}</th>
+                              <th className="text-left p-4 font-medium text-slate-600 text-sm">{t("progress.attempts")}</th>
+                              <th className="text-left p-4 font-medium text-slate-600 text-sm">{t("progress.lastActivity")}</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -2753,7 +2669,7 @@ const ManagerGroupProgressPage = () => {
                 <Card className="bg-white border border-slate-200 rounded-sm">
                   <CardContent className="p-12 text-center">
                     <BarChart3 className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                    <p className="text-slate-600">Select a course to view detailed progress</p>
+                    <p className="text-slate-600">{t("progress.selectCourseHint")}</p>
                   </CardContent>
                 </Card>
               )}
@@ -2944,6 +2860,11 @@ function App() {
             <Route path="/admin/courses" element={
               <ProtectedRoute roles={["admin"]}>
                 <AdminCoursesPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/courses/:id/edit" element={
+              <ProtectedRoute roles={["admin"]}>
+                <AdminCourseEditPage />
               </ProtectedRoute>
             } />
             <Route path="/admin/users" element={
