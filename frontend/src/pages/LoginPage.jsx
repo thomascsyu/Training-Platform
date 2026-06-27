@@ -1,33 +1,14 @@
-import { useState, useEffect } from "react";
-import "@/App.css";
-import { BrowserRouter, Routes, Route, Navigate, useNavigate, useParams, useSearchParams, Link } from "react-router-dom";
-import { Toaster, toast } from "sonner";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
-import { Switch } from "@/components/ui/switch";
-import {
-  BookOpen, GraduationCap, Users, PlayCircle, Award, MessageSquare,
-  Menu, X, LogOut, Settings, ChevronRight, Plus, Trash2, Edit,
-  Download, Send, Bot, FileText, Video, CheckCircle, Clock,
-  DollarSign, Lock, Globe, BarChart3, Home, Loader2, Search, Languages
-} from "lucide-react";
-import { courseLanguages, languageNames } from "@/i18n";
-import { API, formatError } from "@/lib/api";
-import { LanguageProvider, useLanguage } from "@/contexts/LanguageContext";
-import { AuthProvider, useAuth } from "@/contexts/AuthContext";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
-import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { GraduationCap, Loader2 } from "lucide-react";
+import { formatError } from "@/lib/api";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const LoginPage = () => {
   const { login } = useAuth();
