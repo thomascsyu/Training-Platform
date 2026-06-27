@@ -22,6 +22,7 @@ import { AdminCoursesPage } from "@/pages/AdminCoursesPage";
 import { AdminUsersPage } from "@/pages/AdminUsersPage";
 import { ManagerGroupProgressPage } from "@/pages/ManagerGroupProgressPage";
 import { AdminBulkEnrollPage } from "@/pages/AdminBulkEnrollPage";
+import { AdminCourseEditPage } from "@/pages/AdminCourseEditPage";
 
 const DashboardRouter = () => {
   const { user } = useAuth();
@@ -97,6 +98,14 @@ function App() {
               element={
                 <ProtectedRoute roles={["admin"]}>
                   <AdminCoursesPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/courses/:id/edit"
+              element={
+                <ProtectedRoute roles={["admin"]}>
+                  <AdminCourseEditPage />
                 </ProtectedRoute>
               }
             />

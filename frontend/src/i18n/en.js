@@ -140,7 +140,22 @@ export default {
       forum: "Forum",
       markComplete: "Mark Complete",
       enrollFree: "Enroll Free",
-      deleteCourse: "Delete Course"
+      deleteCourse: "Delete Course",
+      editCourse: "Edit Course",
+      saveChanges: "Save Changes",
+      backToCourses: "Back to Courses",
+      courseUpdated: "Course updated successfully",
+      addLesson: "Add Lesson",
+      editLesson: "Edit Lesson",
+      saveLesson: "Save Lesson",
+      lessonTitle: "Lesson title",
+      lessonDescription: "Lesson description",
+      lessonAdded: "Lesson added",
+      lessonUpdated: "Lesson updated",
+      lessonDeleted: "Lesson deleted",
+      confirmDeleteLesson: "Are you sure you want to delete this lesson?",
+      categoryPlaceholder: "e.g. Business",
+      hasVideo: "Has video"
     },
     
     // Quiz
