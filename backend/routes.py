@@ -14,6 +14,7 @@ from routers.quizzes import router as quizzes_router
 from routers.root import router as root_router
 from routers.stats import router as stats_router
 from routers.translate import router as translate_router
+from routers.companies import router as companies_router
 from routers.users import router as users_router
 
 api_router = APIRouter(prefix="/api")
@@ -30,6 +31,7 @@ api_router.include_router(chat_router)
 api_router.include_router(translate_router)
 api_router.include_router(payments_router)
 api_router.include_router(progress_router)
+api_router.include_router(companies_router)
 api_router.include_router(users_router)
 api_router.include_router(stats_router)
 api_router.include_router(root_router)

@@ -19,6 +19,8 @@ from routes import api_router
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await db.users.create_index("email", unique=True)
+    await db.companies.create_index("name", unique=True)
+    await db.users.create_index("company_id")
     await db.enrollments.create_index([("course_id", 1), ("user_id", 1)])
     await db.lesson_progress.create_index(
         [("user_id", 1), ("course_id", 1), ("lesson_id", 1)], unique=True
