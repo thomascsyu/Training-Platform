@@ -38,6 +38,7 @@ export const DashboardLayout = ({ children }) => {
   const navItems = user?.role === "admin" ? [
     { icon: Home, label: t("nav.dashboard"), path: "/dashboard" },
     { icon: BookOpen, label: t("dashboard.manageCourses"), path: "/admin/courses" },
+    { icon: Users, label: t("nav.companies"), path: "/admin/companies" },
     { icon: Users, label: t("nav.users"), path: "/admin/users" },
     { icon: Users, label: t("nav.bulkEnroll"), path: "/admin/bulk-enroll" },
     { icon: BarChart3, label: t("nav.groupProgress"), path: "/manager/progress" },

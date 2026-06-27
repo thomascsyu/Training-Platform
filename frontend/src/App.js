@@ -20,6 +20,7 @@ import { QuizPage } from "@/pages/QuizPage";
 import { CertificatesPage } from "@/pages/CertificatesPage";
 import { AdminCoursesPage } from "@/pages/AdminCoursesPage";
 import { AdminUsersPage } from "@/pages/AdminUsersPage";
+import { AdminCompaniesPage } from "@/pages/AdminCompaniesPage";
 import { ManagerGroupProgressPage } from "@/pages/ManagerGroupProgressPage";
 import { AdminBulkEnrollPage } from "@/pages/AdminBulkEnrollPage";
 import { AdminCourseEditPage } from "@/pages/AdminCourseEditPage";

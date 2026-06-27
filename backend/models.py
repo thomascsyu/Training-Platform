@@ -10,6 +10,44 @@ class UserCreate(BaseModel):
     role: str = "student"
 
 
+class CompanyCreate(BaseModel):
+    name: str
+    description: Optional[str] = None
+
+
+class CompanyUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+
+
+class AdminUserCreate(BaseModel):
+    email: EmailStr
+    password: str = Field(min_length=8)
+    name: str
+    role: str = "student"
+    company_id: Optional[str] = None
+
+
+class AdminUserUpdate(BaseModel):
+    email: Optional[EmailStr] = None
+    password: Optional[str] = Field(default=None, min_length=8)
+    name: Optional[str] = None
+    role: Optional[str] = None
+    company_id: Optional[str] = None
+
+
+class UserImportRow(BaseModel):
+    name: str
+    email: EmailStr
+    password: Optional[str] = None
+    role: str = "student"
+
+
+class UserImportRequest(BaseModel):
+    company_id: str
+    users: List[UserImportRow]
+
+
 class UserLogin(BaseModel):
     email: EmailStr
     password: str = Field(min_length=1)
