@@ -1,8 +1,6 @@
 import { createContext, useContext, useState } from "react";
 import { translations, UI_LANGUAGES } from "@/i18n";
 
-const UI_LANGUAGES = ["en", "zh-TW", "zh-CN", "ja", "ko"];
-
 const LanguageContext = createContext(null);
 
 export const useLanguage = () => useContext(LanguageContext);

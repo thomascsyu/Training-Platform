@@ -28,6 +28,8 @@ export const uiLanguages = [
   { value: "ko", label: "한국어" },
 ];
 
+export const UI_LANGUAGES = uiLanguages.map(({ value }) => value);
+
 export const courseLanguages = [
   { value: "en", label: "English" },
   { value: "zh-TW", label: "繁體中文 (Traditional Chinese)" },
