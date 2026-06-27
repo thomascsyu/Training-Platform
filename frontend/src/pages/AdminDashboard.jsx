@@ -132,6 +132,9 @@ export const AdminDashboard = () => {
             <Button onClick={() => navigate("/admin/courses")} className="w-full justify-start bg-[#002FA7] hover:bg-[#002585] text-white rounded-sm" data-testid="manage-courses-btn">
               <BookOpen className="w-4 h-4 mr-2" /> {t("dashboard.manageCourses")}
             </Button>
+            <Button onClick={() => navigate("/admin/companies")} variant="outline" className="w-full justify-start rounded-sm" data-testid="manage-companies-btn">
+              <Users className="w-4 h-4 mr-2" /> {t("companies.manageCompanies")}
+            </Button>
             <Button onClick={() => navigate("/admin/users")} variant="outline" className="w-full justify-start rounded-sm" data-testid="manage-users-btn">
               <Users className="w-4 h-4 mr-2" /> {t("dashboard.manageUsers")}
             </Button>
