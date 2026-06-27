@@ -1,33 +1,24 @@
 import { useState, useEffect } from "react";
-import "@/App.css";
-import { BrowserRouter, Routes, Route, Navigate, useNavigate, useParams, useSearchParams, Link } from "react-router-dom";
-import { Toaster, toast } from "sonner";
+import { useNavigate, useParams } from "react-router-dom";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Switch } from "@/components/ui/switch";
 import {
-  BookOpen, GraduationCap, Users, PlayCircle, Award, MessageSquare,
-  Menu, X, LogOut, Settings, ChevronRight, Plus, Trash2, Edit,
-  Download, Send, Bot, FileText, Video, CheckCircle, Clock,
-  DollarSign, Lock, Globe, BarChart3, Home, Loader2, Search, Languages
+  Award, Bot, CheckCircle, DollarSign, Download, FileText, Loader2,
+  Lock, MessageSquare, Send, Video, X,
 } from "lucide-react";
-import { courseLanguages, languageNames } from "@/i18n";
 import { API, formatError } from "@/lib/api";
-import { LanguageProvider, useLanguage } from "@/contexts/LanguageContext";
-import { AuthProvider, useAuth } from "@/contexts/AuthContext";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
-import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { PublicSiteHeader } from "@/components/PublicSiteHeader";
 
 export const CourseDetailPage = () => {
   const { id } = useParams();
@@ -220,22 +211,13 @@ export const CourseDetailPage = () => {
 
   return (
     <div className="min-h-screen bg-[#F4F5F7]">
-      {/* Header */}
-      <header className="backdrop-blur-xl bg-white/80 border-b border-slate-200 sticky top-0 z-50">
-        <div className="container mx-auto px-6 md:px-12 lg:px-24 py-4 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
-            <GraduationCap className="w-8 h-8 text-[#002FA7]" />
-            <span className="text-xl font-medium tracking-tight text-[#0A0B10]">LearnHub</span>
-          </Link>
-          <nav className="flex items-center gap-4">
-            {user && (
-              <Button onClick={() => navigate("/dashboard")} variant="outline" className="rounded-sm" data-testid="back-dashboard-btn">
-                Dashboard
-              </Button>
-            )}
-          </nav>
-        </div>
-      </header>
+      <PublicSiteHeader variant="compact">
+        {user && (
+          <Button onClick={() => navigate("/dashboard")} variant="outline" className="rounded-sm" data-testid="back-dashboard-btn">
+            Dashboard
+          </Button>
+        )}
+      </PublicSiteHeader>
 
       <div className="container mx-auto px-6 md:px-12 lg:px-24 py-8" data-testid="course-detail-page">
         {/* Course Header */}

@@ -5,15 +5,6 @@ const LanguageContext = createContext(null);
 
 export const useLanguage = () => useContext(LanguageContext);
 
-const lookup = (lang, key) => {
-  const keys = key.split(".");
-  let value = translations[lang];
-  for (const k of keys) {
-    value = value?.[k];
-  }
-  return value;
-};
-
 export const LanguageProvider = ({ children }) => {
   const [lang, setLang] = useState(() => {
     const saved = localStorage.getItem("learnhub_lang");
