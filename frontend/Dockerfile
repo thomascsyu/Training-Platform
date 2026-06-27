@@ -20,7 +20,7 @@ RUN yarn global add serve
 
 COPY --from=build /app/build ./build
 
-EXPOSE 3000
+EXPOSE 8080
 
-# Respect the platform-provided PORT (Zeabur/Heroku-style), default to 3000 for local use
-CMD ["sh", "-c", "serve -s build -l ${PORT:-3000}"]
+# Zeabur routes to port 8080; PORT can still override this for other platforms.
+CMD ["sh", "-c", "exec serve -s build -l ${PORT:-8080}"]

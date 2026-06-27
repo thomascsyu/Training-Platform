@@ -61,7 +61,7 @@ Or build this service only:
 
 ```bash
 docker build -t learnhub-web --build-arg REACT_APP_BACKEND_URL=http://localhost:8001 .
-docker run -p 3000:3000 learnhub-web
+docker run -p 3000:8080 learnhub-web
 ```
 
 > `REACT_APP_BACKEND_URL` must be reachable from the **browser** (usually `http://localhost:8001`), not an internal Docker hostname.

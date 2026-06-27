@@ -368,18 +368,18 @@ docker compose up --build
 ```bash
 # API only (requires external MongoDB)
 cd backend && docker build -t learnhub-api .
-docker run -p 8001:8001 --env-file .env learnhub-api
+docker run -p 8001:8080 --env-file .env learnhub-api
 
 # Web only
 cd frontend
 docker build -t learnhub-web --build-arg REACT_APP_BACKEND_URL=http://localhost:8001 .
-docker run -p 3000:3000 learnhub-web
+docker run -p 3000:8080 learnhub-web
 ```
 
 ### Zeabur (container deploy)
 
-- **Backend service:** Deploy from `backend/Dockerfile`. Zeabur injects `PORT`; the image now honors `${PORT:-8001}` automatically. Set environment variables: `MONGO_URL`, `DB_NAME`, `JWT_SECRET`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `FRONTEND_URL`, `CORS_ORIGINS`, and optional Stripe/Brevo keys. Point Zeabur’s Mongo add-on (or your own URI) to `MONGO_URL`.
-- **Frontend service:** Deploy from `frontend/Dockerfile`. Provide a build arg `REACT_APP_BACKEND_URL=https://<your-api-domain>` so the SPA points at the live API. The container respects `PORT` (defaults to 3000 locally) and serves the CRA build via `serve -s build`.
+- **Backend service:** Deploy from `backend/Dockerfile`. The image exposes and defaults to port `8080`; `PORT` can still override it if the platform injects one. Set environment variables: `MONGO_URL`, `DB_NAME`, `JWT_SECRET`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `FRONTEND_URL`, `CORS_ORIGINS`, and optional Stripe/Brevo keys. Point Zeabur’s Mongo add-on (or your own URI) to `MONGO_URL`.
+- **Frontend service:** Deploy from `frontend/Dockerfile`. Provide a build arg `REACT_APP_BACKEND_URL=https://<your-api-domain>` so the SPA points at the live API. The container exposes and defaults to port `8080` and serves the CRA build via `serve -s build`.
 - **Domain binding:** Attach your Zeabur domain (e.g., `training-platform-beling.zeabur.app`) to the **frontend** service. After deploy, `curl -I https://<domain>/` should return `200`.
 - If you deploy both services in one project, ensure `FRONTEND_URL` on the backend matches the public frontend origin and `CORS_ORIGINS` includes it.
 
