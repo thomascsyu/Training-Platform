@@ -141,7 +141,22 @@ export default {
       forum: "포럼",
       markComplete: "완료로 표시",
       enrollFree: "무료 등록",
-      deleteCourse: "코스 삭제"
+      deleteCourse: "코스 삭제",
+      editCourse: "코스 편집",
+      saveChanges: "변경 사항 저장",
+      backToCourses: "코스 목록으로",
+      courseUpdated: "코스가 업데이트되었습니다",
+      addLesson: "레슨 추가",
+      editLesson: "레슨 편집",
+      saveLesson: "레슨 저장",
+      lessonTitle: "레슨 제목",
+      lessonDescription: "레슨 설명",
+      lessonAdded: "레슨이 추가되었습니다",
+      lessonUpdated: "레슨이 업데이트되었습니다",
+      lessonDeleted: "레슨이 삭제되었습니다",
+      confirmDeleteLesson: "이 레슨을 삭제하시겠습니까?",
+      categoryPlaceholder: "예: 비즈니스",
+      hasVideo: "동영상 있음"
     },
     
     // Quiz

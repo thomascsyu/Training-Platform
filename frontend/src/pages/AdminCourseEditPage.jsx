@@ -11,7 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
-  ArrowLeft, BookOpen, Globe, Loader2, Plus, Trash2, Video
+  ArrowLeft, Globe, Loader2, Pencil, Plus, Trash2, Video, X
 } from "lucide-react";
 import { courseLanguages } from "@/i18n";
 import { API, formatError } from "@/lib/api";
@@ -34,6 +34,9 @@ export const AdminCourseEditPage = () => {
     order: 0,
   });
   const [addingLesson, setAddingLesson] = useState(false);
+  const [editingLessonId, setEditingLessonId] = useState(null);
+  const [editingLesson, setEditingLesson] = useState(null);
+  const [savingLesson, setSavingLesson] = useState(false);
 
   useEffect(() => {
     fetchCourse();
@@ -104,9 +107,45 @@ export const AdminCourseEditPage = () => {
     try {
       await API.delete(`/lessons/${lessonId}`);
       toast.success(t("courses.lessonDeleted"));
+      if (editingLessonId === lessonId) {
+        setEditingLessonId(null);
+        setEditingLesson(null);
+      }
       fetchCourse();
     } catch (e) {
       toast.error(formatError(e));
+    }
+  };
+
+  const handleStartEditLesson = (lesson) => {
+    setEditingLessonId(lesson.id);
+    setEditingLesson({
+      title: lesson.title || "",
+      description: lesson.description || "",
+      video_url: lesson.video_url || "",
+      video_type: lesson.video_type || "youtube",
+      order: lesson.order ?? 0,
+    });
+  };
+
+  const handleCancelEditLesson = () => {
+    setEditingLessonId(null);
+    setEditingLesson(null);
+  };
+
+  const handleSaveLesson = async () => {
+    if (!editingLesson?.title?.trim()) return;
+    setSavingLesson(true);
+    try {
+      await API.put(`/lessons/${editingLessonId}`, editingLesson);
+      toast.success(t("courses.lessonUpdated"));
+      setEditingLessonId(null);
+      setEditingLesson(null);
+      fetchCourse();
+    } catch (e) {
+      toast.error(formatError(e));
+    } finally {
+      setSavingLesson(false);
     }
   };
 
@@ -254,27 +293,103 @@ export const AdminCourseEditPage = () => {
                 {course.lessons.map((lesson, idx) => (
                   <div
                     key={lesson.id}
-                    className="flex items-center gap-3 p-3 border border-slate-200 rounded-sm"
+                    className="p-3 border border-slate-200 rounded-sm"
                   >
-                    <span className="w-8 h-8 bg-[#002FA7]/10 text-[#002FA7] rounded-sm flex items-center justify-center text-sm font-medium">
-                      {idx + 1}
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">{lesson.title}</p>
-                      {lesson.video_url && (
-                        <Badge variant="secondary" className="text-xs mt-1">
-                          <Video className="w-3 h-3 mr-1" /> {t("courses.hasVideo")}
-                        </Badge>
-                      )}
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="rounded-sm text-red-600"
-                      onClick={() => handleDeleteLesson(lesson.id)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    {editingLessonId === lesson.id ? (
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm font-medium text-[#002FA7]">
+                            {t("courses.editLesson")} #{idx + 1}
+                          </p>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="rounded-sm h-8 w-8"
+                            onClick={handleCancelEditLesson}
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                        <Input
+                          placeholder={t("courses.lessonTitle")}
+                          value={editingLesson.title}
+                          onChange={(e) => setEditingLesson({ ...editingLesson, title: e.target.value })}
+                          className="rounded-sm"
+                        />
+                        <Textarea
+                          placeholder={t("courses.lessonDescription")}
+                          value={editingLesson.description}
+                          onChange={(e) => setEditingLesson({ ...editingLesson, description: e.target.value })}
+                          className="rounded-sm"
+                          rows={2}
+                        />
+                        <Input
+                          placeholder={t("courses.videoUrl")}
+                          value={editingLesson.video_url}
+                          onChange={(e) => setEditingLesson({ ...editingLesson, video_url: e.target.value })}
+                          className="rounded-sm"
+                        />
+                        <Select
+                          value={editingLesson.video_type}
+                          onValueChange={(v) => setEditingLesson({ ...editingLesson, video_type: v })}
+                        >
+                          <SelectTrigger className="rounded-sm">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="youtube">{t("common.youtube")}</SelectItem>
+                            <SelectItem value="vimeo">{t("common.vimeo")}</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={handleSaveLesson}
+                            disabled={savingLesson || !editingLesson.title.trim()}
+                            className="flex-1 bg-[#002FA7] hover:bg-[#002585] text-white rounded-sm"
+                          >
+                            {savingLesson ? <Loader2 className="w-4 h-4 animate-spin" /> : t("courses.saveLesson")}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={handleCancelEditLesson}
+                            className="rounded-sm"
+                          >
+                            {t("common.cancel")}
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-3">
+                        <span className="w-8 h-8 bg-[#002FA7]/10 text-[#002FA7] rounded-sm flex items-center justify-center text-sm font-medium shrink-0">
+                          {idx + 1}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">{lesson.title}</p>
+                          {lesson.video_url && (
+                            <Badge variant="secondary" className="text-xs mt-1">
+                              <Video className="w-3 h-3 mr-1" /> {t("courses.hasVideo")}
+                            </Badge>
+                          )}
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="rounded-sm"
+                          onClick={() => handleStartEditLesson(lesson)}
+                          data-testid={`edit-lesson-${lesson.id}`}
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="rounded-sm text-red-600"
+                          onClick={() => handleDeleteLesson(lesson.id)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

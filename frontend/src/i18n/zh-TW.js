@@ -141,7 +141,22 @@ export default {
       forum: "論壇",
       markComplete: "標記為完成",
       enrollFree: "免費報名",
-      deleteCourse: "刪除課程"
+      deleteCourse: "刪除課程",
+      editCourse: "編輯課程",
+      saveChanges: "儲存變更",
+      backToCourses: "返回課程列表",
+      courseUpdated: "課程已更新",
+      addLesson: "新增課時",
+      editLesson: "編輯課時",
+      saveLesson: "儲存課時",
+      lessonTitle: "課時標題",
+      lessonDescription: "課時描述",
+      lessonAdded: "課時已新增",
+      lessonUpdated: "課時已更新",
+      lessonDeleted: "課時已刪除",
+      confirmDeleteLesson: "確定要刪除此課時嗎？",
+      categoryPlaceholder: "例如：商業",
+      hasVideo: "含影片"
     },
     
     // Quiz

@@ -141,7 +141,22 @@ export default {
       forum: "论坛",
       markComplete: "标记为完成",
       enrollFree: "免费报名",
-      deleteCourse: "删除课程"
+      deleteCourse: "删除课程",
+      editCourse: "编辑课程",
+      saveChanges: "保存变更",
+      backToCourses: "返回课程列表",
+      courseUpdated: "课程已更新",
+      addLesson: "新增课时",
+      editLesson: "编辑课时",
+      saveLesson: "保存课时",
+      lessonTitle: "课时标题",
+      lessonDescription: "课时描述",
+      lessonAdded: "课时已新增",
+      lessonUpdated: "课时已更新",
+      lessonDeleted: "课时已删除",
+      confirmDeleteLesson: "确定要删除此课时吗？",
+      categoryPlaceholder: "例如：商业",
+      hasVideo: "含视频"
     },
     
     // Quiz

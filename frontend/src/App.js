@@ -23,6 +23,7 @@ import { AdminUsersPage } from "@/pages/AdminUsersPage";
 import { AdminCompaniesPage } from "@/pages/AdminCompaniesPage";
 import { ManagerGroupProgressPage } from "@/pages/ManagerGroupProgressPage";
 import { AdminBulkEnrollPage } from "@/pages/AdminBulkEnrollPage";
+import { AdminCourseEditPage } from "@/pages/AdminCourseEditPage";
 
 const DashboardRouter = () => {
   const { user } = useAuth();
@@ -102,10 +103,10 @@ function App() {
               }
             />
             <Route
-              path="/admin/companies"
+              path="/admin/courses/:id/edit"
               element={
                 <ProtectedRoute roles={["admin"]}>
-                  <AdminCompaniesPage />
+                  <AdminCourseEditPage />
                 </ProtectedRoute>
               }
             />

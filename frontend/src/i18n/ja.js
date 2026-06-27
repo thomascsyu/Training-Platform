@@ -141,7 +141,22 @@ export default {
       forum: "フォーラム",
       markComplete: "完了としてマーク",
       enrollFree: "無料で登録",
-      deleteCourse: "コースを削除"
+      deleteCourse: "コースを削除",
+      editCourse: "コースを編集",
+      saveChanges: "変更を保存",
+      backToCourses: "コース一覧に戻る",
+      courseUpdated: "コースを更新しました",
+      addLesson: "レッスンを追加",
+      editLesson: "レッスンを編集",
+      saveLesson: "レッスンを保存",
+      lessonTitle: "レッスンタイトル",
+      lessonDescription: "レッスン説明",
+      lessonAdded: "レッスンを追加しました",
+      lessonUpdated: "レッスンを更新しました",
+      lessonDeleted: "レッスンを削除しました",
+      confirmDeleteLesson: "このレッスンを削除しますか？",
+      categoryPlaceholder: "例：ビジネス",
+      hasVideo: "動画あり"
     },
     
     // Quiz
