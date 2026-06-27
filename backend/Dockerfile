@@ -9,4 +9,5 @@ COPY . .
 
 EXPOSE 8001
 
-CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "8001"]
+# Allow platforms like Zeabur to inject a dynamic $PORT; default to 8001 locally
+CMD ["sh", "-c", "uvicorn server:app --host 0.0.0.0 --port ${PORT:-8001}"]
