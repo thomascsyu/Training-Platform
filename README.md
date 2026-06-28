@@ -32,6 +32,18 @@ Open [http://localhost:3000](http://localhost:3000). Default admin is seeded fro
 
 ---
 
+
+## Zeabur deployment
+
+This repository is a monorepo with separate Dockerfiles for the API and web app. Zeabur does not deploy from `docker-compose.yml`, so create separate Zeabur services from the same Git repository:
+
+| Zeabur service name | Config file | Dockerfile used | Required notes |
+|---------------------|-------------|-----------------|----------------|
+| `backend` | `zbpack.backend.json` | `backend/Dockerfile` | Add a Zeabur MongoDB service and set `MONGO_URL`/`MONGODB_URI`, `JWT_SECRET`, and production secrets. |
+| `frontend` | `zbpack.frontend.json` | `frontend/Dockerfile` | Set build arg/environment `REACT_APP_BACKEND_URL` to the public backend URL. |
+
+Both Dockerfiles listen on `${PORT:-8080}`, which matches Zeabur's routed port convention. If you choose different service names in Zeabur, either rename the matching `zbpack.<service>.json` file or set `ZBPACK_DOCKERFILE_PATH` to `backend/Dockerfile` or `frontend/Dockerfile` for the corresponding service.
+
 ## Overview
 
 LearnHub is a full-featured LMS for creating, managing, and delivering courses. Organizations can run paid or free programs, track group progress, and issue certificates on quiz completion.
