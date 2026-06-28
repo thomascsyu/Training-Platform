@@ -12,8 +12,17 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-MONGO_URL = os.environ["MONGO_URL"]
-DB_NAME = os.environ["DB_NAME"]
+MONGO_URL = os.environ.get("MONGO_URL", "mongodb://localhost:27017")
+if "MONGO_URL" not in os.environ:
+    logger.warning("MONGO_URL not set; defaulting to mongodb://localhost:27017")
+
+DB_NAME = os.environ.get("DB_NAME", "learnhub")
+if "DB_NAME" not in os.environ:
+    logger.warning("DB_NAME not set; defaulting to learnhub")
+
+MONGO_SERVER_SELECTION_TIMEOUT_MS = int(
+    os.environ.get("MONGO_SERVER_SELECTION_TIMEOUT_MS", "5000")
+)
 
 _jwt_from_env = os.environ.get("JWT_SECRET")
 if _jwt_from_env:
