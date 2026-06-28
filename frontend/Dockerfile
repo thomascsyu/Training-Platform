@@ -16,11 +16,10 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-RUN yarn global add serve
-
+COPY static-server.js ./static-server.js
 COPY --from=build /app/build ./build
 
 EXPOSE 8080
 
 # Zeabur routes to port 8080; PORT can still override this for other platforms.
-CMD ["sh", "-c", "exec serve -s build -l ${PORT:-8080}"]
+CMD ["node", "static-server.js"]
