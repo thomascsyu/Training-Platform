@@ -37,7 +37,7 @@ function Calendar({
         day: cn(
           "relative p-0 text-center text-sm focus-within:relative focus-within:z-20 data-[selected=true]:bg-accent data-[outside=true]:data-[selected=true]:bg-accent/50",
           props.mode === "range"
-            ? "data-[selected=true]:first:rounded-l-md data-[selected=true]:last:rounded-r-md data-[range-start=true]:rounded-l-md data-[range-end=true]:rounded-r-md"
+            ? "data-[selected=true]:first:rounded-l-md data-[selected=true]:last:rounded-r-md [&.day-range-start]:rounded-l-md [&.day-range-end]:rounded-r-md"
             : "data-[selected=true]:rounded-md"
         ),
         day_button: cn(
