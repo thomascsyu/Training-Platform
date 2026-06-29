@@ -1,50 +1,13 @@
-import { useState, useEffect } from "react";
-import "@/App.css";
-import { BrowserRouter, Routes, Route, Navigate, useNavigate, useParams, useSearchParams, Link } from "react-router-dom";
-import { Toaster, toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useNavigate } from "react-router-dom";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
-import { Switch } from "@/components/ui/switch";
-import {
-  BookOpen, GraduationCap, Users, PlayCircle, Award, MessageSquare,
-  Menu, X, LogOut, Settings, ChevronRight, Plus, Trash2, Edit,
-  Download, Send, Bot, FileText, Video, CheckCircle, Clock,
-  DollarSign, Lock, Globe, BarChart3, Home, Loader2, Search, Languages
-} from "lucide-react";
-import { courseLanguages, languageNames } from "@/i18n";
-import { API, formatError } from "@/lib/api";
-import { LanguageProvider, useLanguage } from "@/contexts/LanguageContext";
-import { AuthProvider, useAuth } from "@/contexts/AuthContext";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
-import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { BookOpen, Globe, Lock } from "lucide-react";
+import { getCourseLanguageDisplay } from "@/i18n";
 
-// ============ COURSE CARD ============
-export const CourseCard = ({ course, enrolled = false, showProgress = false, progress = 0 }) => {
+export const CourseCard = ({ course, showProgress = false, progress = 0 }) => {
   const navigate = useNavigate();
-  
-  // Get language display name
-  const getLanguageDisplay = (langCode) => {
-    const langMap = {
-      "en": "EN",
-      "zh-TW": "繁中",
-      "zh-CN": "简中",
-      "ja": "日本",
-      "ko": "한국"
-    };
-    return langMap[langCode] || langCode;
-  };
-  
+
   return (
     <Card 
       className="bg-white border border-slate-200 rounded-sm hover:-translate-y-1 hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden"
@@ -63,7 +26,7 @@ export const CourseCard = ({ course, enrolled = false, showProgress = false, pro
           {course.language && (
             <Badge className="bg-[#002FA7] text-white rounded-sm text-xs">
               <Globe className="w-3 h-3 mr-1" />
-              {getLanguageDisplay(course.language)}
+              {getCourseLanguageDisplay(course.language, { short: true })}
             </Badge>
           )}
         </div>

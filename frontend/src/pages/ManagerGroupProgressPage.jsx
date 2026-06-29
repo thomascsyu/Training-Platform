@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { BarChart3, CheckCircle, Clock, Loader2 } from "lucide-react";
+import { getCourseLanguageDisplay } from "@/i18n";
 import { API, formatError } from "@/lib/api";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { DashboardLayout } from "@/components/DashboardLayout";
@@ -45,11 +46,6 @@ export const ManagerGroupProgressPage = () => {
     }
   };
 
-  const getLanguageDisplay = (langCode) => {
-    const langMap = { "en": "EN", "zh-TW": "繁中", "zh-CN": "简中", "ja": "日本", "ko": "한국" };
-    return langMap[langCode] || langCode;
-  };
-
   return (
     <DashboardLayout>
       <div className="p-6" data-testid="manager-progress-page">
@@ -82,7 +78,7 @@ export const ManagerGroupProgressPage = () => {
                     <div className="flex items-start justify-between mb-2">
                       <h3 className="font-medium text-sm line-clamp-2">{course.course_title}</h3>
                       <Badge className="bg-[#002FA7] text-white rounded-sm text-xs ml-2">
-                        {getLanguageDisplay(course.language)}
+                        {getCourseLanguageDisplay(course.language, { short: true })}
                       </Badge>
                     </div>
                     <div className="flex items-center gap-4 text-xs text-slate-500 mb-2">

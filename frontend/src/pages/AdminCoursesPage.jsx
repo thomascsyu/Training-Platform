@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { BookOpen, Edit, Globe, Loader2, Plus, Trash2 } from "lucide-react";
-import { courseLanguages } from "@/i18n";
+import { courseLanguages, getCourseLanguageDisplay } from "@/i18n";
 import { API, formatError } from "@/lib/api";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { DashboardLayout } from "@/components/DashboardLayout";
@@ -90,18 +90,6 @@ export const AdminCoursesPage = () => {
     } catch (e) {
       toast.error(formatError(e));
     }
-  };
-
-  // Get language display name
-  const getLanguageDisplay = (langCode) => {
-    const langMap = {
-      "en": "English",
-      "zh-TW": "繁體中文",
-      "zh-CN": "简体中文",
-      "ja": "日本語",
-      "ko": "한국어"
-    };
-    return langMap[langCode] || langCode;
   };
 
   return (
@@ -273,7 +261,7 @@ export const AdminCoursesPage = () => {
                       {course.language && (
                         <Badge className="bg-[#002FA7] text-white rounded-sm text-xs">
                           <Globe className="w-3 h-3 mr-1" />
-                          {getLanguageDisplay(course.language)}
+                          {getCourseLanguageDisplay(course.language)}
                         </Badge>
                       )}
                       {course.is_free ? (
