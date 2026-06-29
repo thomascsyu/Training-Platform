@@ -393,19 +393,18 @@ scripts/rebuild-mongo-api.sh --pull-mongo --web
 
 ```bash
 # API only (requires external MongoDB)
-cd backend && docker build -t learnhub-api .
+docker build -t learnhub-api -f backend/Dockerfile .
 docker run -p 8001:8080 --env-file .env learnhub-api
 
 # Web only
-cd frontend
-docker build -t learnhub-web --build-arg REACT_APP_BACKEND_URL=http://localhost:8001 .
+docker build -t learnhub-web -f frontend/Dockerfile --build-arg REACT_APP_BACKEND_URL=http://localhost:8001 .
 docker run -p 3000:8080 learnhub-web
 ```
 
 ### Zeabur (container deploy)
 
-- **Backend service:** Deploy from `backend/Dockerfile`. The image exposes and defaults to port `8080`; `PORT` can still override it if the platform injects one. Set environment variables: `MONGO_URL` (or Zeabur's `MONGODB_URI`), `DB_NAME`, `JWT_SECRET`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `FRONTEND_URL`, `CORS_ORIGINS`, and optional Stripe/Brevo keys.
-- **Frontend service:** Deploy from `frontend/Dockerfile`. Provide a build arg `REACT_APP_BACKEND_URL=https://<your-api-domain>` so the SPA points at the live API. The container exposes and defaults to port `8080` and serves the CRA build with `frontend/static-server.js`.
+- **Backend service:** Deploy from the repository root with `backend/Dockerfile`. The image exposes and defaults to port `8080`; `PORT` can still override it if the platform injects one. Set environment variables: `MONGO_URL` (or Zeabur's `MONGODB_URI`), `DB_NAME`, `JWT_SECRET`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `FRONTEND_URL`, `CORS_ORIGINS`, and optional Stripe/Brevo keys.
+- **Frontend service:** Deploy from the repository root with `frontend/Dockerfile`. Provide a build arg `REACT_APP_BACKEND_URL=https://<your-api-domain>` so the SPA points at the live API. The container exposes and defaults to port `8080` and serves the CRA build with `frontend/static-server.js`.
 - **Domain binding:** Attach your Zeabur domain (e.g., `training-platform-beling.zeabur.app`) to the **frontend** service. After deploy, `curl -I https://<domain>/` should return `200`.
 - If you deploy both services in one project, ensure `FRONTEND_URL` on the backend matches the public frontend origin and `CORS_ORIGINS` includes it.
 
