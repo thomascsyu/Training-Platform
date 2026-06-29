@@ -16,7 +16,7 @@ import {
 import { courseLanguages } from "@/i18n";
 import { API, formatError } from "@/lib/api";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { DashboardLayout } from "@/pages/DashboardLayout";
+import { DashboardLayout } from "@/components/DashboardLayout";
 
 export const AdminCourseEditPage = () => {
   const { id } = useParams();

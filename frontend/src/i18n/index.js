@@ -38,4 +38,17 @@ export const courseLanguages = [
   { value: "ko", label: "한국어 (Korean)" },
 ];
 
+export const courseLanguageShortNames = {
+  en: "EN",
+  "zh-TW": "繁中",
+  "zh-CN": "简中",
+  ja: "日本",
+  ko: "한국",
+};
+
+export const getCourseLanguageDisplay = (langCode, { short = false } = {}) => {
+  const labels = short ? courseLanguageShortNames : languageNames;
+  return labels[langCode] || langCode;
+};
+
 export default translations;

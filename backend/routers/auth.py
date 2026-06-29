@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 
 from bson import ObjectId
 from fastapi import APIRouter, HTTPException, Request
+from starlette.responses import JSONResponse
 
 import jwt
 from config import JWT_ALGORITHM, JWT_SECRET
@@ -21,8 +22,6 @@ router = APIRouter(tags=["auth"], prefix="/auth")
 
 @router.post("/register")
 async def register(data: UserCreate):
-    from starlette.responses import JSONResponse
-
     email = data.email.lower()
     existing = await db.users.find_one({"email": email})
     if existing:
@@ -56,8 +55,6 @@ async def register(data: UserCreate):
 
 @router.post("/login")
 async def login(data: UserLogin):
-    from starlette.responses import JSONResponse
-
     email = data.email.lower()
     user = await db.users.find_one({"email": email})
     if not user or not verify_password(data.password, user["password_hash"]):
@@ -82,8 +79,6 @@ async def login(data: UserLogin):
 
 @router.post("/logout")
 async def logout():
-    from starlette.responses import JSONResponse
-
     resp = JSONResponse(content={"message": "Logged out"})
     clear_auth_cookies(resp)
     return resp
@@ -91,8 +86,6 @@ async def logout():
 
 @router.post("/refresh")
 async def refresh_session(request: Request):
-    from starlette.responses import JSONResponse
-
     token = request.cookies.get("refresh_token")
     if not token:
         raise HTTPException(status_code=401, detail="Refresh token missing")
