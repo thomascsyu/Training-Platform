@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 def _get_int_env(name: str, default: int) -> int:
     raw_value = os.environ.get(name)
-    if raw_value is None:
+    if raw_value is None or raw_value.strip() == "":
         return default
     try:
         return int(raw_value)
