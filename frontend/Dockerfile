@@ -2,10 +2,10 @@ FROM node:20-alpine AS build
 
 WORKDIR /app
 
-COPY package.json yarn.lock* ./
+COPY frontend/package.json frontend/yarn.lock* ./
 RUN corepack enable && yarn install --frozen-lockfile
 
-COPY . .
+COPY frontend/ .
 
 ARG REACT_APP_BACKEND_URL=http://localhost:8001
 ENV REACT_APP_BACKEND_URL=$REACT_APP_BACKEND_URL
@@ -16,7 +16,7 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-COPY static-server.js ./static-server.js
+COPY frontend/static-server.js ./static-server.js
 COPY --from=build /app/build ./build
 
 EXPOSE 8080

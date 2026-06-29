@@ -393,12 +393,11 @@ scripts/rebuild-mongo-api.sh --pull-mongo --web
 
 ```bash
 # API only (requires external MongoDB)
-cd backend && docker build -t learnhub-api .
+docker build -t learnhub-api -f backend/Dockerfile .
 docker run -p 8001:8080 --env-file .env learnhub-api
 
 # Web only
-cd frontend
-docker build -t learnhub-web --build-arg REACT_APP_BACKEND_URL=http://localhost:8001 .
+docker build -t learnhub-web -f frontend/Dockerfile --build-arg REACT_APP_BACKEND_URL=http://localhost:8001 .
 docker run -p 3000:8080 learnhub-web
 ```
 
