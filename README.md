@@ -370,6 +370,19 @@ cp .env.docker.example .env   # edit JWT_SECRET, ADMIN_PASSWORD
 docker compose up --build
 ```
 
+**Rebuild MongoDB + API only:**
+
+```bash
+# Rebuild/recreate the API container and restart MongoDB without deleting data
+scripts/rebuild-mongo-api.sh
+
+# Rebuild from a clean local MongoDB volume (destructive)
+scripts/rebuild-mongo-api.sh --reset-db --yes
+
+# Also pull the configured MongoDB image and start the web service afterward
+scripts/rebuild-mongo-api.sh --pull-mongo --web
+```
+
 | Service | URL |
 |---------|-----|
 | Frontend | http://localhost:3000 |
