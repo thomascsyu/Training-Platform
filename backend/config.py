@@ -23,9 +23,22 @@ def _get_int_env(name: str, default: int) -> int:
         logger.error("%s must be an integer, got %r", name, raw_value)
         raise RuntimeError(f"{name} must be an integer, got {raw_value!r}") from exc
 
-MONGO_URL = os.environ.get("MONGO_URL", "mongodb://localhost:27017")
-if "MONGO_URL" not in os.environ:
+
+def _get_mongo_url() -> str:
+    mongo_url = os.environ.get("MONGO_URL")
+    if mongo_url:
+        return mongo_url
+
+    mongodb_uri = os.environ.get("MONGODB_URI")
+    if mongodb_uri:
+        logger.info("MONGO_URL not set; using MONGODB_URI")
+        return mongodb_uri
+
     logger.warning("MONGO_URL not set; defaulting to mongodb://localhost:27017")
+    return "mongodb://localhost:27017"
+
+
+MONGO_URL = _get_mongo_url()
 
 DB_NAME = os.environ.get("DB_NAME", "learnhub")
 if "DB_NAME" not in os.environ:
