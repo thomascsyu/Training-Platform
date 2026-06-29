@@ -1,5 +1,5 @@
 {
   "dockerfile": {
-    "path": "frontend/Dockerfile"
+    "path": "Dockerfile.frontend"
   }
 }
