@@ -18,10 +18,15 @@ def _get_int_env(name: str, default: int) -> int:
     if raw_value is None or raw_value.strip() == "":
         return default
     try:
-        return int(raw_value)
-    except ValueError as exc:
-        logger.error("%s must be an integer, got %r", name, raw_value)
-        raise RuntimeError(f"{name} must be an integer, got {raw_value!r}") from exc
+        return int(raw_value.strip())
+    except ValueError:
+        logger.warning(
+            "%s must be an integer, got %r; falling back to %s",
+            name,
+            raw_value,
+            default,
+        )
+        return default
 
 
 def _get_mongo_url() -> str:
