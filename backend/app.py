@@ -1,4 +1,5 @@
-from contextlib import asynccontextmanager
+import asyncio
+from contextlib import asynccontextmanager, suppress
 
 from fastapi import FastAPI, HTTPException
 from pymongo.errors import PyMongoError
@@ -44,14 +45,22 @@ async def initialize_database():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    try:
-        await initialize_database()
-    except PyMongoError:
-        logger.exception(
-            "Database initialization failed; continuing so liveness checks can respond"
-        )
+    async def _initialize_database_in_background() -> None:
+        try:
+            await initialize_database()
+        except PyMongoError:
+            logger.exception(
+                "Database initialization failed; continuing so liveness checks can respond"
+            )
+
+    init_task = asyncio.create_task(_initialize_database_in_background())
 
     yield
+
+    if not init_task.done():
+        init_task.cancel()
+        with suppress(asyncio.CancelledError):
+            await init_task
     await close_db_client()
 
 
