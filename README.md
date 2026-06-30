@@ -41,6 +41,7 @@ This repository is a monorepo with separate Dockerfiles for the API and web app.
 |---------------------|-------------|-----------------|----------------|
 | `backend` | `zbpack.backend.json` | `Dockerfile.backend` | Add a Zeabur MongoDB service and set `MONGO_URL`/`MONGODB_URI`, `JWT_SECRET`, and production secrets. |
 | `training-platform` | `zbpack.training-platform.json` | `Dockerfile.training-platform` | Backend alias for deployments using the project/service name reported by Zeabur. |
+| `training-platform-beling` | `zbpack.training-platform-beling.json` | `Dockerfile.training-platform-beling` | Same backend image as `training-platform`; required when the Zeabur service name includes a suffix (e.g. domain/project slug). Without this match, Zeabur auto-detects the monorepo as Node.js and the container exits immediately with no Python logs. |
 | `frontend` | `zbpack.frontend.json` | `Dockerfile.frontend` | Set build arg/environment `REACT_APP_BACKEND_URL` to the public backend URL. |
 
 The root-level `Dockerfile.<service>` files are used by Zeabur and are named to match Zeabur's service-name auto-detection convention. The `backend/Dockerfile` and `frontend/Dockerfile` files remain for Docker Compose and local subdirectory builds. All containers listen on `${PORT:-8080}`, which matches Zeabur's routed port convention. If you configure a Zeabur service with a Root Directory of `backend` or `frontend`, use the `Dockerfile` inside that directory instead of the root-level `zbpack.<service>.json` path.
@@ -403,7 +404,7 @@ docker run -p 3000:8080 learnhub-web
 
 ### Zeabur (container deploy)
 
-- **Backend service:** Deploy from `Dockerfile.backend` (or `Dockerfile.training-platform` when the Zeabur service is named `training-platform`). The image exposes and defaults to port `8080`; `PORT` can still override it if the platform injects one. Set environment variables: `MONGO_URL` (or Zeabur's `MONGODB_URI`), `DB_NAME`, `JWT_SECRET`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `FRONTEND_URL`, `CORS_ORIGINS`, and optional Stripe/Brevo keys.
+- **Backend service:** Deploy from `Dockerfile.backend` (or `Dockerfile.training-platform` / `Dockerfile.training-platform-beling` when the Zeabur service is named `training-platform` or `training-platform-beling`). The image exposes and defaults to port `8080`; `PORT` can still override it if the platform injects one. Set environment variables: `MONGO_URL` (or Zeabur's `MONGODB_URI`), `DB_NAME`, `JWT_SECRET`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `FRONTEND_URL`, `CORS_ORIGINS`, and optional Stripe/Brevo keys.
 - **Frontend service:** Deploy from `Dockerfile.frontend`. Provide a build arg `REACT_APP_BACKEND_URL=https://<your-api-domain>` so the SPA points at the live API. The container exposes and defaults to port `8080` and serves the CRA build with `frontend/static-server.js`.
 - **Health checks:** Leave Zeabur on the default TCP probe, or set a custom HTTP path to `/health` (not `/ready`). `/ready` returns `503` until MongoDB is reachable.
 - **Domain binding:** Attach your Zeabur domain (e.g., `training-platform-beling.zeabur.app`) to the **frontend** service. After deploy, `curl -I https://<domain>/` should return `200`.

@@ -3,6 +3,11 @@ import os
 import sys
 import traceback
 
+# Emit before third-party imports so Zeabur logs show activity even if a
+# native extension segfaults during import (faulthandler is not enabled yet).
+print("[learnhub-startup] boot", file=sys.stderr, flush=True)
+faulthandler.enable(file=sys.stderr, all_threads=True)
+
 import uvicorn
 
 
@@ -26,7 +31,6 @@ def _parse_port() -> int:
 
 
 def main() -> None:
-    faulthandler.enable(file=sys.stderr, all_threads=True)
     os.environ.setdefault("PYTHONUNBUFFERED", "1")
 
     host = os.environ.get("HOST") or "0.0.0.0"
