@@ -16,7 +16,7 @@ def _log(message: str) -> None:
 
 
 def _parse_port() -> int:
-    raw_port = os.environ.get("PORT", "8080")
+    raw_port = (os.environ.get("PORT") or "8080").strip()
     try:
         port = int(raw_port)
     except (TypeError, ValueError):
@@ -30,10 +30,20 @@ def _parse_port() -> int:
     return port
 
 
+def _resolve_host() -> str:
+    host = (os.environ.get("HOST") or "0.0.0.0").strip() or "0.0.0.0"
+    if host in {"127.0.0.1", "localhost", "::1"}:
+        _log(
+            f"HOST={host!r} is not reachable from outside the container; using 0.0.0.0"
+        )
+        return "0.0.0.0"
+    return host
+
+
 def main() -> None:
     os.environ.setdefault("PYTHONUNBUFFERED", "1")
 
-    host = os.environ.get("HOST") or "0.0.0.0"
+    host = _resolve_host()
     port = _parse_port()
     _log(f"Starting LearnHub API on {host}:{port}")
 
