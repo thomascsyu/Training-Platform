@@ -13,17 +13,23 @@ def _log(message: str) -> None:
 def _parse_port() -> int:
     raw_port = os.environ.get("PORT", "8080")
     try:
-        return int(raw_port)
-    except ValueError as exc:
-        _log(f"Invalid PORT value {raw_port!r}; expected an integer")
-        raise SystemExit(1) from exc
+        port = int(raw_port)
+    except (TypeError, ValueError):
+        _log(f"Invalid PORT value {raw_port!r}; falling back to 8080")
+        return 8080
+
+    if not 0 < port < 65536:
+        _log(f"Invalid PORT value {raw_port!r}; falling back to 8080")
+        return 8080
+
+    return port
 
 
 def main() -> None:
     faulthandler.enable(file=sys.stderr, all_threads=True)
     os.environ.setdefault("PYTHONUNBUFFERED", "1")
 
-    host = os.environ.get("HOST", "0.0.0.0")
+    host = os.environ.get("HOST") or "0.0.0.0"
     port = _parse_port()
     _log(f"Starting LearnHub API on {host}:{port}")
 

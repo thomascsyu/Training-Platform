@@ -3,7 +3,18 @@ const fs = require('fs');
 const path = require('path');
 
 const buildDir = path.join(__dirname, 'build');
-const port = Number.parseInt(process.env.PORT || '8080', 10);
+function parsePort(rawPort) {
+  const port = Number.parseInt(rawPort || '8080', 10);
+
+  if (!Number.isInteger(port) || port <= 0 || port >= 65536) {
+    console.warn(`Invalid PORT value ${JSON.stringify(rawPort)}; falling back to 8080`);
+    return 8080;
+  }
+
+  return port;
+}
+
+const port = parsePort(process.env.PORT);
 const host = process.env.HOST || '0.0.0.0';
 
 const contentTypes = {
