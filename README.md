@@ -348,6 +348,7 @@ BREVO_API_KEY=
 EMAIL_FROM=noreply@yourdomain.com
 EMAIL_FROM_NAME=LearnHub
 FRONTEND_URL=http://localhost:3000
+LOG_LEVEL=info                     # critical | error | warning | debug | trace; invalid values fall back to info
 ```
 
 ### Frontend
