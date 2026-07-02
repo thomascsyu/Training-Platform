@@ -9,6 +9,7 @@ print("[learnhub-startup] boot", file=sys.stderr, flush=True)
 faulthandler.enable(file=sys.stderr, all_threads=True)
 
 import uvicorn
+from uvicorn.config import LOG_LEVELS
 
 
 def _log(message: str) -> None:
@@ -30,8 +31,11 @@ def _parse_port() -> int:
     return port
 
 
+_VALID_LOG_LEVELS = set(LOG_LEVELS.keys())
+
+
 def _resolve_host() -> str:
-    host = (os.environ.get("HOST") or "0.0.0.0").strip() or "0.0.0.0"
+    host = (os.environ.get("HOST") or "0.0.0.0").strip().lower() or "0.0.0.0"
     if host in {"127.0.0.1", "localhost", "::1"}:
         _log(
             f"HOST={host!r} is not reachable from outside the container; using 0.0.0.0"
@@ -40,11 +44,25 @@ def _resolve_host() -> str:
     return host
 
 
+def _resolve_log_level() -> str:
+    raw = (os.environ.get("LOG_LEVEL") or "info").strip()
+    if not raw:
+        return "info"
+    level = raw.lower()
+    if level == "warn":
+        level = "warning"
+    if level not in _VALID_LOG_LEVELS:
+        _log(f"Invalid LOG_LEVEL value {raw!r}; falling back to 'info'")
+        return "info"
+    return level
+
+
 def main() -> None:
     os.environ.setdefault("PYTHONUNBUFFERED", "1")
 
     host = _resolve_host()
     port = _parse_port()
+    log_level = _resolve_log_level()
     _log(f"Starting LearnHub API on {host}:{port}")
 
     try:
@@ -54,7 +72,7 @@ def main() -> None:
         traceback.print_exc(file=sys.stderr)
         raise SystemExit(1)
 
-    uvicorn.run(app, host=host, port=port, log_level=os.environ.get("LOG_LEVEL", "info"))
+    uvicorn.run(app, host=host, port=port, log_level=log_level)
 
 
 if __name__ == "__main__":
