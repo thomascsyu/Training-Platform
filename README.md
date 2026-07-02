@@ -35,16 +35,18 @@ Open [http://localhost:3000](http://localhost:3000). Default admin is seeded fro
 
 ## Zeabur deployment
 
-This repository is a monorepo with separate Dockerfiles for the API and web app. Zeabur does not deploy from `docker-compose.yml`, so create separate Zeabur services from the same Git repository:
+This repository is a monorepo with separate Dockerfiles for the API and web app. Zeabur does not deploy from `docker-compose.yml`, so create separate Zeabur services from the same Git repository.
 
-| Zeabur service name | Config file | Dockerfile used | Required notes |
-|---------------------|-------------|-----------------|----------------|
-| `backend` | `zbpack.backend.json` | `Dockerfile.backend` | Add a Zeabur MongoDB service and set `MONGO_URL`/`MONGODB_URI`, `JWT_SECRET`, and production secrets. |
-| `training-platform` | `zbpack.training-platform.json` | `Dockerfile.training-platform` | Backend alias for deployments using the project/service name reported by Zeabur. |
-| `training-platform-beling` | `zbpack.training-platform-beling.json` | `Dockerfile.training-platform-beling` | Same backend image as `training-platform`; required when the Zeabur service name includes a suffix (e.g. domain/project slug). Without this match, Zeabur auto-detects the monorepo as Node.js and the container exits immediately with no Python logs. |
-| `frontend` | `zbpack.frontend.json` | `Dockerfile.frontend` | Set build arg/environment `REACT_APP_BACKEND_URL` to the public backend URL. |
+**How Zeabur picks a Dockerfile:** the deciding factor is the exact **service name** you set in the Zeabur dashboard, not the `zbpack.<service>.json` files. Zeabur automatically builds `Dockerfile.<service-name>` (or `<service-name>.Dockerfile`) for whatever the service is named. The `zbpack.*.json` files in this repo are kept as a defensive fallback but are not required for this to work — get the service name right and the matching Dockerfile is picked up with zero extra config.
 
-The root-level `Dockerfile.<service>` files are used by Zeabur and are named to match Zeabur's service-name auto-detection convention. The `backend/Dockerfile` and `frontend/Dockerfile` files remain for Docker Compose and local subdirectory builds. All containers listen on `${PORT:-8080}`, which matches Zeabur's routed port convention. If you configure a Zeabur service with a Root Directory of `backend` or `frontend`, use the `Dockerfile` inside that directory instead of the root-level `zbpack.<service>.json` path.
+| Zeabur service name | Dockerfile used | Required notes |
+|---------------------|-----------------|----------------|
+| `backend` | `Dockerfile.backend` | Add a Zeabur MongoDB service and set `MONGO_URL`/`MONGODB_URI`, `JWT_SECRET`, and production secrets. |
+| `training-platform` | `Dockerfile.training-platform` | Backend alias for deployments using the project/service name reported by Zeabur. |
+| `training-platform-beling` | `Dockerfile.training-platform-beling` | Same backend image as `training-platform`; required when the Zeabur service name includes a suffix (e.g. domain/project slug). Without this match, Zeabur auto-detects the monorepo as Node.js and the container exits immediately with no Python logs. |
+| `frontend` | `Dockerfile.frontend` | Set environment variable `REACT_APP_BACKEND_URL` to the public backend URL **before the first build** — Zeabur forwards service variables into the Docker build as `ARG`s, and CRA bakes this value into the static JS bundle at build time. Changing it later requires a redeploy, not just a restart. |
+
+If your service name doesn't match any of the four above, either rename the service to one of them, or set the service's **Root Directory** to `backend` or `frontend` so it builds the plain `backend/Dockerfile` / `frontend/Dockerfile` instead (these remain for Docker Compose and local subdirectory builds too). All containers listen on `${PORT:-8080}`, which matches Zeabur's routed port convention.
 
 ## Overview
 
