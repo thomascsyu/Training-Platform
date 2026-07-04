@@ -7,8 +7,9 @@ RUN corepack enable && yarn install --frozen-lockfile
 
 COPY frontend/ .
 
-ARG REACT_APP_BACKEND_URL=http://localhost:8001
-ENV REACT_APP_BACKEND_URL=$REACT_APP_BACKEND_URL
+# No default on ARG so Zeabur injects the service variable at build time.
+ARG REACT_APP_BACKEND_URL
+ENV REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL}
 
 RUN yarn build
 
