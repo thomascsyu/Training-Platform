@@ -29,17 +29,32 @@ def _get_int_env(name: str, default: int) -> int:
         return default
 
 
+# Connection-string env vars in priority order. MONGO_URL is preferred, but
+# different platforms expose different names: Zeabur's prebuilt MongoDB service
+# injects MONGO_CONNECTION_STRING, and Emergent-imported apps commonly use
+# MONGO_URI. Accepting all of them means "add a MongoDB service" works without
+# manually wiring an extra MONGO_URL variable.
+_MONGO_URL_ENV_VARS = (
+    "MONGO_URL",
+    "MONGODB_URI",
+    "MONGO_CONNECTION_STRING",
+    "MONGO_URI",
+)
+
+
 def _get_mongo_url() -> str:
-    mongo_url = os.environ.get("MONGO_URL")
-    if mongo_url:
-        return mongo_url
+    for name in _MONGO_URL_ENV_VARS:
+        value = os.environ.get(name)
+        if value and value.strip():
+            if name != "MONGO_URL":
+                logger.info("MONGO_URL not set; using %s", name)
+            return value.strip()
 
-    mongodb_uri = os.environ.get("MONGODB_URI")
-    if mongodb_uri:
-        logger.info("MONGO_URL not set; using MONGODB_URI")
-        return mongodb_uri
-
-    logger.warning("MONGO_URL not set; defaulting to mongodb://localhost:27017")
+    logger.warning(
+        "No MongoDB connection string set (checked %s); "
+        "defaulting to mongodb://localhost:27017",
+        ", ".join(_MONGO_URL_ENV_VARS),
+    )
     return "mongodb://localhost:27017"
 
 

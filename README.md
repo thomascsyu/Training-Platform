@@ -41,7 +41,7 @@ This repository is a monorepo with separate Dockerfiles for the API and web app.
 
 | Zeabur service name | Dockerfile used | Required notes |
 |---------------------|-----------------|----------------|
-| `backend` | `Dockerfile.backend` | Add a Zeabur MongoDB service and set `MONGO_URL`/`MONGODB_URI`, `JWT_SECRET`, and production secrets. |
+| `backend` | `Dockerfile.backend` | Add a Zeabur MongoDB service, then set `JWT_SECRET` and production secrets. The Mongo connection string is read from the first of `MONGO_URL`, `MONGODB_URI`, `MONGO_CONNECTION_STRING`, or `MONGO_URI` that is set — Zeabur's MongoDB injects `MONGO_CONNECTION_STRING`, so no extra wiring is usually needed. |
 | `training-platform` | `Dockerfile.training-platform` | Backend alias for deployments using the project/service name reported by Zeabur. |
 | `training-platform-beling` | `Dockerfile.training-platform-beling` | Same backend image as `training-platform`; required when the Zeabur service name includes a suffix (e.g. domain/project slug). Without this match, Zeabur auto-detects the monorepo as Node.js and the container exits immediately with no Python logs. |
 | `frontend` | `Dockerfile.frontend` | Set environment variable `REACT_APP_BACKEND_URL` to the public backend URL **before the first build** — Zeabur forwards service variables into the Docker build as `ARG`s, and CRA bakes this value into the static JS bundle at build time. Changing it later requires a redeploy, not just a restart. |
@@ -328,7 +328,7 @@ Copy templates: `backend/.env.example`, `frontend/.env.example`, or for Docker C
 ### Backend
 
 ```bash
-MONGO_URL=mongodb://localhost:27017
+MONGO_URL=mongodb://localhost:27017 # also accepts MONGODB_URI / MONGO_CONNECTION_STRING / MONGO_URI
 DB_NAME=learnhub
 JWT_SECRET=                         # python -c "import secrets; print(secrets.token_hex(32))"
 
@@ -407,10 +407,10 @@ docker run -p 3000:8080 learnhub-web
 
 ### Zeabur (container deploy)
 
-- **Backend service:** Deploy from `Dockerfile.backend` (or `Dockerfile.training-platform` / `Dockerfile.training-platform-beling` when the Zeabur service is named `training-platform` or `training-platform-beling`). The image exposes and defaults to port `8080`; `PORT` can still override it if the platform injects one. Set environment variables: `MONGO_URL` (or Zeabur's `MONGODB_URI`), `DB_NAME`, `JWT_SECRET`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `FRONTEND_URL`, `CORS_ORIGINS`, and optional Stripe/Brevo keys.
+- **Backend service:** Deploy from `Dockerfile.backend` (or `Dockerfile.training-platform` / `Dockerfile.training-platform-beling` when the Zeabur service is named `training-platform` or `training-platform-beling`). The image exposes and defaults to port `8080`; `PORT` can still override it if the platform injects one. Set environment variables: a Mongo connection string via any of `MONGO_URL` / `MONGODB_URI` / `MONGO_CONNECTION_STRING` / `MONGO_URI` (Zeabur's MongoDB service provides `MONGO_CONNECTION_STRING` automatically), `DB_NAME`, `JWT_SECRET`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `FRONTEND_URL`, `CORS_ORIGINS`, and optional Stripe/Brevo keys.
 - **Frontend service:** Deploy from `Dockerfile.frontend`. Provide a build arg `REACT_APP_BACKEND_URL=https://<your-api-domain>` so the SPA points at the live API. The container exposes and defaults to port `8080` and serves the CRA build with `frontend/static-server.js`.
 - **Health checks:** Leave Zeabur on the default TCP probe, or set a custom HTTP path to `/health` (not `/ready`). `/ready` returns `503` until MongoDB is reachable.
-- **Invalid Mongo connection string:** If `MONGO_URL`/`MONGODB_URI` is malformed (wrong scheme such as `tcp://`, missing `mongodb://`, or unescaped credentials), the API still boots and `/health` stays `200` so the container does not crash-loop; `/ready` returns `503` and the logs show `Invalid MongoDB connection string`. Fix the variable and redeploy — passwords with special characters must be percent-encoded (`urllib.parse.quote_plus`).
+- **Invalid Mongo connection string:** If the connection string (`MONGO_URL` / `MONGODB_URI` / `MONGO_CONNECTION_STRING` / `MONGO_URI`) is malformed (wrong scheme such as `tcp://`, missing `mongodb://`, or unescaped credentials), the API still boots and `/health` stays `200` so the container does not crash-loop; `/ready` returns `503` and the logs show `Invalid MongoDB connection string`. Fix the variable and redeploy — passwords with special characters must be percent-encoded (`urllib.parse.quote_plus`). If none of the variables are set, the logs show `No MongoDB connection string set (checked ...)` and the app falls back to `mongodb://localhost:27017`.
 - **Domain binding:** Attach your Zeabur domain (e.g., `training-platform-beling.zeabur.app`) to the **frontend** service. After deploy, `curl -I https://<domain>/` should return `200`.
 - If you deploy both services in one project, ensure `FRONTEND_URL` on the backend matches the public frontend origin and `CORS_ORIGINS` includes it.
 
