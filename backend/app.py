@@ -5,7 +5,7 @@ from fastapi import FastAPI, HTTPException
 from pymongo.errors import PyMongoError
 from starlette.middleware.cors import CORSMiddleware
 
-from auth_utils import hash_password
+from auth_utils import hash_password, verify_password
 from config import (
     ADMIN_EMAIL,
     ADMIN_PASSWORD,
@@ -47,6 +47,13 @@ async def initialize_database():
                 "created_at": datetime.now(timezone.utc).isoformat(),
             })
             logger.info("Admin user created: %s", ADMIN_EMAIL)
+    elif ADMIN_PASSWORD:
+        if not verify_password(ADMIN_PASSWORD, existing["password_hash"]):
+            await db.users.update_one(
+                {"email": ADMIN_EMAIL},
+                {"$set": {"password_hash": hash_password(ADMIN_PASSWORD)}},
+            )
+            logger.info("Admin password reset for: %s", ADMIN_EMAIL)
 
 
 @asynccontextmanager
