@@ -14,6 +14,7 @@ from auth_utils import (
     create_refresh_token,
     get_current_user,
     hash_password,
+    normalize_email,
     set_auth_cookies,
     verify_password,
 )
@@ -22,7 +23,7 @@ router = APIRouter(tags=["auth"], prefix="/auth")
 
 @router.post("/register")
 async def register(data: UserCreate):
-    email = data.email.lower()
+    email = normalize_email(data.email)
     existing = await db.users.find_one({"email": email})
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -55,7 +56,7 @@ async def register(data: UserCreate):
 
 @router.post("/login")
 async def login(data: UserLogin):
-    email = data.email.lower()
+    email = normalize_email(data.email)
     user = await db.users.find_one({"email": email})
     if not user or not verify_password(data.password, user["password_hash"]):
         raise HTTPException(status_code=401, detail="Invalid credentials")

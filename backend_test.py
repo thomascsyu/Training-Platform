@@ -1,7 +1,11 @@
 import requests
 import sys
 import json
+import os
 from datetime import datetime
+
+ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "admin@learnhub.com")
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin123")
 
 class LearnHubAPITester:
     def __init__(self, base_url="https://feature-builder-19.preview.emergentagent.com"):
@@ -61,7 +65,7 @@ class LearnHubAPITester:
             "POST",
             "auth/login",
             200,
-            data={"email": "admin@learnhub.com", "password": "admin123"}
+            data={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD}
         )
         if success and 'id' in response:
             # Extract token from cookies if available

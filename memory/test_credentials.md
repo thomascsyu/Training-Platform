@@ -4,7 +4,7 @@ Use these accounts for local development and QA. **Change all passwords before d
 
 | Role | Email | Password | Notes |
 |------|-------|----------|-------|
-| Admin | admin@learnhub.com | Set via `ADMIN_PASSWORD` in backend `.env` (default seed: admin123) | Full platform access |
+| Admin | admin@learnhub.com | Set via `ADMIN_PASSWORD` in backend `.env` (no default) | Full platform access; account is only seeded when `ADMIN_PASSWORD` is set |
 | Student | student@test.com | test123 | Create via registration or seed manually |
 
 ## Client Manager accounts

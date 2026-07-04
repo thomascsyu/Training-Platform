@@ -85,7 +85,7 @@ EMAIL_FROM_NAME = os.environ.get("EMAIL_FROM_NAME", "LearnHub")
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:3000")
 
 ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "admin@learnhub.com")
-ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin123")
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD")
 
 ENVIRONMENT = os.environ.get("ENVIRONMENT", "development")
 COOKIE_SECURE = os.environ.get("COOKIE_SECURE", "false").lower() == "true"
