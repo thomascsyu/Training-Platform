@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -39,20 +39,16 @@ export const CourseDetailPage = () => {
   const [activeLesson, setActiveLesson] = useState(null);
   const [completingLesson, setCompletingLesson] = useState(false);
 
-  useEffect(() => {
-    fetchCourse();
-  }, [id]);
-
-  const fetchLessonProgress = async () => {
+  const fetchLessonProgress = useCallback(async () => {
     try {
       const { data } = await API.get(`/progress/course/${id}`);
       setLessonProgress(data);
     } catch (e) {
       console.error(e);
     }
-  };
+  }, [id]);
 
-  const fetchCourse = async () => {
+  const fetchCourse = useCallback(async () => {
     try {
       const { data } = await API.get(`/courses/${id}`);
       setCourse(data);
@@ -85,7 +81,11 @@ export const CourseDetailPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, user, navigate, fetchLessonProgress]);
+
+  useEffect(() => {
+    fetchCourse();
+  }, [fetchCourse]);
 
   const handleEnroll = async () => {
     if (!user) {
