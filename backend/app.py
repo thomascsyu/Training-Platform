@@ -1,5 +1,6 @@
 import asyncio
-from contextlib import asynccontextmanager, suppress
+
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException
 from pymongo.errors import PyMongoError
@@ -16,6 +17,8 @@ from config import (
 from database import close_db_client, db
 from rate_limit import RateLimitMiddleware
 from routes import api_router
+
+_database_initialized = False
 
 
 async def initialize_database():
@@ -56,24 +59,42 @@ async def initialize_database():
             logger.info("Admin password reset for: %s", ADMIN_EMAIL)
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    async def _initialize_database_in_background() -> None:
+async def _initialize_database_with_retry(
+    max_attempts: int = 12,
+    base_delay: float = 0.5,
+) -> None:
+    global _database_initialized
+
+    for attempt in range(1, max_attempts + 1):
         try:
             await initialize_database()
+            _database_initialized = True
+            return
         except PyMongoError:
-            logger.exception(
-                "Database initialization failed; continuing so liveness checks can respond"
-            )
+            if attempt == max_attempts:
+                logger.exception(
+                    "Database initialization failed after %s attempts; "
+                    "continuing so liveness checks can respond",
+                    max_attempts,
+                )
+                return
 
-    init_task = asyncio.create_task(_initialize_database_in_background())
+            delay = min(base_delay * (2 ** (attempt - 1)), 8)
+            logger.warning(
+                "Database initialization attempt %s/%s failed; retrying in %.1fs",
+                attempt,
+                max_attempts,
+                delay,
+            )
+            await asyncio.sleep(delay)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await _initialize_database_with_retry()
 
     yield
 
-    if not init_task.done():
-        init_task.cancel()
-        with suppress(asyncio.CancelledError):
-            await init_task
     await close_db_client()
 
 
@@ -92,6 +113,11 @@ async def health():
 
 @app.get("/ready", tags=["health"])
 async def ready():
+    if not _database_initialized:
+        raise HTTPException(
+            status_code=503,
+            detail="Database initialization pending",
+        )
     try:
         await db.command("ping")
     except PyMongoError as exc:

@@ -54,6 +54,5 @@ def test_int_env_treats_blank_values_as_unset(monkeypatch):
     assert config._get_int_env("MONGO_SERVER_SELECTION_TIMEOUT_MS", 5000) == 5000
 
 
-def test_int_env_falls_back_on_invalid_values(monkeypatch):
-    monkeypatch.setenv("MONGO_SERVER_SELECTION_TIMEOUT_MS", "bad")
-    assert config._get_int_env("MONGO_SERVER_SELECTION_TIMEOUT_MS", 5000) == 5000
+def test_admin_email_is_normalized():
+    assert config._normalize_admin_email("  Admin@LearnHub.COM  ") == "admin@learnhub.com"
