@@ -2,7 +2,7 @@
 
 Online learning platform built with **React**, **FastAPI**, and **MongoDB**. Supports multi-language courses, AI translation & chat (Deepseek), quizzes, certificates, Stripe payments, forums, and Brevo email notifications.
 
-**Quick links:** [Quick Start](#-quick-start) · [Architecture](#-architecture) · [API](#-api-endpoints) · [Environment](#environment-variables) · [Test Accounts](memory/test_credentials.md) · [License](LICENSE)
+**Quick links:** [Quick Start](#-quick-start) · [Zeabur deployment](#zeabur-deployment) · [Architecture](#-architecture) · [API](#-api-endpoints) · [Environment](#environment-variables) · [Test Accounts](memory/test_credentials.md) · [License](LICENSE)
 
 ---
 
@@ -35,18 +35,77 @@ Open [http://localhost:3000](http://localhost:3000). The admin account is seeded
 
 ## Zeabur deployment
 
-This repository is a monorepo with separate Dockerfiles for the API and web app. Zeabur does not deploy from `docker-compose.yml`, so create separate Zeabur services from the same Git repository.
+This repository is a monorepo with separate Dockerfiles for the API and web app. Zeabur does not deploy from `docker-compose.yml`, so create **three** Zeabur services from the same Git repository:
+
+| Service | Role | Example domain |
+|---------|------|----------------|
+| `mongodb` | Database (Zeabur prebuilt MongoDB) | internal only |
+| **one API service** (see below) | FastAPI backend | `https://<api>.zeabur.app` |
+| `frontend` | React SPA | `https://<web>.zeabur.app` |
+
+`frontend` and the API service are **not duplicates** — the browser loads the SPA from `frontend`, and the SPA calls the API over HTTPS with cookies. You need both.
+
+### Pick one API service name
+
+Several Dockerfile names exist for the same Python API. **Create only one API service** — do not deploy both `backend` and `training-platform` in the same project.
+
+| Zeabur service name | Dockerfile used | When to use |
+|---------------------|-----------------|-------------|
+| `training-platform` | `Dockerfile.training-platform` | **Recommended** when the Zeabur project/repo is named after this repo (`Training-Platform`). |
+| `backend` | `Dockerfile.backend` | Alternative API name; same app as `training-platform` with a slightly different start command. |
+| `training-platform-beling` | `Dockerfile.training-platform-beling` | Same API image; use when the Zeabur service name includes a suffix (e.g. domain/project slug). Without this match, Zeabur auto-detects the monorepo as Node.js and the container exits immediately with no Python logs. |
+| `frontend` | `Dockerfile.frontend` | Always required for the web UI. |
 
 **How Zeabur picks a Dockerfile:** the deciding factor is the exact **service name** you set in the Zeabur dashboard, not the `zbpack.<service>.json` files. Zeabur automatically builds `Dockerfile.<service-name>` (or `<service-name>.Dockerfile`) for whatever the service is named. The `zbpack.*.json` files in this repo are kept as a defensive fallback but are not required for this to work — get the service name right and the matching Dockerfile is picked up with zero extra config.
 
-| Zeabur service name | Dockerfile used | Required notes |
-|---------------------|-----------------|----------------|
-| `backend` | `Dockerfile.backend` | Add a Zeabur MongoDB service, then set `JWT_SECRET` and production secrets. The Mongo connection string is read from the first of `MONGO_URL`, `MONGODB_URI`, `MONGO_CONNECTION_STRING`, or `MONGO_URI` that is set — Zeabur's MongoDB injects `MONGO_CONNECTION_STRING`, so no extra wiring is usually needed. |
-| `training-platform` | `Dockerfile.training-platform` | Backend alias for deployments using the project/service name reported by Zeabur. |
-| `training-platform-beling` | `Dockerfile.training-platform-beling` | Same backend image as `training-platform`; required when the Zeabur service name includes a suffix (e.g. domain/project slug). Without this match, Zeabur auto-detects the monorepo as Node.js and the container exits immediately with no Python logs. |
-| `frontend` | `Dockerfile.frontend` | Set environment variable `REACT_APP_BACKEND_URL` to the public backend URL **before the first build** — Zeabur forwards service variables into the Docker build as `ARG`s, and CRA bakes this value into the static JS bundle at build time. Changing it later requires a redeploy, not just a restart. |
-
 If your service name doesn't match any of the four above, either rename the service to one of them, or set the service's **Root Directory** to `backend` or `frontend` so it builds the plain `backend/Dockerfile` / `frontend/Dockerfile` instead (these remain for Docker Compose and local subdirectory builds too). All containers listen on `${PORT:-8080}`, which matches Zeabur's routed port convention.
+
+### Environment variables (production)
+
+**MongoDB:** no manual connection string is usually needed. Link the prebuilt MongoDB service; Zeabur exposes `MONGO_CONNECTION_STRING` to other services automatically. The API reads the first of `MONGO_URL`, `MONGODB_URI`, `MONGO_CONNECTION_STRING`, or `MONGO_URI`. Do **not** set `MONGO_CONNECTION_STRING=${MONGO_CONNECTION_STRING}` on the API service — that self-reference blocks the injected value.
+
+**API service** (`training-platform`, `backend`, or `training-platform-beling`):
+
+```bash
+ENVIRONMENT=production
+COOKIE_SECURE=true
+JWT_SECRET=<64-char hex>
+DB_NAME=learnhub
+ADMIN_EMAIL=<your admin email>
+ADMIN_PASSWORD=<strong password>
+FRONTEND_URL=https://<your-frontend-domain>
+CORS_ORIGINS=https://<your-frontend-domain>
+LOG_LEVEL=info
+# optional: STRIPE_*, BREVO_*, DEEPSEEK_*
+```
+
+**Frontend service:**
+
+```bash
+REACT_APP_BACKEND_URL=https://<your-api-domain>
+```
+
+Use **`REACT_APP_BACKEND_URL`** exactly — not `REACT_APP_API_URL`. The app reads this name in `frontend/src/lib/api.js`. Zeabur forwards service variables into the Docker build as `ARG`s; `Dockerfile.frontend` declares `ARG REACT_APP_BACKEND_URL` **without a default** so the dashboard value is baked into the CRA bundle at build time. Changing it later requires a **redeploy**, not just a restart.
+
+### URL alignment checklist
+
+These three values must use the same public origins:
+
+| Variable | Service | Must match |
+|----------|---------|------------|
+| `REACT_APP_BACKEND_URL` | `frontend` | Public API URL (browser-reachable) |
+| `FRONTEND_URL` | API | Public frontend URL |
+| `CORS_ORIGINS` | API | Same origin as `FRONTEND_URL` (not `*`) |
+
+Bind the **frontend** domain to the `frontend` service. Bind the **API** domain to your single API service.
+
+### Health checks and troubleshooting
+
+- **Liveness:** use `/health` on the API (always `200`). Do not use `/ready` as the liveness probe — it returns `503` until MongoDB is connected.
+- **Readiness:** `curl https://<api-domain>/ready` should return `200` once Mongo is wired.
+- **Invalid Mongo connection string:** malformed values (`tcp://`, missing `mongodb://`, unescaped `@` in passwords) still allow `/health` to respond; `/ready` stays `503` until fixed. Percent-encode special characters in credentials (`urllib.parse.quote_plus`).
+- **Frontend calls `localhost:8001`:** `REACT_APP_BACKEND_URL` was missing or misnamed at build time — set the variable and redeploy the `frontend` service.
+- **502 on API domain:** API service suspended or not deployed — resume/redeploy the API service, not a second copy.
 
 ## Overview
 
@@ -407,12 +466,19 @@ docker run -p 3000:8080 learnhub-web
 
 ### Zeabur (container deploy)
 
-- **Backend service:** Deploy from `Dockerfile.backend` (or `Dockerfile.training-platform` / `Dockerfile.training-platform-beling` when the Zeabur service is named `training-platform` or `training-platform-beling`). The image exposes and defaults to port `8080`; `PORT` can still override it if the platform injects one. Set environment variables: a Mongo connection string via any of `MONGO_URL` / `MONGODB_URI` / `MONGO_CONNECTION_STRING` / `MONGO_URI` (Zeabur's MongoDB service provides `MONGO_CONNECTION_STRING` automatically), `DB_NAME`, `JWT_SECRET`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `FRONTEND_URL`, `CORS_ORIGINS`, and optional Stripe/Brevo keys.
-- **Frontend service:** Deploy from `Dockerfile.frontend`. Provide a build arg `REACT_APP_BACKEND_URL=https://<your-api-domain>` so the SPA points at the live API. The container exposes and defaults to port `8080` and serves the CRA build with `frontend/static-server.js`.
-- **Health checks:** Leave Zeabur on the default TCP probe, or set a custom HTTP path to `/health` (not `/ready`). `/ready` returns `503` until MongoDB is reachable.
-- **Invalid Mongo connection string:** If the connection string (`MONGO_URL` / `MONGODB_URI` / `MONGO_CONNECTION_STRING` / `MONGO_URI`) is malformed (wrong scheme such as `tcp://`, missing `mongodb://`, or unescaped credentials), the API still boots and `/health` stays `200` so the container does not crash-loop; `/ready` returns `503` and the logs show `Invalid MongoDB connection string`. Fix the variable and redeploy — passwords with special characters must be percent-encoded (`urllib.parse.quote_plus`). If none of the variables are set, the logs show `No MongoDB connection string set (checked ...)` and the app falls back to `mongodb://localhost:27017`.
-- **Domain binding:** Attach your Zeabur domain (e.g., `training-platform-beling.zeabur.app`) to the **frontend** service. After deploy, `curl -I https://<domain>/` should return `200`.
-- If you deploy both services in one project, ensure `FRONTEND_URL` on the backend matches the public frontend origin and `CORS_ORIGINS` includes it.
+See **[Zeabur deployment](#zeabur-deployment)** above for the full service layout, environment variables, URL alignment, and troubleshooting.
+
+Quick summary: one project needs **mongodb + one API service + frontend**. Do not create both `backend` and `training-platform`. Attach the public web domain to `frontend` and the API domain to your single API service.
+
+**Production checklist (Zeabur):**
+
+- [ ] Strong `JWT_SECRET` and `ADMIN_PASSWORD`
+- [ ] `ENVIRONMENT=production`, `COOKIE_SECURE=true`
+- [ ] `CORS_ORIGINS` and `FRONTEND_URL` set to the frontend origin (not `*`)
+- [ ] `REACT_APP_BACKEND_URL` set on `frontend` before deploy/redeploy
+- [ ] API `/ready` returns `200` after Mongo is linked
+- [ ] Stripe live keys + webhook secret enforced (if using payments)
+- [ ] Brevo configured; `FRONTEND_URL` correct (if using email)
 
 ### Stripe webhook
 
