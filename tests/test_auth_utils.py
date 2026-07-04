@@ -3,8 +3,14 @@ import pytest
 from auth_utils import (
     create_access_token,
     hash_password,
+    normalize_email,
     verify_password,
 )
+
+
+def test_normalize_email_trims_and_lowercases():
+    assert normalize_email("  User@Example.COM  ") == "user@example.com"
+    assert normalize_email("user@example.com") == "user@example.com"
 
 
 def test_hash_and_verify_password():

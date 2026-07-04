@@ -31,16 +31,22 @@ async def initialize_database():
 
     existing = await db.users.find_one({"email": ADMIN_EMAIL})
     if not existing:
-        from datetime import datetime, timezone
+        if not ADMIN_PASSWORD:
+            logger.warning(
+                "ADMIN_PASSWORD not set; skipping admin seed. "
+                "Set ADMIN_PASSWORD to create the default admin account."
+            )
+        else:
+            from datetime import datetime, timezone
 
-        await db.users.insert_one({
-            "email": ADMIN_EMAIL,
-            "password_hash": hash_password(ADMIN_PASSWORD),
-            "name": "Admin",
-            "role": "admin",
-            "created_at": datetime.now(timezone.utc).isoformat(),
-        })
-        logger.info("Admin user created: %s", ADMIN_EMAIL)
+            await db.users.insert_one({
+                "email": ADMIN_EMAIL,
+                "password_hash": hash_password(ADMIN_PASSWORD),
+                "name": "Admin",
+                "role": "admin",
+                "created_at": datetime.now(timezone.utc).isoformat(),
+            })
+            logger.info("Admin user created: %s", ADMIN_EMAIL)
 
 
 @asynccontextmanager

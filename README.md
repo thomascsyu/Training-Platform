@@ -26,7 +26,7 @@ cp .env.example .env   # set REACT_APP_BACKEND_URL=http://localhost:8001
 yarn start
 ```
 
-Open [http://localhost:3000](http://localhost:3000). Default admin is seeded from `ADMIN_EMAIL` / `ADMIN_PASSWORD` in backend `.env` — see [Test Accounts](memory/test_credentials.md).
+Open [http://localhost:3000](http://localhost:3000). The admin account is seeded from `ADMIN_EMAIL` / `ADMIN_PASSWORD` in backend `.env` only when `ADMIN_PASSWORD` is set — see [Test Accounts](memory/test_credentials.md).
 
 **Docker (all services):** `cp .env.docker.example .env && docker compose up --build` — see [Docker](#docker).
 

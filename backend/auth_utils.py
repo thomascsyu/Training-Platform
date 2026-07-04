@@ -12,6 +12,10 @@ ACCESS_TOKEN_MAX_AGE = 3600
 REFRESH_TOKEN_MAX_AGE = 604800
 
 
+def normalize_email(email: str) -> str:
+    return email.lower().strip()
+
+
 def hash_password(password: str) -> str:
     salt = bcrypt.gensalt()
     return bcrypt.hashpw(password.encode("utf-8"), salt).decode("utf-8")
