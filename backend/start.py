@@ -1,4 +1,5 @@
 import faulthandler
+import ipaddress
 import os
 import sys
 import traceback
@@ -35,13 +36,32 @@ _VALID_LOG_LEVELS = set(LOG_LEVELS.keys())
 
 
 def _resolve_host() -> str:
-    host = (os.environ.get("HOST") or "0.0.0.0").strip().lower() or "0.0.0.0"
-    if host in {"127.0.0.1", "localhost", "::1"}:
+    raw_host = (os.environ.get("HOST") or "0.0.0.0").strip()
+    if not raw_host:
+        return "0.0.0.0"
+
+    host = raw_host.lower()
+    if host == "localhost":
         _log(
-            f"HOST={host!r} is not reachable from outside the container; using 0.0.0.0"
+            f"HOST={raw_host!r} is not reachable from outside the container; using 0.0.0.0"
         )
         return "0.0.0.0"
-    return host
+
+    try:
+        parsed_host = ipaddress.ip_address(raw_host)
+    except ValueError:
+        _log(
+            f"HOST={raw_host!r} is not a bindable IP address; using 0.0.0.0"
+        )
+        return "0.0.0.0"
+
+    if parsed_host.is_loopback:
+        _log(
+            f"HOST={raw_host!r} is not reachable from outside the container; using 0.0.0.0"
+        )
+        return "0.0.0.0"
+
+    return raw_host
 
 
 def _resolve_log_level() -> str:
