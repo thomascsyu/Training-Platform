@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -17,11 +17,7 @@ export const QuizPage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState(null);
 
-  useEffect(() => {
-    fetchQuiz();
-  }, [id]);
-
-  const fetchQuiz = async () => {
+  const fetchQuiz = useCallback(async () => {
     try {
       const { data } = await API.get(`/quizzes/${id}`);
       setQuiz(data);
@@ -32,7 +28,11 @@ export const QuizPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, navigate]);
+
+  useEffect(() => {
+    fetchQuiz();
+  }, [fetchQuiz]);
 
   const handleSubmit = async () => {
     if (answers.some(a => a === -1)) {

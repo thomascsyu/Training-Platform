@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -76,10 +76,6 @@ export const AdminUsersPage = () => {
   }, []);
 
   useEffect(() => {
-    fetchUsers();
-  }, [selectedCompany]);
-
-  useEffect(() => {
     const companyId = searchParams.get("company_id");
     if (companyId) {
       setSelectedCompany(companyId);
@@ -96,7 +92,7 @@ export const AdminUsersPage = () => {
     }
   };
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
       const params = selectedCompany !== "all" ? { company_id: selectedCompany } : {};
@@ -107,7 +103,11 @@ export const AdminUsersPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedCompany]);
+
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
 
   const handleCompanyFilterChange = (value) => {
     setSelectedCompany(value);

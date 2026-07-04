@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,13 +11,7 @@ export const PaymentSuccessPage = () => {
   const [status, setStatus] = useState("checking");
   const sessionId = searchParams.get("session_id");
 
-  useEffect(() => {
-    if (sessionId) {
-      pollPaymentStatus();
-    }
-  }, [sessionId]);
-
-  const pollPaymentStatus = async (attempts = 0) => {
+  const pollPaymentStatus = useCallback(async (attempts = 0) => {
     if (attempts >= 5) {
       setStatus("timeout");
       return;
@@ -33,7 +27,13 @@ export const PaymentSuccessPage = () => {
     } catch (e) {
       setStatus("error");
     }
-  };
+  }, [sessionId]);
+
+  useEffect(() => {
+    if (sessionId) {
+      pollPaymentStatus();
+    }
+  }, [sessionId, pollPaymentStatus]);
 
   return (
     <div className="min-h-screen bg-[#F4F5F7] flex items-center justify-center p-6" data-testid="payment-success-page">

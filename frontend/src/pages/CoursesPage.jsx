@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { BookOpen, Globe, Loader2, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,11 +23,7 @@ export const CoursesPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedLanguage, setSelectedLanguage] = useState("all");
 
-  useEffect(() => {
-    fetchCourses();
-  }, [selectedLanguage]);
-
-  const fetchCourses = async () => {
+  const fetchCourses = useCallback(async () => {
     try {
       let url = "/courses";
       const params = new URLSearchParams();
@@ -44,7 +40,11 @@ export const CoursesPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedLanguage]);
+
+  useEffect(() => {
+    fetchCourses();
+  }, [fetchCourses]);
 
   const filteredCourses = courses.filter((course) => {
     if (!searchQuery) return true;
