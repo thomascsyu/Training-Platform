@@ -17,3 +17,29 @@ export const resolveBackendOrigin = (
   const candidate = (proxyUrl || backendUrl || "http://localhost:8001").trim();
   return candidate.replace(/\/$/, "");
 };
+
+/**
+ * Resolve a stored upload URL for use in <img src>.
+ *
+ * Uploaded assets are stored as `/api/uploads/...`. When the app talks to the
+ * backend directly via REACT_APP_BACKEND_URL, image tags must use the same
+ * origin instead of the frontend host.
+ */
+export const resolveUploadUrl = (
+  url,
+  backendUrl = process.env.REACT_APP_BACKEND_URL
+) => {
+  const trimmed = (url || "").trim();
+  if (!trimmed) return "";
+
+  if (/^https?:\/\//i.test(trimmed)) {
+    return trimmed;
+  }
+
+  if (trimmed.startsWith("/api/")) {
+    const backend = (backendUrl || "").trim().replace(/\/$/, "");
+    return backend ? `${backend}${trimmed}` : trimmed;
+  }
+
+  return trimmed;
+};

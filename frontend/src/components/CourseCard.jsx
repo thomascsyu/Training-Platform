@@ -2,8 +2,9 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { BookOpen, Globe, Lock } from "lucide-react";
+import { Globe, Lock } from "lucide-react";
 import { getCourseLanguageDisplay } from "@/i18n";
+import { CourseThumbnail } from "@/components/CourseThumbnail";
 
 export const CourseCard = ({ course, showProgress = false, progress = 0 }) => {
   const navigate = useNavigate();
@@ -15,13 +16,12 @@ export const CourseCard = ({ course, showProgress = false, progress = 0 }) => {
       data-testid={`course-card-${course.id}`}
     >
       <div className="aspect-video bg-slate-100 relative overflow-hidden">
-        {course.thumbnail_url ? (
-          <img src={course.thumbnail_url} alt={course.title} className="w-full h-full object-cover" />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#002FA7]/10 to-[#002FA7]/5">
-            <BookOpen className="w-12 h-12 text-[#002FA7]/40" />
-          </div>
-        )}
+        <CourseThumbnail
+          src={course.thumbnail_url}
+          alt={course.title}
+          fallbackClassName="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#002FA7]/10 to-[#002FA7]/5"
+          fallbackIconClassName="w-12 h-12 text-[#002FA7]/40"
+        />
         <div className="absolute top-2 left-2 flex gap-1">
           {course.language && (
             <Badge className="bg-[#002FA7] text-white rounded-sm text-xs">

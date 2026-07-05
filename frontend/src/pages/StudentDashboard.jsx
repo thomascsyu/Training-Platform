@@ -8,6 +8,7 @@ import { Award, BookOpen, CheckCircle, ChevronRight, Loader2 } from "lucide-reac
 import { API } from "@/lib/api";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { CourseThumbnail } from "@/components/CourseThumbnail";
 
 export const StudentDashboard = () => {
   const { user } = useAuth();
@@ -108,13 +109,12 @@ export const StudentDashboard = () => {
                 data-testid={`enrollment-card-${e.course_id}`}
               >
                 <div className="aspect-video bg-slate-100 relative overflow-hidden">
-                  {e.course_thumbnail ? (
-                    <img src={e.course_thumbnail} alt={e.course_title} className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#002FA7]/10 to-[#002FA7]/5">
-                      <BookOpen className="w-12 h-12 text-[#002FA7]/40" />
-                    </div>
-                  )}
+                  <CourseThumbnail
+                    src={e.course_thumbnail}
+                    alt={e.course_title}
+                    fallbackClassName="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#002FA7]/10 to-[#002FA7]/5"
+                    fallbackIconClassName="w-12 h-12 text-[#002FA7]/40"
+                  />
                   {e.completed && (
                     <Badge className="absolute top-2 right-2 bg-green-600 text-white rounded-sm">
                       <CheckCircle className="w-3 h-3 mr-1" /> {t("common.completed")}

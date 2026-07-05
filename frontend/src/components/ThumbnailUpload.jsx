@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { uploadThumbnail, formatError } from "@/lib/api";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { CourseThumbnail } from "@/components/CourseThumbnail";
 
 const ACCEPTED_TYPES = "image/jpeg,image/png,.jpg,.jpeg,.png";
 
@@ -57,11 +58,12 @@ export const ThumbnailUpload = ({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
         <div className="w-full sm:w-40 h-24 bg-slate-100 border border-slate-200 rounded-sm overflow-hidden flex items-center justify-center shrink-0">
           {value ? (
-            <img
+            <CourseThumbnail
               src={value}
               alt={t("courses.uploadThumbnail")}
-              className="w-full h-full object-cover"
-              data-testid={`${testId}-preview`}
+              fallbackIcon={ImagePlus}
+              fallbackIconClassName="w-8 h-8 text-slate-300"
+              testId={`${testId}-preview`}
             />
           ) : (
             <ImagePlus className="w-8 h-8 text-slate-300" />
