@@ -7,6 +7,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY backend/ .
 
+VOLUME ["/app/uploads"]
+
 EXPOSE 8080
 
 # Zeabur routes to port 8080; PORT can still override this for other platforms.

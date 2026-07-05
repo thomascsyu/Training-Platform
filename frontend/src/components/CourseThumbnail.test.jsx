@@ -40,4 +40,27 @@ describe("CourseThumbnail", () => {
     expect(screen.getByTestId("course-thumb-fallback")).toBeInTheDocument();
     expect(screen.queryByRole("img")).not.toBeInTheDocument();
   });
+
+  it("uses fallbackSrc before showing the icon placeholder", async () => {
+    render(
+      <CourseThumbnail
+        src="/api/uploads/thumbnails/missing.jpg"
+        fallbackSrc="blob:http://localhost/fallback"
+        alt="ISO 9001"
+        testId="course-thumb"
+      />
+    );
+
+    const image = screen.getByRole("img", { name: "ISO 9001" });
+    expect(image).toHaveAttribute("src", "/api/uploads/thumbnails/missing.jpg");
+
+    await act(async () => {
+      image.dispatchEvent(new Event("error"));
+    });
+
+    expect(screen.getByRole("img", { name: "ISO 9001" })).toHaveAttribute(
+      "src",
+      "blob:http://localhost/fallback"
+    );
+  });
 });

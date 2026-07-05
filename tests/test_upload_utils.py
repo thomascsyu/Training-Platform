@@ -3,6 +3,7 @@ from fastapi import HTTPException
 
 from upload_utils import (
     detect_image_extension,
+    get_uploads_root,
     save_thumbnail,
     thumbnail_public_url,
     validate_thumbnail_upload,
@@ -64,7 +65,8 @@ def test_validate_thumbnail_upload_rejects_large_file():
 
 
 def test_save_thumbnail_writes_file(tmp_path, monkeypatch):
-    monkeypatch.setattr("upload_utils.THUMBNAIL_DIR", tmp_path)
+    tmp_path.mkdir(parents=True, exist_ok=True)
+    monkeypatch.setattr("upload_utils.get_thumbnail_dir", lambda: tmp_path)
     extension = validate_thumbnail_upload(
         content=JPEG_BYTES,
         content_type="image/jpeg",
@@ -76,3 +78,21 @@ def test_save_thumbnail_writes_file(tmp_path, monkeypatch):
     assert saved_file.exists()
     assert filename.endswith(".jpg")
     assert thumbnail_public_url(filename) == f"/api/uploads/thumbnails/{filename}"
+
+
+def test_get_uploads_root_uses_uploads_dir_env(tmp_path, monkeypatch):
+    uploads_root = tmp_path / "custom-uploads"
+    monkeypatch.setenv("UPLOADS_DIR", str(uploads_root))
+
+    assert get_uploads_root() == uploads_root.resolve()
+
+    extension = validate_thumbnail_upload(
+        content=JPEG_BYTES,
+        content_type="image/jpeg",
+        filename="course.jpg",
+    )
+    filename = save_thumbnail(JPEG_BYTES, extension)
+
+    saved_file = uploads_root / "thumbnails" / filename
+    assert saved_file.exists()
+    assert saved_file.read_bytes() == JPEG_BYTES

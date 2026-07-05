@@ -1,19 +1,34 @@
+import os
 import uuid
 from pathlib import Path
 
 from fastapi import HTTPException
-
-UPLOADS_ROOT = Path(__file__).resolve().parent / "uploads"
-THUMBNAIL_DIR = UPLOADS_ROOT / "thumbnails"
 
 ALLOWED_THUMBNAIL_CONTENT_TYPES = {"image/jpeg", "image/png"}
 ALLOWED_THUMBNAIL_EXTENSIONS = {".jpg", ".jpeg", ".png"}
 MAX_THUMBNAIL_SIZE_BYTES = 5 * 1024 * 1024
 
 
+def get_uploads_root() -> Path:
+    configured = os.environ.get("UPLOADS_DIR", "").strip()
+    if configured:
+        return Path(configured).expanduser().resolve()
+    return Path(__file__).resolve().parent / "uploads"
+
+
+def get_thumbnail_dir() -> Path:
+    return get_uploads_root() / "thumbnails"
+
+
+# Backward-compatible aliases used by tests and imports.
+UPLOADS_ROOT = get_uploads_root()
+THUMBNAIL_DIR = get_thumbnail_dir()
+
+
 def ensure_thumbnail_dir() -> Path:
-    THUMBNAIL_DIR.mkdir(parents=True, exist_ok=True)
-    return THUMBNAIL_DIR
+    thumbnail_dir = get_thumbnail_dir()
+    thumbnail_dir.mkdir(parents=True, exist_ok=True)
+    return thumbnail_dir
 
 
 def detect_image_extension(content: bytes) -> str | None:
@@ -52,9 +67,9 @@ def validate_thumbnail_upload(
 
 
 def save_thumbnail(content: bytes, extension: str) -> str:
-    ensure_thumbnail_dir()
+    thumbnail_dir = ensure_thumbnail_dir()
     filename = f"{uuid.uuid4().hex}{extension}"
-    (THUMBNAIL_DIR / filename).write_bytes(content)
+    (thumbnail_dir / filename).write_bytes(content)
     return filename
 
 
