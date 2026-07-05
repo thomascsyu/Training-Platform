@@ -55,10 +55,11 @@ Several Dockerfile names exist for the same Python API. **Create only one API se
 | `backend` | `Dockerfile.backend` | Alternative API name; same app as `training-platform` with a slightly different start command. |
 | `training-platform-beling` | `Dockerfile.training-platform-beling` | Same API image; use when the Zeabur service name includes a suffix (e.g. domain/project slug). Without this match, Zeabur auto-detects the monorepo as Node.js and the container exits immediately with no Python logs. |
 | `frontend` | `Dockerfile.frontend` | Always required for the web UI. |
+| `learnhub-frontend` / `learnhub-frontend-*` | `Dockerfile.learnhub-frontend` (symlink) | Same image as `frontend`; use when your Zeabur service name is not exactly `frontend`. |
 
 **How Zeabur picks a Dockerfile:** the deciding factor is the exact **service name** you set in the Zeabur dashboard, not the `zbpack.<service>.json` files. Zeabur automatically builds `Dockerfile.<service-name>` (or `<service-name>.Dockerfile`) for whatever the service is named. The `zbpack.*.json` files in this repo are kept as a defensive fallback but are not required for this to work — get the service name right and the matching Dockerfile is picked up with zero extra config.
 
-If your service name doesn't match any of the four above, either rename the service to one of them, or set the service's **Root Directory** to `backend` or `frontend` so it builds the plain `backend/Dockerfile` / `frontend/Dockerfile` instead (these remain for Docker Compose and local subdirectory builds too). All containers listen on `${PORT:-8080}`, which matches Zeabur's routed port convention.
+If your service name doesn't match any of the names above, either rename the service to one of them, set the service's **Root Directory** to `frontend` so it builds `frontend/Dockerfile`, or set **`ZBPACK_DOCKERFILE_PATH=Dockerfile.frontend`** on the Zeabur service. All containers listen on `${PORT:-8080}`, which matches Zeabur's routed port convention.
 
 ### Environment variables (production)
 
@@ -85,10 +86,13 @@ LOG_LEVEL=info
 **Frontend service:**
 
 ```bash
-REACT_APP_BACKEND_URL=https://<your-api-domain>
+BACKEND_PROXY_URL=http://<internal-backend-host>:8080
+# Do not set REACT_APP_BACKEND_URL unless you intentionally want cross-origin API calls.
 ```
 
-Use **`REACT_APP_BACKEND_URL`** exactly — not `REACT_APP_API_URL`. The app reads this name in `frontend/src/lib/api.js`. Zeabur forwards service variables into the Docker build as `ARG`s; `Dockerfile.frontend` declares `ARG REACT_APP_BACKEND_URL` **without a default** so the dashboard value is baked into the CRA bundle at build time. Changing it later requires a **redeploy**, not just a restart.
+If the frontend domain returns **HTTP 404**, Zeabur is not running the React container — the service name likely doesn't match any `Dockerfile.*` in the repo. Rename the service to `frontend` or `learnhub-frontend`, or set `ZBPACK_DOCKERFILE_PATH=Dockerfile.frontend`, then redeploy.
+
+Use **`REACT_APP_BACKEND_URL`** only for legacy direct cross-origin API access (not recommended). Zeabur forwards service variables into the Docker build as `ARG`s; `Dockerfile.frontend` declares `ARG REACT_APP_BACKEND_URL` **without a default** so the dashboard value is baked into the CRA bundle at build time when set. Changing it later requires a **redeploy**, not just a restart.
 
 ### URL alignment checklist
 
@@ -96,7 +100,7 @@ These three values must use the same public origins:
 
 | Variable | Service | Must match |
 |----------|---------|------------|
-| `REACT_APP_BACKEND_URL` | `frontend` | Public API URL (browser-reachable) |
+| `BACKEND_PROXY_URL` | `frontend` | Internal API hostname (e.g. `http://training-platform:8080`) |
 | `FRONTEND_URL` | API | Public frontend URL |
 | `CORS_ORIGINS` | API | Same origin as `FRONTEND_URL` (not `*`) |
 
@@ -107,7 +111,8 @@ Bind the **frontend** domain to the `frontend` service. Bind the **API** domain 
 - **Liveness:** use `/health` on the API (always `200`). Do not use `/ready` as the liveness probe — it returns `503` until MongoDB is connected.
 - **Readiness:** `curl https://<api-domain>/ready` should return `200` once Mongo is wired.
 - **Invalid Mongo connection string:** malformed values (`tcp://`, missing `mongodb://`, unescaped `@` in passwords) still allow `/health` to respond; `/ready` stays `503` until fixed. Percent-encode special characters in credentials (`urllib.parse.quote_plus`).
-- **Frontend calls `localhost:8001`:** `REACT_APP_BACKEND_URL` was missing or misnamed at build time — set the variable and redeploy the `frontend` service.
+- **Frontend HTTP 404:** service name doesn't match a `Dockerfile.*` — set `ZBPACK_DOCKERFILE_PATH=Dockerfile.frontend` or rename to `frontend` / `learnhub-frontend`, then redeploy.
+- **Frontend calls `localhost:8001`:** `REACT_APP_BACKEND_URL` was set at build time — unset it and redeploy so the app uses same-origin `/api`.
 - **502 on API domain:** API service suspended or not deployed — resume/redeploy the API service, not a second copy.
 
 ## Overview

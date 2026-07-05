@@ -61,6 +61,21 @@ let webpackConfig = {
 };
 
 webpackConfig.devServer = (devServerConfig) => {
+  const backendProxyTarget =
+    process.env.BACKEND_PROXY_URL ||
+    process.env.REACT_APP_BACKEND_URL ||
+    "http://localhost:8001";
+
+  devServerConfig.proxy = [
+    ...(Array.isArray(devServerConfig.proxy) ? devServerConfig.proxy : []),
+    {
+      context: ["/api"],
+      target: backendProxyTarget,
+      changeOrigin: true,
+      secure: false,
+    },
+  ];
+
   // Add health check endpoints if enabled
   if (config.enableHealthCheck && setupHealthEndpoints && healthPluginInstance) {
     const originalSetupMiddlewares = devServerConfig.setupMiddlewares;

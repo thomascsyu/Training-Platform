@@ -43,7 +43,8 @@ export const AuthProvider = ({ children }) => {
       // just flash "Not authenticated" after a successful login.
       const sessionError = new Error(
         "Login succeeded, but the browser could not establish a session. " +
-          "This usually means cookies are blocked by CORS, HTTPS, or browser settings."
+          "Ensure the frontend proxies /api to the backend (BACKEND_PROXY_URL) " +
+          "or configure CORS, COOKIE_SAMESITE=none, and COOKIE_SECURE=true for cross-origin API access."
       );
       sessionError.cause = err;
       throw sessionError;

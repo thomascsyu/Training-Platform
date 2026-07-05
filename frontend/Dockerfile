@@ -18,6 +18,7 @@ FROM node:20-alpine
 WORKDIR /app
 
 COPY frontend/static-server.js ./static-server.js
+COPY frontend/proxy-utils.js ./proxy-utils.js
 COPY --from=build /app/build ./build
 
 EXPOSE 8080
