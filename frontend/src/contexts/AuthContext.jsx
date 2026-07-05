@@ -30,7 +30,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const _verifySession = async (user) => {
+  const _verifySession = async () => {
     // The login/register endpoints return the user object in the JSON body, but
     // real session persistence depends on HTTP-only cookies. Re-fetch /me so
     // we fail fast here if the browser didn't store/send cookies, instead of
@@ -55,7 +55,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const { data } = await API.post("/auth/login", { email, password });
       setUser(data);
-      const me = await _verifySession(data);
+      const me = await _verifySession();
       setUser(me);
       return me;
     } catch (err) {
@@ -76,7 +76,7 @@ export const AuthProvider = ({ children }) => {
         role: "student",
       });
       setUser(data);
-      const me = await _verifySession(data);
+      const me = await _verifySession();
       setUser(me);
       return me;
     } catch (err) {
