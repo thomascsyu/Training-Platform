@@ -52,6 +52,9 @@ __pycache__/
 venv/
 .venv/
 
+# Uploaded course thumbnails
+backend/uploads/
+
 # Development tools
 chainlit.md
 .chainlit

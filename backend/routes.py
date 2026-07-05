@@ -1,4 +1,7 @@
+from pathlib import Path
+
 from fastapi import APIRouter
+from fastapi.staticfiles import StaticFiles
 
 from routers.auth import router as auth_router
 from routers.certificates import router as certificates_router
@@ -16,6 +19,8 @@ from routers.stats import router as stats_router
 from routers.translate import router as translate_router
 from routers.companies import router as companies_router
 from routers.users import router as users_router
+from routers.uploads import router as uploads_router
+from upload_utils import UPLOADS_ROOT, ensure_thumbnail_dir
 
 api_router = APIRouter(prefix="/api")
 
@@ -34,4 +39,12 @@ api_router.include_router(progress_router)
 api_router.include_router(companies_router)
 api_router.include_router(users_router)
 api_router.include_router(stats_router)
+api_router.include_router(uploads_router)
 api_router.include_router(root_router)
+
+ensure_thumbnail_dir()
+api_router.mount(
+    "/uploads",
+    StaticFiles(directory=Path(UPLOADS_ROOT)),
+    name="uploads",
+)
