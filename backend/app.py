@@ -8,10 +8,9 @@ from starlette.middleware.cors import CORSMiddleware
 
 from auth_utils import hash_password, verify_password
 from config import (
-    ADMIN_EMAIL,
-    ADMIN_PASSWORD,
     CORS_ALLOW_CREDENTIALS,
     CORS_ORIGINS,
+    get_seeded_admin_accounts,
     logger,
 )
 from database import close_db_client, db
@@ -32,31 +31,38 @@ async def initialize_database():
     )
     await db.chat_messages.create_index([("course_id", 1), ("user_id", 1)])
 
-    existing = await db.users.find_one({"email": ADMIN_EMAIL})
-    if not existing:
-        if not ADMIN_PASSWORD:
-            logger.warning(
-                "ADMIN_PASSWORD not set; skipping admin seed. "
-                "Set ADMIN_PASSWORD to create the default admin account."
-            )
-        else:
-            from datetime import datetime, timezone
+    for name, email, password in get_seeded_admin_accounts():
+        await _seed_admin_account(name, email, password)
 
-            await db.users.insert_one({
-                "email": ADMIN_EMAIL,
-                "password_hash": hash_password(ADMIN_PASSWORD),
-                "name": "Admin",
-                "role": "admin",
-                "created_at": datetime.now(timezone.utc).isoformat(),
-            })
-            logger.info("Admin user created: %s", ADMIN_EMAIL)
-    elif ADMIN_PASSWORD:
-        if not verify_password(ADMIN_PASSWORD, existing["password_hash"]):
-            await db.users.update_one(
-                {"email": ADMIN_EMAIL},
-                {"$set": {"password_hash": hash_password(ADMIN_PASSWORD)}},
+
+async def _seed_admin_account(name: str, email: str, password: str | None) -> None:
+    existing = await db.users.find_one({"email": email})
+    if not existing:
+        if not password:
+            logger.warning(
+                "Password not set for %s; skipping admin seed. "
+                "Set ADMIN_PASSWORD (and ADMIN2_PASSWORD if used) to create admin accounts.",
+                email,
             )
-            logger.info("Admin password reset for: %s", ADMIN_EMAIL)
+            return
+
+        from datetime import datetime, timezone
+
+        await db.users.insert_one({
+            "email": email,
+            "password_hash": hash_password(password),
+            "name": name,
+            "role": "admin",
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        })
+        logger.info("Admin user created: %s", email)
+    elif password:
+        if not verify_password(password, existing["password_hash"]):
+            await db.users.update_one(
+                {"email": email},
+                {"$set": {"password_hash": hash_password(password)}},
+            )
+            logger.info("Admin password reset for: %s", email)
 
 
 async def _initialize_database_with_retry(

@@ -4,7 +4,8 @@ Use these accounts for local development and QA. **Change all passwords before d
 
 | Role | Email | Password | Notes |
 |------|-------|----------|-------|
-| Admin | admin@learnhub.com | Set via `ADMIN_PASSWORD` in backend `.env` (no default) | Full platform access; account is only seeded when `ADMIN_PASSWORD` is set |
+| Admin | admin@learnhub.com | Set via `ADMIN_PASSWORD` in backend `.env` (Docker default: `change-me-in-production`) | Full platform access; account is only seeded when `ADMIN_PASSWORD` is set |
+| Admin 2 | admin2@learnhub.com | Set via `ADMIN2_PASSWORD` in backend `.env` (Docker default: `change-me-admin2`) | Second admin; both `ADMIN2_EMAIL` and `ADMIN2_PASSWORD` must be set |
 | Student | student@test.com | test123 | Create via registration or seed manually |
 
 ## Client Manager accounts

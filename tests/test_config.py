@@ -54,5 +54,33 @@ def test_int_env_treats_blank_values_as_unset(monkeypatch):
     assert config._get_int_env("MONGO_SERVER_SELECTION_TIMEOUT_MS", 5000) == 5000
 
 
+def test_int_env_falls_back_on_invalid_values(monkeypatch):
+    monkeypatch.setenv("MONGO_SERVER_SELECTION_TIMEOUT_MS", "bad")
+    assert config._get_int_env("MONGO_SERVER_SELECTION_TIMEOUT_MS", 5000) == 5000
+
+
 def test_admin_email_is_normalized():
     assert config._normalize_admin_email("  Admin@LearnHub.COM  ") == "admin@learnhub.com"
+
+
+def test_get_seeded_admin_accounts_includes_second_admin_when_both_set(monkeypatch):
+    monkeypatch.setenv("ADMIN_EMAIL", "admin@learnhub.com")
+    monkeypatch.setenv("ADMIN_PASSWORD", "password-1")
+    monkeypatch.setenv("ADMIN2_EMAIL", "admin2@learnhub.com")
+    monkeypatch.setenv("ADMIN2_PASSWORD", "password-2")
+
+    accounts = config.get_seeded_admin_accounts()
+
+    assert len(accounts) == 2
+    assert accounts[1] == ("Admin 2", "admin2@learnhub.com", "password-2")
+
+
+def test_get_seeded_admin_accounts_skips_second_admin_when_incomplete(monkeypatch):
+    monkeypatch.setenv("ADMIN_EMAIL", "admin@learnhub.com")
+    monkeypatch.setenv("ADMIN_PASSWORD", "password-1")
+    monkeypatch.setenv("ADMIN2_EMAIL", "admin2@learnhub.com")
+    monkeypatch.delenv("ADMIN2_PASSWORD", raising=False)
+
+    accounts = config.get_seeded_admin_accounts()
+
+    assert len(accounts) == 1
