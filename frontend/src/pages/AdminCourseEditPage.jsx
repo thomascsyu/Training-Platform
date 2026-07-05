@@ -269,17 +269,10 @@ export const AdminCourseEditPage = () => {
                 <Label>{t("courses.privateCourse")}</Label>
               </div>
             </div>
-            <Button
-              onClick={handleSave}
-              disabled={saving || !formData.title}
-              className="w-full bg-[#002FA7] hover:bg-[#002585] text-white rounded-sm"
-            >
-              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : t("courses.saveChanges")}
-            </Button>
           </CardContent>
         </Card>
 
-        <Card className="bg-white border border-slate-200 rounded-sm">
+        <Card className="bg-white border border-slate-200 rounded-sm mb-6">
           <CardHeader>
             <CardTitle className="text-lg">{t("courses.lessons")}</CardTitle>
           </CardHeader>
@@ -429,6 +422,15 @@ export const AdminCourseEditPage = () => {
             </div>
           </CardContent>
         </Card>
+
+        <Button
+          onClick={handleSave}
+          disabled={saving || !formData.title}
+          className="w-full bg-[#002FA7] hover:bg-[#002585] text-white rounded-sm"
+          data-testid="course-save-changes"
+        >
+          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : t("courses.saveChanges")}
+        </Button>
       </div>
     </DashboardLayout>
   );
