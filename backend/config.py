@@ -119,17 +119,37 @@ def get_seeded_admin_accounts() -> list[tuple[str, str, str | None]]:
 
 ENVIRONMENT = os.environ.get("ENVIRONMENT", "development")
 COOKIE_SECURE = os.environ.get("COOKIE_SECURE", "false").lower() == "true"
+
+_COOKIE_SAMESITE_RAW = os.environ.get("COOKIE_SAMESITE", "lax").lower()
+COOKIE_SAMESITE = _COOKIE_SAMESITE_RAW if _COOKIE_SAMESITE_RAW in (
+    "lax",
+    "strict",
+    "none",
+) else "lax"
+
+if COOKIE_SAMESITE == "none" and not COOKIE_SECURE:
+    COOKIE_SECURE = True
+    logger.warning(
+        "COOKIE_SAMESITE=none requires Secure; forcing COOKIE_SECURE=true"
+    )
+
 REQUIRE_STRIPE_WEBHOOK_SECRET = (
     os.environ.get("REQUIRE_STRIPE_WEBHOOK_SECRET", "false").lower() == "true"
     or ENVIRONMENT == "production"
 )
 
-CORS_ORIGINS_STR = os.environ.get("CORS_ORIGINS", "*")
+# Default to the frontend URL so cookie-based auth works out of the box.
+# Using '*' with allow_credentials=True is forbidden by browsers, so '*' turns
+# credentials off and breaks login sessions.
+CORS_ORIGINS_STR = os.environ.get("CORS_ORIGINS", FRONTEND_URL)
 if CORS_ORIGINS_STR == "*":
     CORS_ORIGINS = ["*"]
     CORS_ALLOW_CREDENTIALS = False
+    logger.warning(
+        "CORS_ORIGINS=* disables credentials; cookie auth will not work across origins"
+    )
 else:
-    CORS_ORIGINS = [origin.strip() for origin in CORS_ORIGINS_STR.split(",")]
+    CORS_ORIGINS = [origin.strip() for origin in CORS_ORIGINS_STR.split(",") if origin.strip()]
     CORS_ALLOW_CREDENTIALS = True
 
 SUPPORTED_LANGUAGES = ["en", "zh-TW", "zh-CN", "ja", "ko"]

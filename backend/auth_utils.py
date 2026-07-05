@@ -5,7 +5,7 @@ import jwt
 from bson import ObjectId
 from fastapi import HTTPException, Request
 
-from config import COOKIE_SECURE, JWT_ALGORITHM, JWT_SECRET
+from config import COOKIE_SAMESITE, COOKIE_SECURE, JWT_ALGORITHM, JWT_SECRET
 from database import db
 
 ACCESS_TOKEN_MAX_AGE = 3600
@@ -53,7 +53,7 @@ def set_auth_cookies(response, access_token: str, refresh_token: str):
         value=access_token,
         httponly=True,
         secure=COOKIE_SECURE,
-        samesite="lax",
+        samesite=COOKIE_SAMESITE,
         max_age=ACCESS_TOKEN_MAX_AGE,
         path="/",
     )
@@ -62,15 +62,19 @@ def set_auth_cookies(response, access_token: str, refresh_token: str):
         value=refresh_token,
         httponly=True,
         secure=COOKIE_SECURE,
-        samesite="lax",
+        samesite=COOKIE_SAMESITE,
         max_age=REFRESH_TOKEN_MAX_AGE,
         path="/",
     )
 
 
 def clear_auth_cookies(response):
-    response.delete_cookie("access_token", path="/")
-    response.delete_cookie("refresh_token", path="/")
+    response.delete_cookie(
+        "access_token", path="/", samesite=COOKIE_SAMESITE
+    )
+    response.delete_cookie(
+        "refresh_token", path="/", samesite=COOKIE_SAMESITE
+    )
 
 
 async def get_current_user(request: Request) -> dict:
