@@ -19,6 +19,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const checkAuth = async () => {
+    setLoading(true);
     try {
       const { data } = await API.get("/auth/me");
       setUser(data);
@@ -29,21 +30,61 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const _verifySession = async (user) => {
+    // The login/register endpoints return the user object in the JSON body, but
+    // real session persistence depends on HTTP-only cookies. Re-fetch /me so
+    // we fail fast here if the browser didn't store/send cookies, instead of
+    // navigating to a protected route and immediately being bounced back.
+    try {
+      const { data } = await API.get("/auth/me");
+      return data;
+    } catch (err) {
+      // Replace the low-level API error with a clear message so the UI doesn't
+      // just flash "Not authenticated" after a successful login.
+      const sessionError = new Error(
+        "Login succeeded, but the browser could not establish a session. " +
+          "This usually means cookies are blocked by CORS, HTTPS, or browser settings."
+      );
+      sessionError.cause = err;
+      throw sessionError;
+    }
+  };
+
   const login = async (email, password) => {
-    const { data } = await API.post("/auth/login", { email, password });
-    setUser(data);
-    return data;
+    setLoading(true);
+    try {
+      const { data } = await API.post("/auth/login", { email, password });
+      setUser(data);
+      const me = await _verifySession(data);
+      setUser(me);
+      return me;
+    } catch (err) {
+      setUser(false);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
   };
 
   const register = async (email, password, name) => {
-    const { data } = await API.post("/auth/register", {
-      email,
-      password,
-      name,
-      role: "student",
-    });
-    setUser(data);
-    return data;
+    setLoading(true);
+    try {
+      const { data } = await API.post("/auth/register", {
+        email,
+        password,
+        name,
+        role: "student",
+      });
+      setUser(data);
+      const me = await _verifySession(data);
+      setUser(me);
+      return me;
+    } catch (err) {
+      setUser(false);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
   };
 
   const logout = async () => {
