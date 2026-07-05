@@ -8,9 +8,24 @@ const {
 } = require("./proxy-utils");
 
 const buildDir = path.join(__dirname, "build");
+const indexPath = path.join(buildDir, "index.html");
 const backendOrigin = normalizeBackendOrigin(
   process.env.BACKEND_PROXY_URL || process.env.REACT_APP_BACKEND_URL
 );
+
+function validateBuildOutput() {
+  if (!fs.existsSync(indexPath)) {
+    console.error(
+      `Missing ${indexPath}. The React build was not copied into the image. ` +
+        "Check the Docker build logs and ensure the service uses Dockerfile.frontend " +
+        "(or set ZBPACK_DOCKERFILE_PATH=Dockerfile.frontend on Zeabur)."
+    );
+    return false;
+  }
+  return true;
+}
+
+const hasBuildOutput = validateBuildOutput();
 
 function parsePort(rawPort) {
   const port = Number.parseInt(rawPort || "8080", 10);
@@ -47,9 +62,21 @@ function safeResolve(urlPath) {
   return filePath.startsWith(buildDir) ? filePath : path.join(buildDir, "index.html");
 }
 
+function sendServiceUnavailable(res, message) {
+  res.writeHead(503, { "Content-Type": "text/plain; charset=utf-8" });
+  res.end(message);
+}
+
 function sendFile(res, filePath) {
   fs.readFile(filePath, (error, data) => {
     if (error) {
+      if (filePath === indexPath) {
+        sendServiceUnavailable(
+          res,
+          "Frontend build missing. Redeploy the frontend service with Dockerfile.frontend."
+        );
+        return;
+      }
       res.writeHead(500, { "Content-Type": "text/plain; charset=utf-8" });
       res.end("Internal Server Error");
       return;
@@ -67,8 +94,22 @@ const server = http.createServer((req, res) => {
   const requestUrl = req.url || "/";
 
   if (requestUrl === "/health") {
-    res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
-    res.end(JSON.stringify({ status: "ok" }));
+    res.writeHead(hasBuildOutput ? 200 : 503, {
+      "Content-Type": "application/json; charset=utf-8",
+    });
+    res.end(
+      JSON.stringify({
+        status: hasBuildOutput ? "ok" : "build_missing",
+      })
+    );
+    return;
+  }
+
+  if (!hasBuildOutput) {
+    sendServiceUnavailable(
+      res,
+      "Frontend build missing. Redeploy the frontend service with Dockerfile.frontend."
+    );
     return;
   }
 
@@ -87,6 +128,10 @@ const server = http.createServer((req, res) => {
     sendFile(res, path.join(buildDir, "index.html"));
   });
 });
+
+if (!hasBuildOutput) {
+  process.exit(1);
+}
 
 server.listen(port, host, () => {
   console.log(`Static server listening on http://${host}:${port}`);
