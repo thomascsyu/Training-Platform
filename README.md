@@ -396,7 +396,7 @@ COOKIE_SECURE=false                 # true in production (HTTPS)
 CORS_ORIGINS=http://localhost:3000  # comma-separated; never * with credentials
 
 ADMIN_EMAIL=admin@learnhub.com
-ADMIN_PASSWORD=change-me
+ADMIN_PASSWORD=change-me-in-production
 
 STRIPE_API_KEY=
 STRIPE_WEBHOOK_SECRET=

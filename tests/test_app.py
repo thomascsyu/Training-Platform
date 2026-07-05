@@ -1,6 +1,9 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
+from fastapi import HTTPException
+from pymongo.errors import PyMongoError
+
 import app
 
 
@@ -76,3 +79,50 @@ async def test_admin_is_not_created_when_password_not_set(mock_db, monkeypatch):
 
     mock_db.users.insert_one.assert_not_awaited()
     mock_db.users.update_one.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_initialize_database_with_retry_succeeds_after_transient_failure(
+    mock_db, monkeypatch
+):
+    monkeypatch.setattr(app, "_database_initialized", False)
+    attempts = {"count": 0}
+
+    async def flaky_initialize():
+        attempts["count"] += 1
+        if attempts["count"] < 2:
+            raise PyMongoError("connection refused")
+
+    monkeypatch.setattr(app, "initialize_database", flaky_initialize)
+
+    await app._initialize_database_with_retry(max_attempts=3, base_delay=0)
+
+    assert attempts["count"] == 2
+    assert app._database_initialized is True
+
+
+@pytest.mark.asyncio
+async def test_initialize_database_with_retry_keeps_app_alive_after_exhausted_retries(
+    mock_db, monkeypatch
+):
+    monkeypatch.setattr(app, "_database_initialized", False)
+
+    async def always_fail():
+        raise PyMongoError("connection refused")
+
+    monkeypatch.setattr(app, "initialize_database", always_fail)
+
+    await app._initialize_database_with_retry(max_attempts=2, base_delay=0)
+
+    assert app._database_initialized is False
+
+
+@pytest.mark.asyncio
+async def test_ready_returns_503_until_database_initialized(monkeypatch):
+    monkeypatch.setattr(app, "_database_initialized", False)
+
+    with pytest.raises(HTTPException) as exc_info:
+        await app.ready()
+
+    assert exc_info.value.status_code == 503
+    assert exc_info.value.detail == "Database initialization pending"

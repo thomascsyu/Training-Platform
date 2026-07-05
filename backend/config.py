@@ -84,7 +84,13 @@ EMAIL_FROM = os.environ.get("EMAIL_FROM", "noreply@learnhub.com")
 EMAIL_FROM_NAME = os.environ.get("EMAIL_FROM_NAME", "LearnHub")
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:3000")
 
-ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "admin@learnhub.com")
+def _normalize_admin_email(email: str) -> str:
+    return email.lower().strip()
+
+
+ADMIN_EMAIL = _normalize_admin_email(
+    os.environ.get("ADMIN_EMAIL", "admin@learnhub.com")
+)
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD")
 
 ENVIRONMENT = os.environ.get("ENVIRONMENT", "development")
