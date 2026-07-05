@@ -1,4 +1,30 @@
+import importlib
+import os
+from contextlib import contextmanager
+
 import config
+
+
+@contextmanager
+def _reloaded_config(**env):
+    """Set environment variables, reload config, yield it, then restore."""
+    keys = list(env.keys())
+    original = {k: os.environ.get(k) for k in keys}
+    for k, v in env.items():
+        if v is None:
+            os.environ.pop(k, None)
+        else:
+            os.environ[k] = str(v)
+    importlib.reload(config)
+    try:
+        yield config
+    finally:
+        for k, v in original.items():
+            if v is None:
+                os.environ.pop(k, None)
+            else:
+                os.environ[k] = v
+        importlib.reload(config)
 
 
 def test_mongo_url_prefers_explicit_mongo_url(monkeypatch):
@@ -84,3 +110,48 @@ def test_get_seeded_admin_accounts_skips_second_admin_when_incomplete(monkeypatc
     accounts = config.get_seeded_admin_accounts()
 
     assert len(accounts) == 1
+
+
+def test_cookie_samesite_defaults_to_lax():
+    with _reloaded_config(COOKIE_SAMESITE=None, COOKIE_SECURE="false") as cfg:
+        assert cfg.COOKIE_SAMESITE == "lax"
+
+
+def test_cookie_samesite_invalid_value_falls_back_to_lax():
+    with _reloaded_config(COOKIE_SAMESITE="invalid", COOKIE_SECURE="false") as cfg:
+        assert cfg.COOKIE_SAMESITE == "lax"
+
+
+def test_cookie_samesite_none_forces_secure():
+    with _reloaded_config(COOKIE_SAMESITE="none", COOKIE_SECURE="false") as cfg:
+        assert cfg.COOKIE_SAMESITE == "none"
+        assert cfg.COOKIE_SECURE is True
+
+
+def test_cors_origins_default_to_frontend_url():
+    with _reloaded_config(
+        CORS_ORIGINS=None, FRONTEND_URL="http://example.com"
+    ) as cfg:
+        assert cfg.CORS_ORIGINS == ["http://example.com"]
+        assert cfg.CORS_ALLOW_CREDENTIALS is True
+
+
+def test_cors_origins_star_disables_credentials():
+    with _reloaded_config(CORS_ORIGINS="*") as cfg:
+        assert cfg.CORS_ORIGINS == ["*"]
+        assert cfg.CORS_ALLOW_CREDENTIALS is False
+
+
+def test_cors_origins_splits_multiple_values():
+    with _reloaded_config(
+        CORS_ORIGINS="http://a.com, http://b.com", FRONTEND_URL="http://example.com"
+    ) as cfg:
+        assert cfg.CORS_ORIGINS == ["http://a.com", "http://b.com"]
+        assert cfg.CORS_ALLOW_CREDENTIALS is True
+
+
+def test_cors_origins_ignores_empty_entries():
+    with _reloaded_config(
+        CORS_ORIGINS="http://a.com,, http://b.com, ", FRONTEND_URL="http://example.com"
+    ) as cfg:
+        assert cfg.CORS_ORIGINS == ["http://a.com", "http://b.com"]
