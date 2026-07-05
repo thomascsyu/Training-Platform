@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { ImagePlus, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,18 @@ export const ThumbnailUpload = ({
   const { t } = useLanguage();
   const inputRef = useRef(null);
   const [uploading, setUploading] = useState(false);
+  const [localPreview, setLocalPreview] = useState(null);
+  const localPreviewRef = useRef(null);
+
+  const clearLocalPreview = () => {
+    if (localPreviewRef.current) {
+      URL.revokeObjectURL(localPreviewRef.current);
+      localPreviewRef.current = null;
+    }
+    setLocalPreview(null);
+  };
+
+  useEffect(() => () => clearLocalPreview(), []);
 
   const handleFileChange = async (event) => {
     const file = event.target.files?.[0];
@@ -33,12 +45,18 @@ export const ThumbnailUpload = ({
       return;
     }
 
+    clearLocalPreview();
+    const objectUrl = URL.createObjectURL(file);
+    localPreviewRef.current = objectUrl;
+    setLocalPreview(objectUrl);
+
     setUploading(true);
     try {
       const { url } = await uploadThumbnail(file);
       onChange(url);
       toast.success(t("courses.thumbnailUploaded"));
     } catch (error) {
+      clearLocalPreview();
       toast.error(formatError(error));
     } finally {
       setUploading(false);
@@ -46,24 +64,35 @@ export const ThumbnailUpload = ({
   };
 
   const handleRemove = () => {
+    clearLocalPreview();
     onChange("");
     if (inputRef.current) {
       inputRef.current.value = "";
     }
   };
 
+  const handlePreviewLoad = (loadedSrc) => {
+    if (loadedSrc === value) {
+      clearLocalPreview();
+    }
+  };
+
+  const previewSrc = value || localPreview;
+
   return (
     <div className="space-y-2" data-testid={testId}>
       <Label>{t("courses.uploadThumbnail")}</Label>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
         <div className="w-full sm:w-40 h-24 bg-slate-100 border border-slate-200 rounded-sm overflow-hidden flex items-center justify-center shrink-0">
-          {value ? (
+          {previewSrc ? (
             <CourseThumbnail
-              src={value}
+              src={value || localPreview}
+              fallbackSrc={localPreview && value ? localPreview : undefined}
               alt={t("courses.uploadThumbnail")}
               fallbackIcon={ImagePlus}
               fallbackIconClassName="w-8 h-8 text-slate-300"
               testId={`${testId}-preview`}
+              onLoad={handlePreviewLoad}
             />
           ) : (
             <ImagePlus className="w-8 h-8 text-slate-300" />
@@ -80,7 +109,7 @@ export const ThumbnailUpload = ({
             data-testid={`${testId}-input`}
           />
           <p className="text-xs text-slate-500">{t("courses.thumbnailHint")}</p>
-          {value && (
+          {previewSrc && (
             <Button
               type="button"
               variant="outline"

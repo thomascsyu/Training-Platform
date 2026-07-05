@@ -26,9 +26,12 @@ services:
     restart: unless-stopped
     ports:
       - "8001:8080"
+    volumes:
+      - uploads_data:/app/uploads
     environment:
       MONGO_URL: ${MONGO_URL:-mongodb://mongo:27017}
       DB_NAME: learnhub
+      UPLOADS_DIR: /app/uploads
       JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
       ENVIRONMENT: ${ENVIRONMENT:-development}
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
@@ -63,3 +66,4 @@ services:
 
 volumes:
   mongo_data:
+  uploads_data:

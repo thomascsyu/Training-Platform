@@ -81,7 +81,10 @@ FRONTEND_URL=https://<your-frontend-domain>
 CORS_ORIGINS=https://<your-frontend-domain>
 LOG_LEVEL=info
 # optional: STRIPE_*, BREVO_*, DEEPSEEK_*
+UPLOADS_DIR=/app/uploads
 ```
+
+Attach a **persistent volume** to the API service mounted at `/app/uploads`. Without it, uploaded course thumbnails are lost on redeploy/restart while MongoDB still keeps the old URLs (broken previews).
 
 **Frontend service:**
 
@@ -114,6 +117,7 @@ Bind the **frontend** domain to the `frontend` service. Bind the **API** domain 
 - **Frontend HTTP 404:** service name doesn't match a `Dockerfile.*` — set `ZBPACK_DOCKERFILE_PATH=Dockerfile.frontend` or rename to `frontend` / `learnhub-frontend`, then redeploy.
 - **Frontend calls `localhost:8001`:** `REACT_APP_BACKEND_URL` was set at build time — unset it and redeploy so the app uses same-origin `/api`.
 - **502 on API domain:** API service suspended or not deployed — resume/redeploy the API service, not a second copy.
+- **Broken course thumbnails after redeploy:** attach persistent storage to the API service at `/app/uploads` and set `UPLOADS_DIR=/app/uploads`.
 
 ## Overview
 
@@ -418,6 +422,7 @@ EMAIL_FROM=noreply@yourdomain.com
 EMAIL_FROM_NAME=LearnHub
 FRONTEND_URL=http://localhost:3000
 LOG_LEVEL=info                     # critical | error | warning | debug | trace; invalid values fall back to info
+UPLOADS_DIR=                        # optional; defaults to backend/uploads (use /app/uploads in Docker/cloud)
 ```
 
 ### Frontend
@@ -442,6 +447,8 @@ Node.js 18+, Python 3.11+, MongoDB 6+, and accounts for Stripe, Deepseek, and (o
 cp .env.docker.example .env   # edit JWT_SECRET, ADMIN_PASSWORD
 docker compose up --build
 ```
+
+Course thumbnails are stored in the `uploads_data` Docker volume (mounted at `/app/uploads` on the API container). They survive `docker compose down` unless you remove volumes with `-v`.
 
 **Rebuild MongoDB + API only:**
 
