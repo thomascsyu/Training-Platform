@@ -17,6 +17,7 @@ import { courseLanguages } from "@/i18n";
 import { API, formatError } from "@/lib/api";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { DashboardLayout } from "@/components/DashboardLayout";
+import { ThumbnailUpload } from "@/components/ThumbnailUpload";
 
 export const AdminCourseEditPage = () => {
   const { id } = useParams();
@@ -216,23 +217,18 @@ export const AdminCourseEditPage = () => {
                 />
               </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>{t("courses.thumbnailUrl")}</Label>
-                <Input
-                  value={formData.thumbnail_url}
-                  onChange={(e) => setFormData({ ...formData, thumbnail_url: e.target.value })}
-                  className="rounded-sm"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>{t("courses.videoUrl")}</Label>
-                <Input
-                  value={formData.video_url}
-                  onChange={(e) => setFormData({ ...formData, video_url: e.target.value })}
-                  className="rounded-sm"
-                />
-              </div>
+            <ThumbnailUpload
+              value={formData.thumbnail_url}
+              onChange={(url) => setFormData({ ...formData, thumbnail_url: url })}
+              testId="course-edit-thumbnail-upload"
+            />
+            <div className="space-y-2">
+              <Label>{t("courses.videoUrl")}</Label>
+              <Input
+                value={formData.video_url}
+                onChange={(e) => setFormData({ ...formData, video_url: e.target.value })}
+                className="rounded-sm"
+              />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">

@@ -82,3 +82,12 @@ export const formatError = (error) => {
   }
   return String(detail);
 };
+
+export const uploadThumbnail = async (file) => {
+  const formData = new FormData();
+  formData.append("file", file);
+  const { data } = await API.post("/uploads/thumbnail", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return data;
+};

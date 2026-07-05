@@ -16,6 +16,7 @@ import { API, formatError } from "@/lib/api";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { TranslateDialog } from "@/components/TranslateDialog";
+import { ThumbnailUpload } from "@/components/ThumbnailUpload";
 
 export const AdminCoursesPage = () => {
   const navigate = useNavigate();
@@ -147,16 +148,11 @@ export const AdminCoursesPage = () => {
                   </Select>
                 </div>
                 
-                <div className="space-y-2">
-                  <Label>{t("courses.thumbnailUrl")}</Label>
-                  <Input 
-                    value={formData.thumbnail_url}
-                    onChange={(e) => setFormData({...formData, thumbnail_url: e.target.value})}
-                    className="rounded-sm"
-                    placeholder="https://..."
-                    data-testid="course-thumbnail-input"
-                  />
-                </div>
+                <ThumbnailUpload
+                  value={formData.thumbnail_url}
+                  onChange={(url) => setFormData({ ...formData, thumbnail_url: url })}
+                  testId="course-thumbnail-upload"
+                />
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>{t("courses.videoUrl")}</Label>
