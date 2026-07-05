@@ -17,6 +17,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { TranslateDialog } from "@/components/TranslateDialog";
 import { ThumbnailUpload } from "@/components/ThumbnailUpload";
+import { CourseThumbnail } from "@/components/CourseThumbnail";
 
 export const AdminCoursesPage = () => {
   const navigate = useNavigate();
@@ -243,13 +244,11 @@ export const AdminCoursesPage = () => {
               <Card key={course.id} className="bg-white border border-slate-200 rounded-sm" data-testid={`admin-course-${course.id}`}>
                 <CardContent className="p-4 flex items-center gap-4">
                   <div className="w-24 h-16 bg-slate-100 rounded-sm overflow-hidden flex-shrink-0">
-                    {course.thumbnail_url ? (
-                      <img src={course.thumbnail_url} alt={course.title} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <BookOpen className="w-6 h-6 text-slate-300" />
-                      </div>
-                    )}
+                    <CourseThumbnail
+                      src={course.thumbnail_url}
+                      alt={course.title}
+                      testId={`admin-course-thumb-${course.id}`}
+                    />
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="font-medium truncate">{course.title}</h3>

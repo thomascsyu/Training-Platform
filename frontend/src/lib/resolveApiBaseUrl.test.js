@@ -1,4 +1,8 @@
-import { resolveApiBaseUrl, resolveBackendOrigin } from "@/lib/resolveApiBaseUrl";
+import {
+  resolveApiBaseUrl,
+  resolveBackendOrigin,
+  resolveUploadUrl,
+} from "@/lib/resolveApiBaseUrl";
 
 describe("resolveApiBaseUrl", () => {
   it("defaults to same-origin /api when unset", () => {
@@ -26,5 +30,34 @@ describe("resolveBackendOrigin", () => {
 
   it("falls back to localhost when nothing is configured", () => {
     expect(resolveBackendOrigin("", "")).toBe("http://localhost:8001");
+  });
+});
+
+describe("resolveUploadUrl", () => {
+  it("returns an empty string for missing values", () => {
+    expect(resolveUploadUrl("")).toBe("");
+    expect(resolveUploadUrl(undefined)).toBe("");
+    expect(resolveUploadUrl("   ")).toBe("");
+  });
+
+  it("keeps same-origin upload paths when no backend URL is configured", () => {
+    expect(resolveUploadUrl("/api/uploads/thumbnails/example.jpg", "")).toBe(
+      "/api/uploads/thumbnails/example.jpg"
+    );
+  });
+
+  it("prefixes upload paths with the backend origin when configured", () => {
+    expect(
+      resolveUploadUrl(
+        "/api/uploads/thumbnails/example.jpg",
+        "http://localhost:8001"
+      )
+    ).toBe("http://localhost:8001/api/uploads/thumbnails/example.jpg");
+  });
+
+  it("leaves absolute URLs unchanged", () => {
+    expect(resolveUploadUrl("https://cdn.example.com/thumb.jpg")).toBe(
+      "https://cdn.example.com/thumb.jpg"
+    );
   });
 });
