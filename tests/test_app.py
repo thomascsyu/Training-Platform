@@ -29,11 +29,21 @@ def mock_db(monkeypatch):
     return db
 
 
+@pytest.fixture
+def single_admin_account(monkeypatch):
+    monkeypatch.setattr(
+        app,
+        "get_seeded_admin_accounts",
+        lambda: [("Admin", "admin@learnhub.com", "admin-password")],
+    )
+
+
 @pytest.mark.asyncio
-async def test_admin_password_is_reset_when_changed(mock_db, monkeypatch):
-    monkeypatch.setattr(app, "ADMIN_PASSWORD", "new-password")
+async def test_admin_password_is_reset_when_changed(
+    mock_db, single_admin_account, monkeypatch
+):
     mock_db.users.find_one.return_value = {
-        "email": app.ADMIN_EMAIL,
+        "email": "admin@learnhub.com",
         "password_hash": "old-hash",
     }
     with patch.object(app, "verify_password", return_value=False):
@@ -41,15 +51,16 @@ async def test_admin_password_is_reset_when_changed(mock_db, monkeypatch):
 
     mock_db.users.update_one.assert_awaited_once()
     args, kwargs = mock_db.users.update_one.await_args
-    assert args[0] == {"email": app.ADMIN_EMAIL}
+    assert args[0] == {"email": "admin@learnhub.com"}
     assert "password_hash" in args[1]["$set"]
 
 
 @pytest.mark.asyncio
-async def test_admin_password_is_not_changed_when_unchanged(mock_db, monkeypatch):
-    monkeypatch.setattr(app, "ADMIN_PASSWORD", "same-password")
+async def test_admin_password_is_not_changed_when_unchanged(
+    mock_db, single_admin_account, monkeypatch
+):
     mock_db.users.find_one.return_value = {
-        "email": app.ADMIN_EMAIL,
+        "email": "admin@learnhub.com",
         "password_hash": "old-hash",
     }
     with patch.object(app, "verify_password", return_value=True):
@@ -59,26 +70,51 @@ async def test_admin_password_is_not_changed_when_unchanged(mock_db, monkeypatch
 
 
 @pytest.mark.asyncio
-async def test_admin_is_created_when_missing_and_password_set(mock_db, monkeypatch):
-    monkeypatch.setattr(app, "ADMIN_PASSWORD", "admin-password")
+async def test_admin_is_created_when_missing_and_password_set(
+    mock_db, single_admin_account, monkeypatch
+):
     mock_db.users.find_one.return_value = None
     await app.initialize_database()
 
     mock_db.users.insert_one.assert_awaited_once()
     args, kwargs = mock_db.users.insert_one.await_args
-    assert args[0]["email"] == app.ADMIN_EMAIL
+    assert args[0]["email"] == "admin@learnhub.com"
     assert args[0]["role"] == "admin"
     assert "password_hash" in args[0]
 
 
 @pytest.mark.asyncio
 async def test_admin_is_not_created_when_password_not_set(mock_db, monkeypatch):
-    monkeypatch.setattr(app, "ADMIN_PASSWORD", None)
+    monkeypatch.setattr(
+        app,
+        "get_seeded_admin_accounts",
+        lambda: [("Admin", "admin@learnhub.com", None)],
+    )
     mock_db.users.find_one.return_value = None
     await app.initialize_database()
 
     mock_db.users.insert_one.assert_not_awaited()
     mock_db.users.update_one.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_second_admin_is_created_when_configured(mock_db, monkeypatch):
+    monkeypatch.setattr(
+        app,
+        "get_seeded_admin_accounts",
+        lambda: [
+            ("Admin", "admin@learnhub.com", "password-1"),
+            ("Admin 2", "admin2@learnhub.com", "password-2"),
+        ],
+    )
+    mock_db.users.find_one.return_value = None
+    await app.initialize_database()
+
+    assert mock_db.users.insert_one.await_count == 2
+    inserted_emails = [
+        call.args[0]["email"] for call in mock_db.users.insert_one.await_args_list
+    ]
+    assert inserted_emails == ["admin@learnhub.com", "admin2@learnhub.com"]
 
 
 @pytest.mark.asyncio

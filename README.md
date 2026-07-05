@@ -73,6 +73,9 @@ JWT_SECRET=<64-char hex>
 DB_NAME=learnhub
 ADMIN_EMAIL=<your admin email>
 ADMIN_PASSWORD=<strong password>
+# optional second admin (both required if used):
+# ADMIN2_EMAIL=<second admin email>
+# ADMIN2_PASSWORD=<strong password>
 FRONTEND_URL=https://<your-frontend-domain>
 CORS_ORIGINS=https://<your-frontend-domain>
 LOG_LEVEL=info
@@ -397,6 +400,8 @@ CORS_ORIGINS=http://localhost:3000  # comma-separated; never * with credentials
 
 ADMIN_EMAIL=admin@learnhub.com
 ADMIN_PASSWORD=change-me-in-production
+ADMIN2_EMAIL=admin2@learnhub.com
+ADMIN2_PASSWORD=change-me-admin2
 
 STRIPE_API_KEY=
 STRIPE_WEBHOOK_SECRET=

@@ -93,6 +93,30 @@ ADMIN_EMAIL = _normalize_admin_email(
 )
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD")
 
+ADMIN2_EMAIL = _normalize_admin_email(os.environ.get("ADMIN2_EMAIL", ""))
+ADMIN2_PASSWORD = os.environ.get("ADMIN2_PASSWORD")
+
+
+def get_seeded_admin_accounts() -> list[tuple[str, str, str | None]]:
+    """Return (display_name, email, password) tuples for startup admin seeding."""
+    admin_email = _normalize_admin_email(
+        os.environ.get("ADMIN_EMAIL", "admin@learnhub.com")
+    )
+    admin_password = os.environ.get("ADMIN_PASSWORD")
+    admin2_email = _normalize_admin_email(os.environ.get("ADMIN2_EMAIL", ""))
+    admin2_password = os.environ.get("ADMIN2_PASSWORD")
+
+    accounts: list[tuple[str, str, str | None]] = [
+        ("Admin", admin_email, admin_password),
+    ]
+    if admin2_email and admin2_password:
+        accounts.append(("Admin 2", admin2_email, admin2_password))
+    elif admin2_email or admin2_password:
+        logger.warning(
+            "ADMIN2_EMAIL and ADMIN2_PASSWORD must both be set; skipping second admin"
+        )
+    return accounts
+
 ENVIRONMENT = os.environ.get("ENVIRONMENT", "development")
 COOKIE_SECURE = os.environ.get("COOKIE_SECURE", "false").lower() == "true"
 REQUIRE_STRIPE_WEBHOOK_SECRET = (
