@@ -22,11 +22,18 @@ jest.mock("sonner", () => ({
 }));
 
 describe("ThumbnailUpload", () => {
+  const originalBackendUrl = process.env.REACT_APP_BACKEND_URL;
+
   beforeEach(() => {
+    process.env.REACT_APP_BACKEND_URL = "";
     uploadThumbnail.mockReset();
     API.put.mockClear();
     URL.createObjectURL = jest.fn(() => "blob:http://localhost/preview");
     URL.revokeObjectURL = jest.fn();
+  });
+
+  afterEach(() => {
+    process.env.REACT_APP_BACKEND_URL = originalBackendUrl;
   });
 
   it("calls onChange with the uploaded thumbnail URL", async () => {
