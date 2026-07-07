@@ -40,19 +40,22 @@ describe("resolveUploadUrl", () => {
     expect(resolveUploadUrl("   ")).toBe("");
   });
 
-  it("keeps same-origin upload paths when no backend URL is configured", () => {
+  it("keeps thumbnail upload paths on the frontend origin for proxying", () => {
     expect(resolveUploadUrl("/api/uploads/thumbnails/example.jpg", "")).toBe(
       "/api/uploads/thumbnails/example.jpg"
     );
-  });
-
-  it("prefixes upload paths with the backend origin when configured", () => {
     expect(
       resolveUploadUrl(
         "/api/uploads/thumbnails/example.jpg",
         "http://localhost:8001"
       )
-    ).toBe("http://localhost:8001/api/uploads/thumbnails/example.jpg");
+    ).toBe("/api/uploads/thumbnails/example.jpg");
+  });
+
+  it("prefixes other /api paths with the backend origin when configured", () => {
+    expect(
+      resolveUploadUrl("/api/files/example.jpg", "http://localhost:8001")
+    ).toBe("http://localhost:8001/api/files/example.jpg");
   });
 
   it("leaves absolute URLs unchanged", () => {

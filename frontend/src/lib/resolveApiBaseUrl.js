@@ -21,9 +21,10 @@ export const resolveBackendOrigin = (
 /**
  * Resolve a stored upload URL for use in <img src>.
  *
- * Uploaded assets are stored as `/api/uploads/...`. When the app talks to the
- * backend directly via REACT_APP_BACKEND_URL, image tags must use the same
- * origin instead of the frontend host.
+ * Uploaded assets are stored as `/api/uploads/...`. Thumbnail GET requests are
+ * always served through the same-origin `/api` proxy (dev server or static
+ * server) so they keep working when JSON API calls use REACT_APP_BACKEND_URL
+ * for direct cross-origin access.
  */
 export const resolveUploadUrl = (
   url,
@@ -33,6 +34,10 @@ export const resolveUploadUrl = (
   if (!trimmed) return "";
 
   if (/^https?:\/\//i.test(trimmed)) {
+    return trimmed;
+  }
+
+  if (trimmed.startsWith("/api/uploads/thumbnails/")) {
     return trimmed;
   }
 

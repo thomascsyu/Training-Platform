@@ -163,7 +163,7 @@ async def get_course(course_id: str, request: Request):
 @router.put("/courses/{course_id}")
 async def update_course(course_id: str, data: CourseUpdate, request: Request):
     await require_roles("admin")(request)
-    update_data = {k: v for k, v in data.model_dump().items() if v is not None}
+    update_data = {k: v for k, v in data.model_dump(exclude_unset=True).items() if v is not None}
     update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
 
     result = await db.courses.update_one(
