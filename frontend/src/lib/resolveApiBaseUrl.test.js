@@ -2,6 +2,7 @@ import {
   resolveApiBaseUrl,
   resolveBackendOrigin,
   resolveUploadUrl,
+  resolveUploadFallbackUrl,
 } from "@/lib/resolveApiBaseUrl";
 
 describe("resolveApiBaseUrl", () => {
@@ -40,7 +41,7 @@ describe("resolveUploadUrl", () => {
     expect(resolveUploadUrl("   ")).toBe("");
   });
 
-  it("keeps thumbnail upload paths on the frontend origin for proxying", () => {
+  it("prefixes thumbnail upload paths with backend origin when configured", () => {
     expect(resolveUploadUrl("/api/uploads/thumbnails/example.jpg", "")).toBe(
       "/api/uploads/thumbnails/example.jpg"
     );
@@ -49,7 +50,7 @@ describe("resolveUploadUrl", () => {
         "/api/uploads/thumbnails/example.jpg",
         "http://localhost:8001"
       )
-    ).toBe("/api/uploads/thumbnails/example.jpg");
+    ).toBe("http://localhost:8001/api/uploads/thumbnails/example.jpg");
   });
 
   it("prefixes other /api paths with the backend origin when configured", () => {
@@ -61,6 +62,23 @@ describe("resolveUploadUrl", () => {
   it("leaves absolute URLs unchanged", () => {
     expect(resolveUploadUrl("https://cdn.example.com/thumb.jpg")).toBe(
       "https://cdn.example.com/thumb.jpg"
+    );
+  });
+});
+
+describe("resolveUploadFallbackUrl", () => {
+  it("returns same-origin thumbnail URL as fallback when backend is configured", () => {
+    expect(
+      resolveUploadFallbackUrl(
+        "/api/uploads/thumbnails/example.jpg",
+        "http://localhost:8001"
+      )
+    ).toBe("/api/uploads/thumbnails/example.jpg");
+  });
+
+  it("returns empty fallback when backend is not configured", () => {
+    expect(resolveUploadFallbackUrl("/api/uploads/thumbnails/example.jpg", "")).toBe(
+      ""
     );
   });
 });

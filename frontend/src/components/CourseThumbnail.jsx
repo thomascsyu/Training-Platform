@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react";
 import { BookOpen } from "lucide-react";
-import { resolveUploadUrl } from "@/lib/resolveApiBaseUrl";
+import { resolveUploadFallbackUrl, resolveUploadUrl } from "@/lib/resolveApiBaseUrl";
 
 const resolveImageSrc = (url) => {
   const trimmed = (url || "").trim();
-  if (!trimmed) return "";
-  if (trimmed.startsWith("blob:")) return trimmed;
-  return resolveUploadUrl(trimmed);
+  if (!trimmed) return { primary: "", fallback: "" };
+  if (trimmed.startsWith("blob:")) return { primary: trimmed, fallback: "" };
+  return {
+    primary: resolveUploadUrl(trimmed),
+    fallback: resolveUploadFallbackUrl(trimmed),
+  };
 };
 
 export const CourseThumbnail = ({
@@ -21,12 +24,19 @@ export const CourseThumbnail = ({
   onLoad,
 }) => {
   const [useFallbackSrc, setUseFallbackSrc] = useState(false);
+  const [useResolvedFallback, setUseResolvedFallback] = useState(false);
   const [failed, setFailed] = useState(false);
   const activeSrc = useFallbackSrc ? fallbackSrc : src;
-  const resolvedSrc = resolveImageSrc(activeSrc);
+  const { primary: resolvedPrimarySrc, fallback: resolvedFallbackSrc } =
+    resolveImageSrc(activeSrc);
+  const resolvedSrc =
+    useResolvedFallback && resolvedFallbackSrc
+      ? resolvedFallbackSrc
+      : resolvedPrimarySrc;
 
   useEffect(() => {
     setUseFallbackSrc(false);
+    setUseResolvedFallback(false);
     setFailed(false);
   }, [src, fallbackSrc]);
 
@@ -49,6 +59,14 @@ export const CourseThumbnail = ({
       onError={() => {
         if (fallbackSrc && !useFallbackSrc) {
           setUseFallbackSrc(true);
+          return;
+        }
+        if (
+          !useResolvedFallback &&
+          resolvedFallbackSrc &&
+          resolvedFallbackSrc !== resolvedPrimarySrc
+        ) {
+          setUseResolvedFallback(true);
           return;
         }
         setFailed(true);
