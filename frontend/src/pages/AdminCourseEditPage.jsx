@@ -82,6 +82,20 @@ export const AdminCourseEditPage = () => {
     }
   };
 
+  const handleThumbnailChange = useCallback(
+    async (thumbnail_url) => {
+      setFormData((prev) => (prev ? { ...prev, thumbnail_url } : prev));
+      try {
+        await API.put(`/courses/${id}`, { thumbnail_url });
+        setCourse((prev) => (prev ? { ...prev, thumbnail_url } : prev));
+      } catch (e) {
+        toast.error(formatError(e));
+        fetchCourse();
+      }
+    },
+    [id, fetchCourse]
+  );
+
   const handleAddLesson = async () => {
     if (!newLesson.title.trim()) return;
     setAddingLesson(true);
@@ -219,7 +233,7 @@ export const AdminCourseEditPage = () => {
             </div>
             <ThumbnailUpload
               value={formData.thumbnail_url}
-              onChange={(url) => setFormData({ ...formData, thumbnail_url: url })}
+              onChange={handleThumbnailChange}
               testId="course-edit-thumbnail-upload"
             />
             <div className="space-y-2">

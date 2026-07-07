@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect, useCallback } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +21,7 @@ import { CourseThumbnail } from "@/components/CourseThumbnail";
 
 export const AdminCoursesPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useLanguage();
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -40,11 +41,7 @@ export const AdminCoursesPage = () => {
   });
   const [creating, setCreating] = useState(false);
 
-  useEffect(() => {
-    fetchCourses();
-  }, []);
-
-  const fetchCourses = async () => {
+  const fetchCourses = useCallback(async () => {
     try {
       const { data } = await API.get("/courses?include_private=true");
       setCourses(data);
@@ -53,7 +50,11 @@ export const AdminCoursesPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchCourses();
+  }, [fetchCourses, location.key]);
 
   const handleCreate = async () => {
     setCreating(true);
