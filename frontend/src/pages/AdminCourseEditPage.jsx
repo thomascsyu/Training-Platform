@@ -38,6 +38,7 @@ export const AdminCourseEditPage = () => {
   const [editingLessonId, setEditingLessonId] = useState(null);
   const [editingLesson, setEditingLesson] = useState(null);
   const [savingLesson, setSavingLesson] = useState(false);
+  const [thumbnailBusy, setThumbnailBusy] = useState(false);
 
   const fetchCourse = useCallback(async () => {
     try {
@@ -81,20 +82,6 @@ export const AdminCourseEditPage = () => {
       setSaving(false);
     }
   };
-
-  const handleThumbnailChange = useCallback(
-    async (thumbnail_url) => {
-      setFormData((prev) => (prev ? { ...prev, thumbnail_url } : prev));
-      try {
-        await API.put(`/courses/${id}`, { thumbnail_url });
-        setCourse((prev) => (prev ? { ...prev, thumbnail_url } : prev));
-      } catch (e) {
-        toast.error(formatError(e));
-        fetchCourse();
-      }
-    },
-    [id, fetchCourse]
-  );
 
   const handleAddLesson = async () => {
     if (!newLesson.title.trim()) return;
@@ -178,7 +165,12 @@ export const AdminCourseEditPage = () => {
     <DashboardLayout>
       <div className="p-6 max-w-4xl" data-testid="admin-course-edit-page">
         <div className="flex items-center gap-4 mb-8">
-          <Button variant="outline" onClick={() => navigate("/admin/courses")} className="rounded-sm">
+          <Button
+            variant="outline"
+            onClick={() => navigate("/admin/courses")}
+            disabled={thumbnailBusy}
+            className="rounded-sm"
+          >
             <ArrowLeft className="w-4 h-4 mr-2" /> {t("courses.backToCourses")}
           </Button>
           <h1 className="text-2xl font-medium text-[#0A0B10]">{t("courses.editCourse")}</h1>
@@ -233,7 +225,12 @@ export const AdminCourseEditPage = () => {
             </div>
             <ThumbnailUpload
               value={formData.thumbnail_url}
-              onChange={handleThumbnailChange}
+              courseId={id}
+              onBusyChange={setThumbnailBusy}
+              onChange={(thumbnail_url) => {
+                setFormData((prev) => (prev ? { ...prev, thumbnail_url } : prev));
+                setCourse((prev) => (prev ? { ...prev, thumbnail_url } : prev));
+              }}
               testId="course-edit-thumbnail-upload"
             />
             <div className="space-y-2">
