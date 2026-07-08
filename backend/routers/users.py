@@ -4,7 +4,7 @@ from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Request
 
-from auth_utils import get_current_user, hash_password, require_roles
+from auth_utils import get_current_user, hash_password, require_admin_or_manager, require_roles
 from database import db
 from db_utils import parse_object_id
 from enrollment_utils import enroll_user_in_assigned_company_courses
@@ -50,11 +50,14 @@ async def get_users(
     role: Optional[str] = None,
     company_id: Optional[str] = None,
 ):
-    await require_roles("admin", "client_manager")(request)
+    user = await require_admin_or_manager(request)
     query = {}
     if role:
         query["role"] = role
-    if company_id:
+
+    if user["role"] == "client_manager":
+        query["company_id"] = user["company_id"]
+    elif company_id:
         await _validate_company_id(company_id)
         query["company_id"] = company_id
 
