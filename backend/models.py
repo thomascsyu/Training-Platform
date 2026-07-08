@@ -66,6 +66,7 @@ class CourseCreate(BaseModel):
     materials: List[Dict[str, str]] = []
     language: str = "en"
     category: Optional[str] = None
+    company_ids: List[str] = Field(default_factory=list)
 
 
 class CourseUpdate(BaseModel):
@@ -81,6 +82,7 @@ class CourseUpdate(BaseModel):
     materials: Optional[List[Dict[str, str]]] = None
     language: Optional[str] = None
     category: Optional[str] = None
+    company_ids: Optional[List[str]] = None
 
 
 class LessonCreate(BaseModel):

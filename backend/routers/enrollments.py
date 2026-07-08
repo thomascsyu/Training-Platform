@@ -1,12 +1,10 @@
-from datetime import datetime, timezone
-
 from bson import ObjectId
 from fastapi import APIRouter, HTTPException, Request
 
 from auth_utils import get_current_user, require_roles
 from database import db
 from db_utils import parse_object_id
-from email_service import send_enrollment_email
+from enrollment_utils import enroll_user_in_course, enroll_users_in_course
 from models import EnrollmentCreate
 from progress_utils import get_user_lesson_progress_by_courses
 
@@ -24,33 +22,19 @@ async def create_enrollment(data: EnrollmentCreate, request: Request):
         raise HTTPException(status_code=404, detail="Course not found")
 
     if user["role"] == "admin" and data.user_ids:
-        enrolled = []
+        enrolled_users = []
         for uid in data.user_ids:
-            existing = await db.enrollments.find_one({
-                "course_id": data.course_id,
-                "user_id": uid,
-            })
-            if not existing:
-                await db.enrollments.insert_one({
-                    "course_id": data.course_id,
-                    "user_id": uid,
-                    "enrolled_by": user["id"],
-                    "completed": False,
-                    "score": 0,
-                    "created_at": datetime.now(timezone.utc).isoformat(),
-                })
-                enrolled.append(uid)
-
-                enrolled_user = await db.users.find_one(
-                    {"_id": parse_object_id(uid, "user")}
-                )
-                if enrolled_user:
-                    await send_enrollment_email(
-                        enrolled_user.get("email"),
-                        enrolled_user.get("name"),
-                        course.get("title"),
-                        data.course_id,
-                    )
+            enrolled_user = await db.users.find_one(
+                {"_id": parse_object_id(uid, "user")}
+            )
+            if enrolled_user:
+                enrolled_users.append(enrolled_user)
+        enrolled = await enroll_users_in_course(
+            course,
+            data.course_id,
+            enrolled_users,
+            enrolled_by=user["id"],
+        )
         return {"message": f"Enrolled {len(enrolled)} users", "enrolled": enrolled}
 
     existing = await db.enrollments.find_one({
@@ -59,6 +43,11 @@ async def create_enrollment(data: EnrollmentCreate, request: Request):
     })
     if existing:
         raise HTTPException(status_code=400, detail="Already enrolled")
+
+    current_user = await db.users.find_one({"_id": ObjectId(user["id"])})
+    if course.get("company_ids"):
+        if not current_user or current_user.get("company_id") not in course["company_ids"]:
+            raise HTTPException(status_code=403, detail="Course is not assigned to your company")
 
     if not course.get("is_free") and course.get("price", 0) > 0:
         payment = await db.payment_transactions.find_one({
@@ -69,16 +58,10 @@ async def create_enrollment(data: EnrollmentCreate, request: Request):
         if not payment:
             raise HTTPException(status_code=402, detail="Payment required")
 
-    await db.enrollments.insert_one({
-        "course_id": data.course_id,
-        "user_id": user["id"],
-        "completed": False,
-        "score": 0,
-        "created_at": datetime.now(timezone.utc).isoformat(),
-    })
-
-    await send_enrollment_email(
-        user["email"], user["name"], course.get("title"), data.course_id
+    await enroll_user_in_course(
+        course,
+        data.course_id,
+        current_user,
     )
 
     return {"message": "Enrolled successfully"}

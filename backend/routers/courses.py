@@ -8,9 +8,42 @@ from config import SUPPORTED_LANGUAGES
 from course_utils import delete_course_related_data
 from database import db
 from db_utils import parse_object_id
+from enrollment_utils import enroll_company_students_in_course, enroll_user_in_course
 from models import CourseCreate, CourseUpdate
 
 router = APIRouter(tags=["courses"])
+
+
+async def _validate_company_ids(company_ids: Optional[list[str]]) -> list[str]:
+    if not company_ids:
+        return []
+
+    normalized = []
+    seen = set()
+    for company_id in company_ids:
+        if not company_id or company_id in seen:
+            continue
+        parse_object_id(company_id, "company")
+        normalized.append(company_id)
+        seen.add(company_id)
+
+    existing_count = await db.companies.count_documents({
+        "_id": {"$in": [parse_object_id(cid, "company") for cid in normalized]},
+    })
+    if existing_count != len(normalized):
+        raise HTTPException(status_code=400, detail="Company not found")
+
+    return normalized
+
+
+async def _get_user_company_id(user: Optional[dict]) -> Optional[str]:
+    if not user:
+        return None
+    user_doc = await db.users.find_one(
+        {"_id": parse_object_id(user["id"], "user")},
+        {"company_id": 1},
+    )
+    return user_doc.get("company_id") if user_doc else None
 
 
 @router.post("/courses")
@@ -22,6 +55,7 @@ async def create_course(data: CourseCreate, request: Request):
             detail=f"Unsupported language. Supported: {SUPPORTED_LANGUAGES}",
         )
 
+    company_ids = await _validate_company_ids(data.company_ids)
     course_doc = {
         "title": data.title,
         "description": data.description,
@@ -35,14 +69,25 @@ async def create_course(data: CourseCreate, request: Request):
         "materials": data.materials,
         "language": data.language,
         "category": data.category,
+        "company_ids": company_ids,
         "created_by": user["id"],
         "created_at": datetime.now(timezone.utc).isoformat(),
         "updated_at": datetime.now(timezone.utc).isoformat(),
     }
     result = await db.courses.insert_one(course_doc)
+    course_id = str(result.inserted_id)
+    enrolled = []
+    if company_ids:
+        enrolled = await enroll_company_students_in_course(
+            course_doc,
+            course_id,
+            company_ids,
+            enrolled_by=user["id"],
+        )
     return {
-        "id": str(result.inserted_id),
+        "id": course_id,
         **{k: v for k, v in course_doc.items() if k != "_id"},
+        "company_enrolled": enrolled,
     }
 
 
@@ -64,25 +109,35 @@ async def get_courses(
     user = await get_optional_user(request)
     is_authenticated = user is not None
 
-    query = {}
+    filters = []
     if not is_authenticated or (user and user["role"] == "student"):
-        query["is_private"] = False
+        company_filter = [
+            {"company_ids": {"$exists": False}},
+            {"company_ids": []},
+        ]
+        user_company_id = await _get_user_company_id(user)
+        if user_company_id:
+            company_filter.append({"company_ids": user_company_id})
+        filters.append({"is_private": False})
+        filters.append({"$or": company_filter})
     elif include_private and user and user["role"] in ["admin", "client_manager"]:
         pass
     else:
-        query["is_private"] = False
+        filters.append({"is_private": False})
 
     if language and language in SUPPORTED_LANGUAGES:
-        query["language"] = language
+        filters.append({"language": language})
 
     if category:
-        query["category"] = category
+        filters.append({"category": category})
 
     if search:
-        query["$or"] = [
+        filters.append({"$or": [
             {"title": {"$regex": search, "$options": "i"}},
             {"description": {"$regex": search, "$options": "i"}},
-        ]
+        ]})
+
+    query = {"$and": filters} if filters else {}
 
     courses = await db.courses.find(
         query,
@@ -96,6 +151,7 @@ async def get_courses(
             "is_private": 1,
             "language": 1,
             "category": 1,
+            "company_ids": 1,
             "created_at": 1,
         },
     ).to_list(100)
@@ -113,8 +169,30 @@ async def get_course(course_id: str, request: Request):
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
 
+    user = await get_optional_user(request)
+    if course.get("company_ids"):
+        if not user:
+            raise HTTPException(status_code=403, detail="Course is assigned to specific companies")
+        if user["role"] == "student":
+            user_company_id = await _get_user_company_id(user)
+            if user_company_id not in course.get("company_ids", []):
+                raise HTTPException(status_code=403, detail="Course is not assigned to your company")
+            enrollment = await db.enrollments.find_one({
+                "course_id": course_id,
+                "user_id": user["id"],
+            })
+            if not enrollment:
+                user_doc = await db.users.find_one(
+                    {"_id": parse_object_id(user["id"], "user")}
+                )
+                await enroll_user_in_course(
+                    course,
+                    course_id,
+                    user_doc,
+                    source="company_assignment",
+                )
+
     if course.get("is_private"):
-        user = await get_optional_user(request)
         if not user:
             raise HTTPException(
                 status_code=403, detail="Private course - authentication required"
@@ -162,8 +240,10 @@ async def get_course(course_id: str, request: Request):
 
 @router.put("/courses/{course_id}")
 async def update_course(course_id: str, data: CourseUpdate, request: Request):
-    await require_roles("admin")(request)
+    user = await require_roles("admin")(request)
     update_data = {k: v for k, v in data.model_dump(exclude_unset=True).items() if v is not None}
+    if "company_ids" in update_data:
+        update_data["company_ids"] = await _validate_company_ids(update_data["company_ids"])
     update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
 
     result = await db.courses.update_one(
@@ -172,7 +252,18 @@ async def update_course(course_id: str, data: CourseUpdate, request: Request):
     )
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Course not found")
-    return {"message": "Course updated"}
+    enrolled = []
+    if "company_ids" in update_data and update_data["company_ids"]:
+        updated_course = await db.courses.find_one(
+            {"_id": parse_object_id(course_id, "course")}
+        )
+        enrolled = await enroll_company_students_in_course(
+            updated_course,
+            course_id,
+            update_data["company_ids"],
+            enrolled_by=user["id"],
+        )
+    return {"message": "Course updated", "company_enrolled": enrolled}
 
 
 @router.delete("/courses/{course_id}")
