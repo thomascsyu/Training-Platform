@@ -11,13 +11,19 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
-  ArrowLeft, Globe, Loader2, Pencil, Plus, Trash2, Video, X
+  ArrowLeft, Bot, Globe, Loader2, Pencil, Plus, Trash2, Video, X
 } from "lucide-react";
 import { courseLanguages } from "@/i18n";
 import { API, formatError } from "@/lib/api";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { ThumbnailUpload } from "@/components/ThumbnailUpload";
+
+const createEmptyQuizQuestion = () => ({
+  question: "",
+  options: ["", "", "", "", ""],
+  correct_answer: 0,
+});
 
 export const AdminCourseEditPage = () => {
   const { id } = useParams();
@@ -40,6 +46,11 @@ export const AdminCourseEditPage = () => {
   const [editingLesson, setEditingLesson] = useState(null);
   const [savingLesson, setSavingLesson] = useState(false);
   const [thumbnailBusy, setThumbnailBusy] = useState(false);
+  const [newMaterial, setNewMaterial] = useState({ name: "", url: "" });
+  const [quizDraftTitle, setQuizDraftTitle] = useState("");
+  const [quizDraftQuestions, setQuizDraftQuestions] = useState([]);
+  const [quizQuestionDraft, setQuizQuestionDraft] = useState(createEmptyQuizQuestion);
+  const [creatingQuiz, setCreatingQuiz] = useState(false);
 
   const fetchCourse = useCallback(async () => {
     try {
@@ -59,10 +70,14 @@ export const AdminCourseEditPage = () => {
         is_free: data.is_free ?? true,
         is_private: data.is_private ?? false,
         passing_score: data.passing_score ?? 70,
+        materials: Array.isArray(data.materials) ? data.materials : [],
+        ai_assistant_enabled: data.ai_assistant_enabled ?? true,
+        ai_assistant_prompt: data.ai_assistant_prompt || "",
         language: data.language || "en",
         category: data.category || "",
         company_ids: data.company_ids || [],
       });
+      setQuizDraftTitle((prev) => prev || `Quiz ${(data.quizzes?.length || 0) + 1}`);
       setNewLesson((prev) => ({ ...prev, order: (data.lessons?.length || 0) + 1 }));
     } catch (e) {
       toast.error(formatError(e));
@@ -79,7 +94,17 @@ export const AdminCourseEditPage = () => {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await API.put(`/courses/${id}`, formData);
+      const payload = {
+        ...formData,
+        materials: (formData.materials || [])
+          .map((material) => ({
+            name: material.name?.trim() || "",
+            url: material.url?.trim() || "",
+          }))
+          .filter((material) => material.name && material.url),
+        ai_assistant_prompt: formData.ai_assistant_prompt?.trim() || null,
+      };
+      await API.put(`/courses/${id}`, payload);
       toast.success(t("courses.courseUpdated"));
       fetchCourse();
     } catch (e) {
@@ -96,6 +121,84 @@ export const AdminCourseEditPage = () => {
         ? [...prev.company_ids, companyId]
         : prev.company_ids.filter((id) => id !== companyId)
     }));
+  };
+
+  const handleMaterialChange = (index, field, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      materials: prev.materials.map((material, materialIdx) =>
+        materialIdx === index ? { ...material, [field]: value } : material
+      ),
+    }));
+  };
+
+  const handleAddMaterial = () => {
+    const name = newMaterial.name.trim();
+    const url = newMaterial.url.trim();
+    if (!name || !url) {
+      return;
+    }
+    setFormData((prev) => ({
+      ...prev,
+      materials: [...prev.materials, { name, url }],
+    }));
+    setNewMaterial({ name: "", url: "" });
+  };
+
+  const handleRemoveMaterial = (index) => {
+    setFormData((prev) => ({
+      ...prev,
+      materials: prev.materials.filter((_, materialIdx) => materialIdx !== index),
+    }));
+  };
+
+  const handleQuizOptionChange = (optionIndex, value) => {
+    setQuizQuestionDraft((prev) => {
+      const nextOptions = [...prev.options];
+      nextOptions[optionIndex] = value;
+      return { ...prev, options: nextOptions };
+    });
+  };
+
+  const handleAddQuizQuestion = () => {
+    const question = quizQuestionDraft.question.trim();
+    const options = quizQuestionDraft.options.map((option) => option.trim());
+    if (!question || options.some((option) => !option)) {
+      return;
+    }
+    setQuizDraftQuestions((prev) => [
+      ...prev,
+      { question, options, correct_answer: quizQuestionDraft.correct_answer },
+    ]);
+    setQuizQuestionDraft(createEmptyQuizQuestion());
+  };
+
+  const handleRemoveQuizQuestion = (index) => {
+    setQuizDraftQuestions((prev) => prev.filter((_, questionIdx) => questionIdx !== index));
+  };
+
+  const handleCreateQuiz = async () => {
+    const title = quizDraftTitle.trim();
+    if (!title || quizDraftQuestions.length === 0) {
+      return;
+    }
+    setCreatingQuiz(true);
+    try {
+      await API.post("/quizzes", {
+        course_id: id,
+        title,
+        questions: quizDraftQuestions,
+      });
+      toast.success("Quiz created");
+      setQuizDraftQuestions([]);
+      setQuizQuestionDraft(createEmptyQuizQuestion());
+      setQuizDraftTitle(`Quiz ${(course?.quizzes?.length || 0) + 2}`);
+      fetchCourse();
+    } catch (e) {
+      toast.error(formatError(e));
+    } finally {
+      setCreatingQuiz(false);
+    }
   };
 
   const handleAddLesson = async () => {
@@ -295,6 +398,84 @@ export const AdminCourseEditPage = () => {
                 <Label>{t("courses.privateCourse")}</Label>
               </div>
             </div>
+            <div className="space-y-3 border border-slate-200 rounded-sm p-4">
+              <div className="flex items-center gap-2 text-sm font-medium text-[#0A0B10]">
+                <Bot className="w-4 h-4 text-[#002FA7]" />
+                AI Assistant
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch
+                  checked={formData.ai_assistant_enabled}
+                  onCheckedChange={(value) => setFormData({ ...formData, ai_assistant_enabled: value })}
+                />
+                <Label>Enable AI assistant for this course</Label>
+              </div>
+              <Textarea
+                value={formData.ai_assistant_prompt}
+                onChange={(e) => setFormData({ ...formData, ai_assistant_prompt: e.target.value })}
+                className="rounded-sm"
+                rows={3}
+                placeholder="Optional instructions for the assistant (e.g. keep answers concise, focus on ISO 9001 examples)."
+                disabled={!formData.ai_assistant_enabled}
+              />
+            </div>
+            <div className="space-y-3">
+              <Label>Downloadable Materials</Label>
+              {formData.materials?.length > 0 ? (
+                <div className="space-y-2">
+                  {formData.materials.map((material, idx) => (
+                    <div key={`${material.name}-${idx}`} className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-2">
+                      <Input
+                        value={material.name || ""}
+                        onChange={(e) => handleMaterialChange(idx, "name", e.target.value)}
+                        placeholder="Material name"
+                        className="rounded-sm"
+                      />
+                      <Input
+                        value={material.url || ""}
+                        onChange={(e) => handleMaterialChange(idx, "url", e.target.value)}
+                        placeholder="https://..."
+                        className="rounded-sm"
+                      />
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="rounded-sm text-red-600"
+                        onClick={() => handleRemoveMaterial(idx)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-slate-500">No downloadable materials added yet.</p>
+              )}
+              <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-2">
+                <Input
+                  value={newMaterial.name}
+                  onChange={(e) => setNewMaterial((prev) => ({ ...prev, name: e.target.value }))}
+                  placeholder="Material name"
+                  className="rounded-sm"
+                />
+                <Input
+                  value={newMaterial.url}
+                  onChange={(e) => setNewMaterial((prev) => ({ ...prev, url: e.target.value }))}
+                  placeholder="https://..."
+                  className="rounded-sm"
+                />
+                <Button
+                  variant="outline"
+                  className="rounded-sm"
+                  onClick={handleAddMaterial}
+                  disabled={!newMaterial.name.trim() || !newMaterial.url.trim()}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add
+                </Button>
+              </div>
+              <p className="text-xs text-slate-500">Students will see these links under the Materials tab.</p>
+            </div>
             <div className="space-y-2">
               <Label>Assigned Companies</Label>
               <div className="border border-slate-200 rounded-sm divide-y divide-slate-100" data-testid="course-edit-company-assignment">
@@ -476,6 +657,135 @@ export const AdminCourseEditPage = () => {
                 {addingLesson ? <Loader2 className="w-4 h-4 animate-spin" /> : (
                   <><Plus className="w-4 h-4 mr-2" />{t("courses.addLesson")}</>
                 )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-white border border-slate-200 rounded-sm mb-6">
+          <CardHeader>
+            <CardTitle className="text-lg">Quiz Builder</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label>Existing Quizzes</Label>
+              {course.quizzes?.length > 0 ? (
+                <div className="space-y-2">
+                  {course.quizzes.map((quiz, idx) => (
+                    <div key={quiz.id} className="p-3 border border-slate-200 rounded-sm">
+                      <p className="font-medium">{idx + 1}. {quiz.title}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-slate-500">No quizzes added yet.</p>
+              )}
+            </div>
+
+            <Separator />
+
+            <div className="space-y-3">
+              <p className="text-sm font-medium">Create multiple-choice quiz (A-E)</p>
+              <Input
+                value={quizDraftTitle}
+                onChange={(e) => setQuizDraftTitle(e.target.value)}
+                placeholder="Quiz title"
+                className="rounded-sm"
+              />
+
+              <div className="space-y-2 border border-slate-200 rounded-sm p-3">
+                <Label>Question</Label>
+                <Textarea
+                  value={quizQuestionDraft.question}
+                  onChange={(e) => setQuizQuestionDraft((prev) => ({ ...prev, question: e.target.value }))}
+                  className="rounded-sm"
+                  rows={2}
+                  placeholder="Enter a question"
+                />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {["A", "B", "C", "D", "E"].map((optionLabel, optionIdx) => (
+                    <Input
+                      key={optionLabel}
+                      value={quizQuestionDraft.options[optionIdx]}
+                      onChange={(e) => handleQuizOptionChange(optionIdx, e.target.value)}
+                      placeholder={`Option ${optionLabel}`}
+                      className="rounded-sm"
+                    />
+                  ))}
+                </div>
+                <div className="space-y-2">
+                  <Label>Correct Answer</Label>
+                  <Select
+                    value={String(quizQuestionDraft.correct_answer)}
+                    onValueChange={(value) => (
+                      setQuizQuestionDraft((prev) => ({ ...prev, correct_answer: parseInt(value, 10) }))
+                    )}
+                  >
+                    <SelectTrigger className="rounded-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {["A", "B", "C", "D", "E"].map((optionLabel, optionIdx) => (
+                        <SelectItem key={optionLabel} value={String(optionIdx)}>
+                          {optionLabel}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button
+                  variant="outline"
+                  className="rounded-sm"
+                  onClick={handleAddQuizQuestion}
+                  disabled={
+                    !quizQuestionDraft.question.trim()
+                    || quizQuestionDraft.options.some((option) => !option.trim())
+                  }
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Question
+                </Button>
+              </div>
+
+              {quizDraftQuestions.length > 0 && (
+                <div className="space-y-2">
+                  <Label>Questions in Draft Quiz</Label>
+                  {quizDraftQuestions.map((question, questionIdx) => (
+                    <div key={`draft-question-${questionIdx}`} className="p-3 border border-slate-200 rounded-sm space-y-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="text-sm font-medium">
+                          {questionIdx + 1}. {question.question}
+                        </p>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="rounded-sm h-8 w-8 text-red-600"
+                          onClick={() => handleRemoveQuizQuestion(questionIdx)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                      <div className="text-xs text-slate-600 grid grid-cols-1 md:grid-cols-2 gap-1">
+                        {question.options.map((option, optionIdx) => (
+                          <span key={`question-${questionIdx}-option-${optionIdx}`}>
+                            {["A", "B", "C", "D", "E"][optionIdx]}: {option}
+                          </span>
+                        ))}
+                      </div>
+                      <p className="text-xs text-[#002FA7]">
+                        Correct answer: {["A", "B", "C", "D", "E"][question.correct_answer]}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <Button
+                onClick={handleCreateQuiz}
+                disabled={creatingQuiz || !quizDraftTitle.trim() || quizDraftQuestions.length === 0}
+                className="bg-[#002FA7] hover:bg-[#002585] text-white rounded-sm"
+              >
+                {creatingQuiz ? <Loader2 className="w-4 h-4 animate-spin" /> : "Create Quiz"}
               </Button>
             </div>
           </CardContent>

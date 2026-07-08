@@ -63,15 +63,25 @@ export const CourseDetailPage = () => {
         if (enrolled) {
           await fetchLessonProgress();
         }
-        
+
+        const aiAssistantEnabled = data.ai_assistant_enabled ?? true;
+
         // Load chat and forum
         try {
-          const [chatRes, forumRes] = await Promise.all([
-            API.get(`/chat/${id}/history`),
-            API.get(`/forums/${id}`)
-          ]);
-          setChatMessages(chatRes.data);
+          const requests = [API.get(`/forums/${id}`)];
+          if (enrolled && aiAssistantEnabled) {
+            requests.unshift(API.get(`/chat/${id}/history`));
+          }
+
+          const responses = await Promise.all(requests);
+          const forumRes = responses[responses.length - 1];
           setForumPosts(forumRes.data);
+          if (enrolled && aiAssistantEnabled) {
+            const chatRes = responses[0];
+            setChatMessages(chatRes.data);
+          } else {
+            setChatMessages([]);
+          }
         } catch (e) {
           console.error(e);
         }
@@ -124,6 +134,7 @@ export const CourseDetailPage = () => {
 
   const sendChatMessage = async () => {
     if (!chatInput.trim()) return;
+    if (!(course?.ai_assistant_enabled ?? true)) return;
     
     setChatLoading(true);
     try {
@@ -340,7 +351,9 @@ export const CourseDetailPage = () => {
             <TabsTrigger value="lessons" className="rounded-sm" data-testid="tab-lessons">Lessons</TabsTrigger>
             {enrollment && <TabsTrigger value="quizzes" className="rounded-sm" data-testid="tab-quizzes">Quizzes</TabsTrigger>}
             {enrollment && <TabsTrigger value="materials" className="rounded-sm" data-testid="tab-materials">Materials</TabsTrigger>}
-            {enrollment && <TabsTrigger value="chat" className="rounded-sm" data-testid="tab-chat">AI Assistant</TabsTrigger>}
+            {enrollment && (course?.ai_assistant_enabled ?? true) && (
+              <TabsTrigger value="chat" className="rounded-sm" data-testid="tab-chat">AI Assistant</TabsTrigger>
+            )}
             {enrollment && <TabsTrigger value="forum" className="rounded-sm" data-testid="tab-forum">Forum</TabsTrigger>}
           </TabsList>
 
@@ -504,50 +517,52 @@ export const CourseDetailPage = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="chat" className="mt-6">
-            <Card className="bg-white border border-slate-200 rounded-sm">
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Bot className="w-5 h-5 text-[#002FA7]" />
-                  AI Course Assistant
-                </CardTitle>
-                <CardDescription>Ask questions about the course content</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ScrollArea className="h-80 mb-4 border border-slate-200 rounded-sm p-4">
-                  {chatMessages.length > 0 ? chatMessages.map((msg, idx) => (
-                    <div key={idx} className={`mb-4 ${msg.role === "user" ? "text-right" : ""}`}>
-                      <div className={`inline-block max-w-[80%] p-3 rounded-sm ${
-                        msg.role === "user" ? "bg-[#002FA7] text-white" : "bg-slate-100 text-[#0A0B10]"
-                      }`}>
-                        {msg.content}
+          {(course?.ai_assistant_enabled ?? true) && (
+            <TabsContent value="chat" className="mt-6">
+              <Card className="bg-white border border-slate-200 rounded-sm">
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Bot className="w-5 h-5 text-[#002FA7]" />
+                    AI Course Assistant
+                  </CardTitle>
+                  <CardDescription>Ask questions about the course content</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ScrollArea className="h-80 mb-4 border border-slate-200 rounded-sm p-4">
+                    {chatMessages.length > 0 ? chatMessages.map((msg, idx) => (
+                      <div key={idx} className={`mb-4 ${msg.role === "user" ? "text-right" : ""}`}>
+                        <div className={`inline-block max-w-[80%] p-3 rounded-sm ${
+                          msg.role === "user" ? "bg-[#002FA7] text-white" : "bg-slate-100 text-[#0A0B10]"
+                        }`}>
+                          {msg.content}
+                        </div>
                       </div>
-                    </div>
-                  )) : (
-                    <p className="text-slate-500 text-center py-8">Start a conversation with the AI assistant</p>
-                  )}
-                </ScrollArea>
-                <div className="flex gap-2">
-                  <Input 
-                    value={chatInput}
-                    onChange={(e) => setChatInput(e.target.value)}
-                    placeholder={t("chat.askQuestion")}
-                    className="rounded-sm border-slate-300"
-                    onKeyDown={(e) => e.key === "Enter" && sendChatMessage()}
-                    data-testid="chat-input"
-                  />
-                  <Button 
-                    onClick={sendChatMessage}
-                    disabled={chatLoading}
-                    className="bg-[#002FA7] hover:bg-[#002585] text-white rounded-sm"
-                    data-testid="chat-send-btn"
-                  >
-                    {chatLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                    )) : (
+                      <p className="text-slate-500 text-center py-8">Start a conversation with the AI assistant</p>
+                    )}
+                  </ScrollArea>
+                  <div className="flex gap-2">
+                    <Input
+                      value={chatInput}
+                      onChange={(e) => setChatInput(e.target.value)}
+                      placeholder={t("chat.askQuestion")}
+                      className="rounded-sm border-slate-300"
+                      onKeyDown={(e) => e.key === "Enter" && sendChatMessage()}
+                      data-testid="chat-input"
+                    />
+                    <Button
+                      onClick={sendChatMessage}
+                      disabled={chatLoading}
+                      className="bg-[#002FA7] hover:bg-[#002585] text-white rounded-sm"
+                      data-testid="chat-send-btn"
+                    >
+                      {chatLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
 
           <TabsContent value="forum" className="mt-6">
             <Card className="bg-white border border-slate-200 rounded-sm">

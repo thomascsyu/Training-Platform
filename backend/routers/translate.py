@@ -294,6 +294,8 @@ async def create_translated_course(course_id: str, target_language: str, request
         "is_private": course.get("is_private", False),
         "passing_score": course.get("passing_score", 70),
         "materials": course.get("materials", []),
+        "ai_assistant_enabled": course.get("ai_assistant_enabled", True),
+        "ai_assistant_prompt": course.get("ai_assistant_prompt"),
         "language": target_language,
         "category": course.get("category"),
         "source_course_id": course_id,  # Reference to original course
