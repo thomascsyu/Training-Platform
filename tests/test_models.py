@@ -17,6 +17,8 @@ def test_user_create_accepts_valid_password():
 def test_course_create_defaults_to_no_assigned_companies():
     course = CourseCreate(title="Course", description="Description")
     assert course.company_ids == []
+    assert course.ai_assistant_enabled is True
+    assert course.ai_assistant_prompt is None
 
 
 def test_course_create_accepts_assigned_companies():
@@ -31,6 +33,12 @@ def test_course_create_accepts_assigned_companies():
 def test_course_update_accepts_clearing_assigned_companies():
     update = CourseUpdate(company_ids=[])
     assert update.company_ids == []
+
+
+def test_course_update_accepts_ai_assistant_settings():
+    update = CourseUpdate(ai_assistant_enabled=False, ai_assistant_prompt="Use only course examples.")
+    assert update.ai_assistant_enabled is False
+    assert update.ai_assistant_prompt == "Use only course examples."
 
 
 def test_company_create_defaults_to_no_assigned_trainings():

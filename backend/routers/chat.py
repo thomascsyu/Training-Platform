@@ -25,9 +25,17 @@ async def chat_with_ai(data: ChatMessageCreate, request: Request):
     course = await db.courses.find_one(
         {"_id": parse_object_id(data.course_id, "course")}
     )
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    if not course.get("ai_assistant_enabled", True):
+        raise HTTPException(status_code=403, detail="AI assistant is disabled for this course")
     course_context = (
         f"Course: {course.get('title', 'Unknown')}\nDescription: {course.get('description', '')}"
-        if course
+    )
+    custom_prompt = (course.get("ai_assistant_prompt") or "").strip()
+    prompt_suffix = (
+        f"\n\nAdditional instructor guidance:\n{custom_prompt}"
+        if custom_prompt
         else ""
     )
 
@@ -43,6 +51,7 @@ async def chat_with_ai(data: ChatMessageCreate, request: Request):
             "content": (
                 f"You are a helpful course assistant. {course_context}\n\n"
                 "Help students understand the course material and answer their questions."
+                f"{prompt_suffix}"
             ),
         }
     ]
@@ -87,6 +96,11 @@ async def chat_with_ai(data: ChatMessageCreate, request: Request):
 async def get_chat_history(course_id: str, request: Request):
     user = await get_current_user(request)
     await require_enrollment(user["id"], course_id)
+    course = await db.courses.find_one({"_id": parse_object_id(course_id, "course")})
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    if not course.get("ai_assistant_enabled", True):
+        raise HTTPException(status_code=403, detail="AI assistant is disabled for this course")
 
     history = await db.chat_messages.find({
         "course_id": course_id,

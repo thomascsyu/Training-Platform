@@ -75,6 +75,8 @@ class CourseCreate(BaseModel):
     is_private: bool = False
     passing_score: int = 70
     materials: List[Dict[str, str]] = []
+    ai_assistant_enabled: bool = True
+    ai_assistant_prompt: Optional[str] = None
     language: str = "en"
     category: Optional[str] = None
     company_ids: List[str] = Field(default_factory=list)
@@ -91,6 +93,8 @@ class CourseUpdate(BaseModel):
     is_private: Optional[bool] = None
     passing_score: Optional[int] = None
     materials: Optional[List[Dict[str, str]]] = None
+    ai_assistant_enabled: Optional[bool] = None
+    ai_assistant_prompt: Optional[str] = None
     language: Optional[str] = None
     category: Optional[str] = None
     company_ids: Optional[List[str]] = None
