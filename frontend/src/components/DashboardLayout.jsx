@@ -25,7 +25,9 @@ export const DashboardLayout = ({ children }) => {
   ] : user?.role === "client_manager" ? [
     { icon: Home, label: t("nav.dashboard"), path: "/dashboard" },
     { icon: BarChart3, label: t("nav.groupProgress"), path: "/manager/progress" },
-    { icon: BookOpen, label: t("nav.courses"), path: "/courses" }
+    { icon: BookOpen, label: t("nav.courses"), path: "/courses" },
+    { icon: BookOpen, label: t("nav.myCourses"), path: "/my-courses" },
+    { icon: Award, label: t("nav.certificates"), path: "/certificates" }
   ] : [
     { icon: Home, label: t("nav.dashboard"), path: "/dashboard" },
     { icon: BookOpen, label: t("nav.myCourses"), path: "/my-courses" },
