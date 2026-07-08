@@ -38,8 +38,7 @@ export const resolveUploadUrl = (
   }
 
   if (trimmed.startsWith("/api/uploads/thumbnails/")) {
-    const backend = (backendUrl || "").trim().replace(/\/$/, "");
-    return backend ? `${backend}${trimmed}` : trimmed;
+    return trimmed;
   }
 
   if (trimmed.startsWith("/api/")) {
@@ -53,10 +52,9 @@ export const resolveUploadUrl = (
 /**
  * Secondary URL for thumbnail image requests.
  *
- * When a backend origin is configured, the primary URL is cross-origin
- * (`${REACT_APP_BACKEND_URL}/api/uploads/thumbnails/...`). This helper returns
- * a same-origin `/api/...` fallback for environments where a frontend proxy is
- * available and direct backend image requests fail.
+ * Thumbnails are loaded same-origin via `/api/...` first. When a backend origin
+ * is configured, this helper returns a direct backend URL fallback for
+ * environments where the frontend proxy is unavailable.
  */
 export const resolveUploadFallbackUrl = (
   url,
@@ -68,5 +66,5 @@ export const resolveUploadFallbackUrl = (
   if (!trimmed.startsWith("/api/uploads/thumbnails/")) return "";
 
   const backend = (backendUrl || "").trim().replace(/\/$/, "");
-  return backend ? trimmed : "";
+  return backend ? `${backend}${trimmed}` : "";
 };

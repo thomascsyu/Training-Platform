@@ -436,7 +436,7 @@ export const AdminCourseEditPage = () => {
 
         <Button
           onClick={handleSave}
-          disabled={saving || !formData.title}
+          disabled={saving || thumbnailBusy || !formData.title}
           className="w-full bg-[#002FA7] hover:bg-[#002585] text-white rounded-sm"
           data-testid="course-save-changes"
         >
