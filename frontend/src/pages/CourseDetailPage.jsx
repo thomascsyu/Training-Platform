@@ -19,6 +19,7 @@ import { API, formatError } from "@/lib/api";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { PublicSiteHeader } from "@/components/PublicSiteHeader";
+import { CourseThumbnail } from "@/components/CourseThumbnail";
 
 export const CourseDetailPage = () => {
   const { id } = useParams();
@@ -223,7 +224,7 @@ export const CourseDetailPage = () => {
         {/* Course Header */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
           <div className="lg:col-span-2">
-            {course.video_url && (
+            {course.video_url ? (
               <div className="aspect-video bg-black rounded-sm overflow-hidden mb-6">
                 <iframe
                   src={getVideoEmbed(course.video_url, course.video_type)}
@@ -232,7 +233,16 @@ export const CourseDetailPage = () => {
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 />
               </div>
-            )}
+            ) : course.thumbnail_url ? (
+              <div className="aspect-video bg-slate-100 rounded-sm overflow-hidden mb-6">
+                <CourseThumbnail
+                  src={course.thumbnail_url}
+                  alt={course.title}
+                  fallbackClassName="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#002FA7]/10 to-[#002FA7]/5"
+                  fallbackIconClassName="w-12 h-12 text-[#002FA7]/40"
+                />
+              </div>
+            ) : null}
             <h1 className="text-2xl sm:text-3xl tracking-tight font-medium text-[#0A0B10] mb-4">
               {course.title}
             </h1>

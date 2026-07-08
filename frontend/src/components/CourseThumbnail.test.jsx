@@ -73,7 +73,7 @@ describe("CourseThumbnail", () => {
     );
   });
 
-  it("tries same-origin thumbnail URL if backend-origin image fails", async () => {
+  it("tries backend thumbnail URL if same-origin image fails", async () => {
     process.env.REACT_APP_BACKEND_URL = "http://localhost:8001";
     render(
       <CourseThumbnail
@@ -86,7 +86,7 @@ describe("CourseThumbnail", () => {
     const image = screen.getByRole("img", { name: "ISO 9001" });
     expect(image).toHaveAttribute(
       "src",
-      "http://localhost:8001/api/uploads/thumbnails/missing.jpg"
+      "/api/uploads/thumbnails/missing.jpg"
     );
 
     await act(async () => {
@@ -95,7 +95,7 @@ describe("CourseThumbnail", () => {
 
     expect(screen.getByRole("img", { name: "ISO 9001" })).toHaveAttribute(
       "src",
-      "/api/uploads/thumbnails/missing.jpg"
+      "http://localhost:8001/api/uploads/thumbnails/missing.jpg"
     );
   });
 });
