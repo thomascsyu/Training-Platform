@@ -12,7 +12,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Plus, Trash2, Edit, Loader2, Users, Building2 } from "lucide-react";
 import { API, formatError } from "@/lib/api";
