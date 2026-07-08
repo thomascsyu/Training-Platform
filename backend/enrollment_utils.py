@@ -4,6 +4,9 @@ from typing import Iterable, Optional
 from database import db
 from email_service import send_enrollment_email
 
+# Roles that should be treated as students for company training assignments.
+STUDENT_ROLES = {"student", "client_manager"}
+
 
 async def enroll_user_in_course(
     course: dict,
@@ -68,7 +71,7 @@ async def enroll_company_students_in_course(
         return []
 
     users = await db.users.find({
-        "role": "student",
+        "role": {"$in": list(STUDENT_ROLES)},
         "company_id": {"$in": company_ids},
     }).to_list(10000)
     return await enroll_users_in_course(
@@ -82,7 +85,7 @@ async def enroll_company_students_in_course(
 
 async def enroll_user_in_assigned_company_courses(user: dict) -> list[str]:
     company_id = user.get("company_id")
-    if user.get("role") != "student" or not company_id:
+    if user.get("role") not in STUDENT_ROLES or not company_id:
         return []
 
     courses = await db.courses.find({"company_ids": company_id}).to_list(1000)
