@@ -13,11 +13,13 @@ class UserCreate(BaseModel):
 class CompanyCreate(BaseModel):
     name: str
     description: Optional[str] = None
+    training_ids: List[str] = Field(default_factory=list)
 
 
 class CompanyUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
+    training_ids: Optional[List[str]] = None
 
 
 class AdminUserCreate(BaseModel):
