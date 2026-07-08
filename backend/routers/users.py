@@ -7,6 +7,7 @@ from fastapi import APIRouter, HTTPException, Request
 from auth_utils import get_current_user, hash_password, require_roles
 from database import db
 from db_utils import parse_object_id
+from enrollment_utils import enroll_user_in_assigned_company_courses
 from models import AdminUserCreate, AdminUserUpdate, UserImportRequest
 
 router = APIRouter(tags=["users"])
@@ -83,6 +84,7 @@ async def create_user(data: AdminUserCreate, request: Request):
     }
     result = await db.users.insert_one(user_doc)
     user_doc["_id"] = result.inserted_id
+    await enroll_user_in_assigned_company_courses(user_doc)
     return _serialize_user(user_doc)
 
 
@@ -128,6 +130,7 @@ async def update_user(user_id: str, data: AdminUserUpdate, request: Request):
 
     await db.users.update_one({"_id": oid}, {"$set": updates})
     updated = await db.users.find_one({"_id": oid}, USER_FIELDS)
+    await enroll_user_in_assigned_company_courses(updated)
     return _serialize_user(updated)
 
 
@@ -195,6 +198,8 @@ async def import_users(data: UserImportRequest, request: Request):
             "created_at": datetime.now(timezone.utc).isoformat(),
         }
         result = await db.users.insert_one(user_doc)
+        user_doc["_id"] = result.inserted_id
+        await enroll_user_in_assigned_company_courses(user_doc)
         created.append({"id": str(result.inserted_id), "email": email, "name": name, "role": role})
 
     return {
@@ -227,4 +232,6 @@ async def update_user_role(user_id: str, role: str, request: Request):
     result = await db.users.update_one({"_id": oid}, {"$set": {"role": role}})
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="User not found")
+    updated = await db.users.find_one({"_id": oid}, USER_FIELDS)
+    await enroll_user_in_assigned_company_courses(updated)
     return {"message": "Role updated"}

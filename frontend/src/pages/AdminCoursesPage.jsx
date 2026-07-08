@@ -24,6 +24,7 @@ export const AdminCoursesPage = () => {
   const location = useLocation();
   const { t } = useLanguage();
   const [courses, setCourses] = useState([]);
+  const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [formData, setFormData] = useState({
@@ -37,14 +38,19 @@ export const AdminCoursesPage = () => {
     is_private: false,
     passing_score: 70,
     language: "en",
-    category: ""
+    category: "",
+    company_ids: []
   });
   const [creating, setCreating] = useState(false);
 
   const fetchCourses = useCallback(async () => {
     try {
-      const { data } = await API.get("/courses?include_private=true");
-      setCourses(data);
+      const [coursesRes, companiesRes] = await Promise.all([
+        API.get("/courses?include_private=true"),
+        API.get("/companies")
+      ]);
+      setCourses(coursesRes.data);
+      setCompanies(companiesRes.data);
     } catch (e) {
       console.error(e);
     } finally {
@@ -73,7 +79,8 @@ export const AdminCoursesPage = () => {
         is_private: false,
         passing_score: 70,
         language: "en",
-        category: ""
+        category: "",
+        company_ids: []
       });
       fetchCourses();
     } catch (e) {
@@ -81,6 +88,19 @@ export const AdminCoursesPage = () => {
     } finally {
       setCreating(false);
     }
+  };
+
+  const handleCompanyToggle = (companyId, checked) => {
+    setFormData((prev) => ({
+      ...prev,
+      company_ids: checked
+        ? [...prev.company_ids, companyId]
+        : prev.company_ids.filter((id) => id !== companyId)
+    }));
+  };
+
+  const getCompanyName = (companyId) => {
+    return companies.find((company) => company.id === companyId)?.name || "Unknown company";
   };
 
   const handleDelete = async (courseId) => {
@@ -222,6 +242,38 @@ export const AdminCoursesPage = () => {
                     <Label>Private Course</Label>
                   </div>
                 </div>
+                <div className="space-y-2">
+                  <Label>Assigned Companies</Label>
+                  <div className="border border-slate-200 rounded-sm divide-y divide-slate-100" data-testid="course-company-assignment">
+                    {companies.length > 0 ? (
+                      companies.map((company) => (
+                        <label
+                          key={company.id}
+                          className="flex items-start gap-3 p-3 hover:bg-slate-50 cursor-pointer"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={formData.company_ids.includes(company.id)}
+                            onChange={(e) => handleCompanyToggle(company.id, e.target.checked)}
+                            className="mt-1 w-4 h-4"
+                            data-testid={`course-company-${company.id}`}
+                          />
+                          <span>
+                            <span className="block text-sm font-medium">{company.name}</span>
+                            {company.description && (
+                              <span className="block text-xs text-slate-500">{company.description}</span>
+                            )}
+                          </span>
+                        </label>
+                      ))
+                    ) : (
+                      <p className="p-3 text-sm text-slate-500">Create companies before assigning courses to them.</p>
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-500">
+                    Assigned company students are auto-enrolled. Leave blank to make the course available by normal visibility rules.
+                  </p>
+                </div>
                 <Button 
                   onClick={handleCreate}
                   disabled={creating || !formData.title}
@@ -268,6 +320,11 @@ export const AdminCoursesPage = () => {
                       {course.is_private && (
                         <Badge variant="outline" className="rounded-sm text-xs">Private</Badge>
                       )}
+                      {(course.company_ids || []).map((companyId) => (
+                        <Badge key={companyId} variant="outline" className="rounded-sm text-xs">
+                          {getCompanyName(companyId)}
+                        </Badge>
+                      ))}
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
