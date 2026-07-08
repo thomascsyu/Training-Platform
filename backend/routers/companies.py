@@ -8,6 +8,7 @@ from database import db
 from db_utils import parse_object_id
 from enrollment_utils import enroll_company_students_in_course
 from models import CompanyCreate, CompanyUpdate
+from progress_utils import get_bulk_lesson_progress
 
 router = APIRouter(tags=["companies"])
 
@@ -111,6 +112,148 @@ async def _sync_company_training_assignments(
     return list(dict.fromkeys(enrolled_user_ids))
 
 
+def _normalize_training_progress(
+    enrollment: Optional[dict],
+    lesson_progress: dict,
+    quiz_attempt_count: int,
+    training: dict,
+) -> dict:
+    completed = bool(enrollment and enrollment.get("completed"))
+    lesson_progress_percent = lesson_progress.get("progress_percent", 0)
+    progress_percent = 100 if completed else lesson_progress_percent
+
+    if completed:
+        status = "completed"
+    elif enrollment:
+        status = "in_progress"
+    else:
+        status = "not_started"
+
+    return {
+        "course_id": training["id"],
+        "course_title": training.get("title", ""),
+        "status": status,
+        "completed": completed,
+        "score": enrollment.get("score", 0) if enrollment else 0,
+        "enrolled_at": enrollment.get("created_at") if enrollment else None,
+        "completed_at": enrollment.get("completed_at") if enrollment else None,
+        "lessons_completed": lesson_progress.get("lessons_completed", 0),
+        "lessons_total": lesson_progress.get("total_lessons", 0),
+        "progress_percent": progress_percent,
+        "quiz_attempts": quiz_attempt_count,
+    }
+
+
+async def _build_company_dashboard_users(company_id: str, trainings: list[dict]) -> list[dict]:
+    users = await db.users.find(
+        {"company_id": company_id},
+        {"_id": 1, "name": 1, "email": 1, "role": 1, "created_at": 1},
+    ).sort("name", 1).to_list(5000)
+    if not users:
+        return []
+
+    user_ids = [str(user["_id"]) for user in users]
+    training_ids = [training["id"] for training in trainings]
+    if not training_ids:
+        return [
+            {
+                "user_id": str(user["_id"]),
+                "user_name": user.get("name", ""),
+                "user_email": user.get("email", ""),
+                "role": user.get("role", ""),
+                "created_at": user.get("created_at"),
+                "summary": {
+                    "total_trainings": 0,
+                    "completed_trainings": 0,
+                    "in_progress_trainings": 0,
+                    "not_started_trainings": 0,
+                    "overall_progress_percent": 0,
+                },
+                "trainings": [],
+            }
+            for user in users
+        ]
+
+    enrollments = await db.enrollments.find({
+        "user_id": {"$in": user_ids},
+        "course_id": {"$in": training_ids},
+    }).to_list(20000)
+    enrollment_map = {
+        (enrollment["user_id"], enrollment["course_id"]): enrollment
+        for enrollment in enrollments
+    }
+
+    quiz_attempts = await db.quiz_attempts.find(
+        {"user_id": {"$in": user_ids}, "course_id": {"$in": training_ids}},
+        {"user_id": 1, "course_id": 1},
+    ).to_list(50000)
+    quiz_attempt_counts: dict[tuple[str, str], int] = {}
+    for attempt in quiz_attempts:
+        key = (attempt["user_id"], attempt["course_id"])
+        quiz_attempt_counts[key] = quiz_attempt_counts.get(key, 0) + 1
+
+    lesson_progress_by_course: dict[str, dict[str, dict]] = {}
+    for training_id in training_ids:
+        lesson_progress_by_course[training_id] = await get_bulk_lesson_progress(
+            user_ids,
+            training_id,
+        )
+
+    company_users = []
+    for user in users:
+        user_id = str(user["_id"])
+        user_trainings = []
+        completed_trainings = 0
+        in_progress_trainings = 0
+        progress_total = 0
+
+        for training in trainings:
+            training_id = training["id"]
+            enrollment = enrollment_map.get((user_id, training_id))
+            lesson_progress = lesson_progress_by_course.get(training_id, {}).get(user_id, {})
+            quiz_attempt_count = quiz_attempt_counts.get((user_id, training_id), 0)
+
+            normalized = _normalize_training_progress(
+                enrollment,
+                lesson_progress,
+                quiz_attempt_count,
+                training,
+            )
+            user_trainings.append(normalized)
+            progress_total += normalized["progress_percent"]
+
+            if normalized["status"] == "completed":
+                completed_trainings += 1
+            elif normalized["status"] == "in_progress":
+                in_progress_trainings += 1
+
+        total_trainings = len(user_trainings)
+        overall_progress_percent = (
+            round(progress_total / total_trainings, 1) if total_trainings > 0 else 0
+        )
+
+        company_users.append({
+            "user_id": user_id,
+            "user_name": user.get("name", ""),
+            "user_email": user.get("email", ""),
+            "role": user.get("role", ""),
+            "created_at": user.get("created_at"),
+            "summary": {
+                "total_trainings": total_trainings,
+                "completed_trainings": completed_trainings,
+                "in_progress_trainings": in_progress_trainings,
+                "not_started_trainings": max(
+                    total_trainings - completed_trainings - in_progress_trainings,
+                    0,
+                ),
+                "overall_progress_percent": overall_progress_percent,
+            },
+            "trainings": user_trainings,
+        })
+
+    return company_users
+
+
 @router.get("/companies")
 async def list_companies(request: Request):
     await require_roles("admin", "client_manager")(request)
@@ -124,6 +267,61 @@ async def list_companies(request: Request):
         )
         for company in companies
     ]
+
+
+@router.get("/companies/{company_id}/dashboard")
+async def get_company_dashboard(company_id: str, request: Request):
+    await require_roles("admin", "client_manager")(request)
+    oid = parse_object_id(company_id, "company")
+    company = await db.companies.find_one({"_id": oid})
+    if not company:
+        raise HTTPException(status_code=404, detail="Company not found")
+
+    trainings_by_company = await _company_training_map([company_id])
+    trainings = trainings_by_company.get(company_id, [])
+    users = await _build_company_dashboard_users(company_id, trainings)
+
+    total_users = len(users)
+    total_trainings = len(trainings)
+    total_assignments = total_users * total_trainings
+    completed_assignments = sum(
+        user["summary"]["completed_trainings"] for user in users
+    )
+    in_progress_assignments = sum(
+        user["summary"]["in_progress_trainings"] for user in users
+    )
+    not_started_assignments = sum(
+        user["summary"]["not_started_trainings"] for user in users
+    )
+    completion_rate = (
+        round((completed_assignments / total_assignments) * 100, 1)
+        if total_assignments > 0
+        else 0
+    )
+    average_progress = (
+        round(
+            sum(user["summary"]["overall_progress_percent"] for user in users)
+            / total_users,
+            1,
+        )
+        if total_users > 0
+        else 0
+    )
+
+    return {
+        "company": _serialize_company(company, trainings=trainings),
+        "summary": {
+            "total_users": total_users,
+            "total_trainings": total_trainings,
+            "total_assignments": total_assignments,
+            "completed_assignments": completed_assignments,
+            "in_progress_assignments": in_progress_assignments,
+            "not_started_assignments": not_started_assignments,
+            "completion_rate": completion_rate,
+            "average_progress_percent": average_progress,
+        },
+        "users": users,
+    }
 
 
 @router.post("/companies")

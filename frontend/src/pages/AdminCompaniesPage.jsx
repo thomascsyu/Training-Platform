@@ -128,6 +128,10 @@ export const AdminCompaniesPage = () => {
     navigate(`/admin/users?company_id=${companyId}`);
   };
 
+  const handleOpenDashboard = (companyId) => {
+    navigate(`/admin/companies/${companyId}/dashboard`);
+  };
+
   return (
     <DashboardLayout>
       <div className="p-6" data-testid="admin-companies-page">
@@ -175,7 +179,13 @@ export const AdminCompaniesPage = () => {
                       }));
 
                     return (
-                    <tr key={company.id} className="border-b border-slate-100" data-testid={`company-row-${company.id}`}>
+                    <tr
+                      key={company.id}
+                      className="border-b border-slate-100 cursor-pointer hover:bg-slate-50/80"
+                      data-testid={`company-row-${company.id}`}
+                      onDoubleClick={() => handleOpenDashboard(company.id)}
+                      title="Double-click to open company dashboard"
+                    >
                       <td className="p-4 font-medium">{company.name}</td>
                       <td className="p-4 text-slate-600">{company.description || "—"}</td>
                       <td className="p-4">
@@ -198,6 +208,7 @@ export const AdminCompaniesPage = () => {
                             size="sm"
                             className="rounded-sm"
                             onClick={() => handleManageUsers(company.id)}
+                            onDoubleClick={(event) => event.stopPropagation()}
                             data-testid={`manage-users-btn-${company.id}`}
                           >
                             <Users className="w-4 h-4 mr-1" /> {t("companies.manageUsers")}
@@ -207,6 +218,7 @@ export const AdminCompaniesPage = () => {
                             size="sm"
                             className="rounded-sm"
                             onClick={() => openEditDialog(company)}
+                            onDoubleClick={(event) => event.stopPropagation()}
                             data-testid={`edit-company-btn-${company.id}`}
                           >
                             <Edit className="w-4 h-4" />
@@ -216,6 +228,7 @@ export const AdminCompaniesPage = () => {
                             size="sm"
                             className="rounded-sm text-red-600 hover:text-red-700"
                             onClick={() => handleDelete(company)}
+                            onDoubleClick={(event) => event.stopPropagation()}
                             data-testid={`delete-company-btn-${company.id}`}
                           >
                             <Trash2 className="w-4 h-4" />
