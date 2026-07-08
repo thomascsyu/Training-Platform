@@ -62,7 +62,22 @@ export default {
       noAccount: "계정이 없으신가요?",
       haveAccount: "이미 계정이 있으신가요?",
       student: "학생",
-      clientManager: "클라이언트 매니저"
+      clientManager: "클라이언트 매니저",
+      forgotPassword: "비밀번호를 잊으셨나요?",
+      forgotPasswordHelp: "이메일을 입력하면 비밀번호 재설정 링크를 보내드립니다.",
+      sendResetLink: "재설정 링크 보내기",
+      passwordResetEmailSent:
+        "해당 이메일 계정이 존재하면 비밀번호 재설정 링크를 보냈습니다.",
+      backToSignIn: "로그인으로 돌아가기",
+      resetPassword: "비밀번호 재설정",
+      resetPasswordHelp: "아래에 새 비밀번호를 입력하세요.",
+      requestNewResetLink: "새 재설정 링크 요청",
+      newPassword: "새 비밀번호",
+      confirmPassword: "비밀번호 확인",
+      updatePassword: "비밀번호 변경",
+      passwordsMustMatch: "비밀번호가 일치해야 합니다",
+      passwordResetSuccess: "비밀번호가 재설정되었습니다. 다시 로그인해 주세요.",
+      invalidResetLink: "재설정 링크가 유효하지 않거나 만료되었습니다."
     },
     
     // Dashboard

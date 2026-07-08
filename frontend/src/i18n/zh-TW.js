@@ -62,7 +62,21 @@ export default {
       noAccount: "還沒有帳戶？",
       haveAccount: "已有帳戶？",
       student: "學生",
-      clientManager: "客戶經理"
+      clientManager: "客戶經理",
+      forgotPassword: "忘記密碼？",
+      forgotPasswordHelp: "輸入您的電子郵件，我們會寄送重設連結給您。",
+      sendResetLink: "寄送重設連結",
+      passwordResetEmailSent: "若該電子郵件已註冊，我們已寄送密碼重設連結。",
+      backToSignIn: "返回登入",
+      resetPassword: "重設密碼",
+      resetPasswordHelp: "請輸入您的新密碼。",
+      requestNewResetLink: "重新取得重設連結",
+      newPassword: "新密碼",
+      confirmPassword: "確認密碼",
+      updatePassword: "更新密碼",
+      passwordsMustMatch: "兩次輸入的密碼必須一致",
+      passwordResetSuccess: "密碼已成功重設，請重新登入。",
+      invalidResetLink: "重設連結無效或已過期。"
     },
     
     // Dashboard

@@ -62,7 +62,21 @@ export default {
       noAccount: "还沒有账户？",
       haveAccount: "已有账户？",
       student: "学生",
-      clientManager: "客户经理"
+      clientManager: "客户经理",
+      forgotPassword: "忘记密码？",
+      forgotPasswordHelp: "请输入您的邮箱，我们会发送重置链接。",
+      sendResetLink: "发送重置链接",
+      passwordResetEmailSent: "如果该邮箱已注册，我们已发送密码重置链接。",
+      backToSignIn: "返回登录",
+      resetPassword: "重置密码",
+      resetPasswordHelp: "请在下方输入新密码。",
+      requestNewResetLink: "重新获取重置链接",
+      newPassword: "新密码",
+      confirmPassword: "确认密码",
+      updatePassword: "更新密码",
+      passwordsMustMatch: "两次输入的密码必须一致",
+      passwordResetSuccess: "密码重置成功，请重新登录。",
+      invalidResetLink: "重置链接无效或已过期。"
     },
     
     // Dashboard

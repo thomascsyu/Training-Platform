@@ -144,3 +144,54 @@ async def send_certificate_email(
     </html>
     """
     return await send_brevo_email(user_email, user_name, subject, html_content)
+
+
+async def send_password_reset_email(
+    user_email: str,
+    user_name: str,
+    reset_link: str,
+    expires_in_minutes: int,
+):
+    subject = "Reset your LearnHub password"
+    html_content = f"""
+    <html>
+    <body style="font-family: 'IBM Plex Sans', Arial, sans-serif; background-color: #F4F5F7; padding: 40px;">
+        <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 4px; overflow: hidden;">
+            <div style="background-color: #002FA7; padding: 30px; text-align: center;">
+                <h1 style="color: white; margin: 0; font-size: 24px;">Password Reset Request</h1>
+            </div>
+            <div style="padding: 30px;">
+                <p style="color: #0A0B10; font-size: 16px;">Hi {user_name},</p>
+                <p style="color: #64748B; font-size: 14px; line-height: 1.6;">
+                    We received a request to reset your LearnHub password.
+                    Click the button below to choose a new password.
+                </p>
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="{reset_link}"
+                       style="background-color: #002FA7; color: white; padding: 12px 30px; text-decoration: none; border-radius: 4px; font-weight: 500; display: inline-block;">
+                        Reset Password
+                    </a>
+                </div>
+                <p style="color: #64748B; font-size: 13px; line-height: 1.6;">
+                    This link expires in {expires_in_minutes} minutes.
+                    If you did not request this, you can safely ignore this email.
+                </p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    text_content = (
+        f"Hi {user_name},\n\n"
+        f"We received a request to reset your LearnHub password.\n"
+        f"Use this link to set a new password: {reset_link}\n\n"
+        f"This link expires in {expires_in_minutes} minutes.\n"
+        "If you did not request this, you can ignore this email."
+    )
+    return await send_brevo_email(
+        user_email,
+        user_name,
+        subject,
+        html_content,
+        text_content=text_content,
+    )

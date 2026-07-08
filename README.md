@@ -231,6 +231,8 @@ Base path: `/api`
 | POST | `/auth/login` | Login; sets access + refresh cookies |
 | POST | `/auth/logout` | Clear cookies |
 | POST | `/auth/refresh` | Renew access token from refresh cookie |
+| POST | `/auth/forgot-password` | Send password reset email (always generic response) |
+| POST | `/auth/reset-password` | Reset password with one-time token |
 | GET | `/auth/me` | Current user |
 
 ### Courses & content
@@ -332,6 +334,7 @@ Optional. If `BREVO_API_KEY` is unset, emails are skipped (logged only).
 | Enrollment | Self-enroll, bulk enroll, or paid checkout |
 | Progress | Failed quiz attempt (score sent as %) |
 | Certificate | First successful quiz pass |
+| Password reset | User submits forgot-password request |
 
 ```env
 BREVO_API_KEY=xkeysib-...
@@ -421,6 +424,7 @@ BREVO_API_KEY=
 EMAIL_FROM=noreply@yourdomain.com
 EMAIL_FROM_NAME=LearnHub
 FRONTEND_URL=http://localhost:3000
+RESET_PASSWORD_TOKEN_TTL_MINUTES=30
 LOG_LEVEL=info                     # critical | error | warning | debug | trace; invalid values fall back to info
 UPLOADS_DIR=                        # optional; defaults to backend/uploads (use /app/uploads in Docker/cloud)
 ```
