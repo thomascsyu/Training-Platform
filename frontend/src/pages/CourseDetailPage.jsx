@@ -212,13 +212,7 @@ export const CourseDetailPage = () => {
 
   return (
     <div className="min-h-screen bg-[#F4F5F7]">
-      <PublicSiteHeader variant="compact">
-        {user && (
-          <Button onClick={() => navigate("/dashboard")} variant="outline" className="rounded-sm" data-testid="back-dashboard-btn">
-            Dashboard
-          </Button>
-        )}
-      </PublicSiteHeader>
+      <PublicSiteHeader variant="compact" />
 
       <div className="container mx-auto px-6 md:px-12 lg:px-24 py-8" data-testid="course-detail-page">
         {/* Course Header */}
