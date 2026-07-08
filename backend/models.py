@@ -178,3 +178,33 @@ class LessonProgressUpdate(BaseModel):
 class TranslateQuizRequest(BaseModel):
     quiz_id: str
     target_languages: List[str]
+
+
+class AIProviderConfig(BaseModel):
+    api_key: Optional[str] = None
+    model: Optional[str] = None
+    enabled: Optional[bool] = None
+
+
+class AISettingsUpdate(BaseModel):
+    default_provider: Optional[str] = None
+    providers: Optional[Dict[str, AIProviderConfig]] = None
+
+
+class AISettingsResponse(BaseModel):
+    default_provider: str
+    providers: Dict[str, Dict[str, Any]]
+
+
+class AITestConnectionRequest(BaseModel):
+    provider: str
+    api_key: Optional[str] = None
+
+
+class AITestConnectionResponse(BaseModel):
+    provider: str
+    connected: bool
+    model: Optional[str] = None
+    latency_ms: Optional[int] = None
+    message: Optional[str] = None
+    error: Optional[str] = None

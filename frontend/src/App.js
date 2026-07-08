@@ -27,6 +27,7 @@ import { AdminCompanyDashboardPage } from "@/pages/AdminCompanyDashboardPage";
 import { ManagerGroupProgressPage } from "@/pages/ManagerGroupProgressPage";
 import { AdminBulkEnrollPage } from "@/pages/AdminBulkEnrollPage";
 import { AdminCourseEditPage } from "@/pages/AdminCourseEditPage";
+import { AdminAISettingsPage } from "@/pages/AdminAISettingsPage";
 
 const DashboardRouter = () => {
   const { user } = useAuth();
@@ -154,6 +155,14 @@ function App() {
               element={
                 <ProtectedRoute roles={["admin"]}>
                   <AdminBulkEnrollPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/ai-settings"
+              element={
+                <ProtectedRoute roles={["admin"]}>
+                  <AdminAISettingsPage />
                 </ProtectedRoute>
               }
             />

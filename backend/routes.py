@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 from fastapi.staticfiles import StaticFiles
 
+from routers.ai_settings import router as ai_settings_router
 from routers.auth import router as auth_router
 from routers.certificates import router as certificates_router
 from routers.chat import router as chat_router
@@ -21,6 +22,9 @@ from routers.uploads import router as uploads_router
 from upload_utils import ensure_thumbnail_dir, get_uploads_root
 from config import logger
 
+# Ensure Stripe global configuration is applied when the API starts.
+import clients  # noqa: F401
+
 api_router = APIRouter(prefix="/api")
 
 api_router.include_router(auth_router)
@@ -39,6 +43,7 @@ api_router.include_router(companies_router)
 api_router.include_router(users_router)
 api_router.include_router(stats_router)
 api_router.include_router(uploads_router)
+api_router.include_router(ai_settings_router)
 api_router.include_router(root_router)
 
 ensure_thumbnail_dir()

@@ -15,7 +15,8 @@ export default {
       analytics: "Analytics",
       manageGroups: "Manage Groups",
       bulkEnroll: "Bulk Enroll",
-      groupProgress: "Group Progress"
+      groupProgress: "Group Progress",
+      aiSettings: "AI API Keys"
     },
     
     // Landing Page
@@ -309,6 +310,31 @@ export default {
       lessonsColumn: "Lessons",
       attemptsColumn: "Attempts",
       lastActivityColumn: "Last Activity"
+    },
+
+    // AI Settings
+    aiSettings: {
+      title: "AI API Keys",
+      description: "Manage AI provider API keys and test connections.",
+      defaultProvider: "Default Provider",
+      deepseek: "DeepSeek",
+      xai: "xAI",
+      apiKey: "API Key",
+      apiKeyHint: "Leave blank to keep the existing key.",
+      model: "Model",
+      enabled: "Enabled",
+      testConnection: "Test Connection",
+      testing: "Testing...",
+      save: "Save Settings",
+      saving: "Saving...",
+      saved: "AI settings saved.",
+      connectionOk: "Connected",
+      connectionFailed: "Connection failed",
+      notConfigured: "Not configured",
+      latency: "{ms}ms",
+      configureKey: "Please enter an API key to test.",
+      deepseekHint: "Create a key at platform.deepseek.com",
+      xaiHint: "Create a key at x.ai/api"
     },
 
     // Toast

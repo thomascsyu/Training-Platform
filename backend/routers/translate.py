@@ -1,10 +1,9 @@
-import uuid
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, HTTPException, Request
 
 from auth_utils import require_roles
-from clients import deepseek_client
+from ai_settings import get_active_client, get_active_provider_settings
 from config import LANGUAGE_NAMES, SUPPORTED_LANGUAGES, logger
 from database import db
 from db_utils import parse_object_id
@@ -13,13 +12,22 @@ from models import TranslateCourseRequest, TranslateQuizRequest, TranslateReques
 
 router = APIRouter(tags=["translate"])
 
+
+async def _get_ai_client():
+    """Return the active OpenAI-compatible client and its configured model."""
+    settings = await get_active_provider_settings()
+    client = await get_active_client()
+    if not client or not settings:
+        raise HTTPException(status_code=503, detail="AI service not configured")
+    return client, settings.get("model", "deepseek-chat")
+
+
 @router.post("/translate/text")
 async def translate_text(data: TranslateRequest, request: Request):
     """Translate a single text using Deepseek AI"""
     user = await require_roles("admin")(request)
-    
-    if not deepseek_client:
-        raise HTTPException(status_code=503, detail="AI service not configured")
+
+    client, model = await _get_ai_client()
     
     # Validate languages
     if data.target_language not in SUPPORTED_LANGUAGES:
@@ -29,8 +37,8 @@ async def translate_text(data: TranslateRequest, request: Request):
     target_name = LANGUAGE_NAMES.get(data.target_language, data.target_language)
     
     try:
-        response = deepseek_client.chat.completions.create(
-            model="deepseek-chat",
+        response = client.chat.completions.create(
+            model=model,
             messages=[
                 {
                     "role": "system",
@@ -53,10 +61,9 @@ async def translate_text(data: TranslateRequest, request: Request):
 async def translate_course(course_id: str, data: TranslateCourseRequest, request: Request):
     """Auto-translate course title and description to multiple languages"""
     user = await require_roles("admin")(request)
-    
-    if not deepseek_client:
-        raise HTTPException(status_code=503, detail="AI service not configured")
-    
+
+    client, model = await _get_ai_client()
+
     course = await db.courses.find_one({"_id": parse_object_id(course_id, "course")})
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
@@ -79,8 +86,8 @@ async def translate_course(course_id: str, data: TranslateCourseRequest, request
         
         try:
             # Translate title
-            title_response = deepseek_client.chat.completions.create(
-                model="deepseek-chat",
+            title_response = client.chat.completions.create(
+                model=model,
                 messages=[
                     {
                         "role": "system",
@@ -93,8 +100,8 @@ async def translate_course(course_id: str, data: TranslateCourseRequest, request
             translated_title = title_response.choices[0].message.content.strip()
             
             # Translate description
-            desc_response = deepseek_client.chat.completions.create(
-                model="deepseek-chat",
+            desc_response = client.chat.completions.create(
+                model=model,
                 messages=[
                     {
                         "role": "system",
@@ -132,10 +139,9 @@ async def translate_course(course_id: str, data: TranslateCourseRequest, request
 async def translate_quiz(quiz_id: str, data: TranslateQuizRequest, request: Request):
     """Auto-translate quiz questions and options to multiple languages"""
     user = await require_roles("admin")(request)
-    
-    if not deepseek_client:
-        raise HTTPException(status_code=503, detail="AI service not configured")
-    
+
+    client, model = await _get_ai_client()
+
     quiz = await db.quizzes.find_one({"_id": parse_object_id(quiz_id, "quiz")})
     if not quiz:
         raise HTTPException(status_code=404, detail="Quiz not found")
@@ -155,8 +161,8 @@ async def translate_quiz(quiz_id: str, data: TranslateQuizRequest, request: Requ
         
         try:
             # Translate title
-            title_response = deepseek_client.chat.completions.create(
-                model="deepseek-chat",
+            title_response = client.chat.completions.create(
+                model=model,
                 messages=[
                     {
                         "role": "system",
@@ -172,8 +178,8 @@ async def translate_quiz(quiz_id: str, data: TranslateQuizRequest, request: Requ
             translated_questions = []
             for q in quiz.get("questions", []):
                 # Translate question text
-                q_response = deepseek_client.chat.completions.create(
-                    model="deepseek-chat",
+                q_response = client.chat.completions.create(
+                    model=model,
                     messages=[
                         {
                             "role": "system",
@@ -188,8 +194,8 @@ async def translate_quiz(quiz_id: str, data: TranslateQuizRequest, request: Requ
                 # Translate options
                 translated_opts = []
                 for opt in q.get("options", []):
-                    opt_response = deepseek_client.chat.completions.create(
-                        model="deepseek-chat",
+                    opt_response = client.chat.completions.create(
+                        model=model,
                         messages=[
                             {
                                 "role": "system",
@@ -233,10 +239,9 @@ async def translate_quiz(quiz_id: str, data: TranslateQuizRequest, request: Requ
 async def create_translated_course(course_id: str, target_language: str, request: Request):
     """Create a new course as a translation of an existing course"""
     user = await require_roles("admin")(request)
-    
-    if not deepseek_client:
-        raise HTTPException(status_code=503, detail="AI service not configured")
-    
+
+    client, model = await _get_ai_client()
+
     if target_language not in SUPPORTED_LANGUAGES:
         raise HTTPException(status_code=400, detail=f"Unsupported language: {target_language}")
     
@@ -255,8 +260,8 @@ async def create_translated_course(course_id: str, target_language: str, request
         translated_desc = stored_translations[target_language]["description"]
     else:
         # Translate title
-        title_response = deepseek_client.chat.completions.create(
-            model="deepseek-chat",
+        title_response = client.chat.completions.create(
+            model=model,
             messages=[
                 {
                     "role": "system",
@@ -269,8 +274,8 @@ async def create_translated_course(course_id: str, target_language: str, request
         translated_title = title_response.choices[0].message.content.strip()
         
         # Translate description
-        desc_response = deepseek_client.chat.completions.create(
-            model="deepseek-chat",
+        desc_response = client.chat.completions.create(
+            model=model,
             messages=[
                 {
                     "role": "system",
@@ -310,8 +315,8 @@ async def create_translated_course(course_id: str, target_language: str, request
     # Also translate lessons if any
     lessons = await db.lessons.find({"course_id": course_id}).to_list(100)
     for lesson in lessons:
-        lesson_title_resp = deepseek_client.chat.completions.create(
-            model="deepseek-chat",
+        lesson_title_resp = client.chat.completions.create(
+            model=model,
             messages=[
                 {
                     "role": "system",
@@ -321,8 +326,8 @@ async def create_translated_course(course_id: str, target_language: str, request
             ],
             temperature=0.3
         )
-        lesson_desc_resp = deepseek_client.chat.completions.create(
-            model="deepseek-chat",
+        lesson_desc_resp = client.chat.completions.create(
+            model=model,
             messages=[
                 {
                     "role": "system",

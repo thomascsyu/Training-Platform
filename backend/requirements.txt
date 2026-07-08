@@ -12,5 +12,6 @@ pydantic==2.12.5
 email-validator==2.3.0
 python-multipart==0.0.22
 reportlab==4.2.5
+cryptography==42.0.8
 pytest==9.0.2
 pytest-asyncio==1.4.0
