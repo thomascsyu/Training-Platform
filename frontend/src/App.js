@@ -23,6 +23,7 @@ import { CertificatesPage } from "@/pages/CertificatesPage";
 import { AdminCoursesPage } from "@/pages/AdminCoursesPage";
 import { AdminUsersPage } from "@/pages/AdminUsersPage";
 import { AdminCompaniesPage } from "@/pages/AdminCompaniesPage";
+import { AdminCompanyDashboardPage } from "@/pages/AdminCompanyDashboardPage";
 import { ManagerGroupProgressPage } from "@/pages/ManagerGroupProgressPage";
 import { AdminBulkEnrollPage } from "@/pages/AdminBulkEnrollPage";
 import { AdminCourseEditPage } from "@/pages/AdminCourseEditPage";
@@ -127,6 +128,14 @@ function App() {
               element={
                 <ProtectedRoute roles={["admin"]}>
                   <AdminCompaniesPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/companies/:companyId/dashboard"
+              element={
+                <ProtectedRoute roles={["admin"]}>
+                  <AdminCompanyDashboardPage />
                 </ProtectedRoute>
               }
             />
