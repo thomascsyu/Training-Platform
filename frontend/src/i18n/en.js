@@ -62,7 +62,22 @@ export default {
       noAccount: "Don't have an account?",
       haveAccount: "Already have an account?",
       student: "Student",
-      clientManager: "Client Manager"
+      clientManager: "Client Manager",
+      forgotPassword: "Forgot password?",
+      forgotPasswordHelp: "Enter your email and we'll send you a reset link.",
+      sendResetLink: "Send Reset Link",
+      passwordResetEmailSent:
+        "If an account with that email exists, a password reset link has been sent.",
+      backToSignIn: "Back to Sign In",
+      resetPassword: "Reset Password",
+      resetPasswordHelp: "Enter your new password below.",
+      requestNewResetLink: "Request a new reset link",
+      newPassword: "New Password",
+      confirmPassword: "Confirm Password",
+      updatePassword: "Update Password",
+      passwordsMustMatch: "Passwords must match",
+      passwordResetSuccess: "Password reset successful. Please sign in.",
+      invalidResetLink: "Invalid or expired reset link."
     },
     
     // Dashboard

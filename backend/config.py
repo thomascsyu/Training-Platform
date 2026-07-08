@@ -29,6 +29,19 @@ def _get_int_env(name: str, default: int) -> int:
         return default
 
 
+def _get_positive_int_env(name: str, default: int) -> int:
+    value = _get_int_env(name, default)
+    if value <= 0:
+        logger.warning(
+            "%s must be greater than 0, got %r; falling back to %s",
+            name,
+            value,
+            default,
+        )
+        return default
+    return value
+
+
 # Connection-string env vars in priority order. MONGO_URL is preferred, but
 # different platforms expose different names: Zeabur's prebuilt MongoDB service
 # injects MONGO_CONNECTION_STRING, and Emergent-imported apps commonly use
@@ -83,6 +96,10 @@ BREVO_API_KEY = os.environ.get("BREVO_API_KEY")
 EMAIL_FROM = os.environ.get("EMAIL_FROM", "noreply@learnhub.com")
 EMAIL_FROM_NAME = os.environ.get("EMAIL_FROM_NAME", "LearnHub")
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:3000")
+RESET_PASSWORD_TOKEN_TTL_MINUTES = _get_positive_int_env(
+    "RESET_PASSWORD_TOKEN_TTL_MINUTES",
+    30,
+)
 
 def _normalize_admin_email(email: str) -> str:
     return email.lower().strip()

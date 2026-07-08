@@ -23,6 +23,7 @@ _database_initialized = False
 async def initialize_database():
     await db.command("ping")
     await db.users.create_index("email", unique=True)
+    await db.users.create_index("password_reset_token_hash")
     await db.companies.create_index("name", unique=True)
     await db.users.create_index("company_id")
     await db.courses.create_index("company_ids")

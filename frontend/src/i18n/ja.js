@@ -62,7 +62,22 @@ export default {
       noAccount: "アカウントをお持ちでないですか？",
       haveAccount: "すでにアカウントをお持ちですか？",
       student: "学生",
-      clientManager: "クライアントマネージャー"
+      clientManager: "クライアントマネージャー",
+      forgotPassword: "パスワードをお忘れですか？",
+      forgotPasswordHelp: "メールアドレスを入力すると、再設定リンクを送信します。",
+      sendResetLink: "再設定リンクを送信",
+      passwordResetEmailSent:
+        "このメールアドレスのアカウントが存在する場合、再設定リンクを送信しました。",
+      backToSignIn: "ログインに戻る",
+      resetPassword: "パスワードを再設定",
+      resetPasswordHelp: "新しいパスワードを入力してください。",
+      requestNewResetLink: "新しい再設定リンクをリクエスト",
+      newPassword: "新しいパスワード",
+      confirmPassword: "パスワード（確認）",
+      updatePassword: "パスワードを更新",
+      passwordsMustMatch: "パスワードが一致しません",
+      passwordResetSuccess: "パスワードを再設定しました。ログインしてください。",
+      invalidResetLink: "再設定リンクが無効か有効期限切れです。"
     },
     
     // Dashboard
