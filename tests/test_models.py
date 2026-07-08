@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from models import CourseCreate, CourseUpdate, UserCreate
+from models import CompanyCreate, CompanyUpdate, CourseCreate, CourseUpdate, UserCreate
 
 
 def test_user_create_password_min_length():
@@ -31,3 +31,13 @@ def test_course_create_accepts_assigned_companies():
 def test_course_update_accepts_clearing_assigned_companies():
     update = CourseUpdate(company_ids=[])
     assert update.company_ids == []
+
+
+def test_company_create_defaults_to_no_assigned_trainings():
+    company = CompanyCreate(name="Acme")
+    assert company.training_ids == []
+
+
+def test_company_update_accepts_training_assignments():
+    update = CompanyUpdate(training_ids=["507f1f77bcf86cd799439011"])
+    assert update.training_ids == ["507f1f77bcf86cd799439011"]
