@@ -18,11 +18,8 @@ class FakeCursor:
         return self._docs
 
 
-def _fake_require_roles(*_roles):
-    async def checker(_request):
-        return {"id": "admin-id", "role": "admin"}
-
-    return checker
+async def _fake_require_admin_or_manager(_request):
+    return {"id": "admin-id", "role": "admin", "company_id": None}
 
 
 @pytest.mark.asyncio
@@ -112,7 +109,7 @@ async def test_company_dashboard_returns_user_training_progress(monkeypatch):
     ])
 
     monkeypatch.setattr(companies_router, "db", mock_db)
-    monkeypatch.setattr(companies_router, "require_roles", _fake_require_roles)
+    monkeypatch.setattr(companies_router, "require_admin_or_manager", _fake_require_admin_or_manager)
     monkeypatch.setattr(
         companies_router,
         "get_bulk_lesson_progress",
@@ -167,7 +164,7 @@ async def test_company_dashboard_returns_404_for_unknown_company(monkeypatch):
     mock_db.companies.find_one = AsyncMock(return_value=None)
 
     monkeypatch.setattr(companies_router, "db", mock_db)
-    monkeypatch.setattr(companies_router, "require_roles", _fake_require_roles)
+    monkeypatch.setattr(companies_router, "require_admin_or_manager", _fake_require_admin_or_manager)
 
     with pytest.raises(HTTPException) as exc_info:
         await companies_router.get_company_dashboard(company_id, request=object())

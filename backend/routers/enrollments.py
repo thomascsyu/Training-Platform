@@ -1,7 +1,7 @@
 from bson import ObjectId
 from fastapi import APIRouter, HTTPException, Request
 
-from auth_utils import get_current_user, require_roles
+from auth_utils import get_current_user, require_admin_or_manager
 from database import db
 from db_utils import parse_object_id
 from enrollment_utils import enroll_user_in_course, enroll_users_in_course
@@ -103,17 +103,40 @@ async def get_my_enrollments(request: Request):
 
 @router.get("/enrollments/course/{course_id}")
 async def get_course_enrollments(course_id: str, request: Request):
-    await require_roles("admin", "client_manager")(request)
+    user = await require_admin_or_manager(request)
     parse_object_id(course_id, "course")
+
+    if user["role"] == "client_manager":
+        course = await db.courses.find_one(
+            {"_id": parse_object_id(course_id, "course")},
+            {"_id": 1, "company_ids": 1},
+        )
+        if not course or user["company_id"] not in course.get("company_ids", []):
+            raise HTTPException(status_code=403, detail="Not authorized to view this course")
 
     enrollments = await db.enrollments.find({"course_id": course_id}).to_list(1000)
 
-    user_ids = [ObjectId(e["user_id"]) for e in enrollments]
-    users = await db.users.find(
-        {"_id": {"$in": user_ids}},
-        {"_id": 1, "name": 1, "email": 1},
-    ).to_list(1000)
-    user_map = {str(u["_id"]): u for u in users}
+    if user["role"] == "client_manager":
+        company_id = user["company_id"]
+        user_ids = list({e["user_id"] for e in enrollments})
+        if user_ids:
+            company_users = await db.users.find(
+                {
+                    "_id": {"$in": [ObjectId(uid) for uid in user_ids]},
+                    "company_id": company_id,
+                },
+                {"_id": 1, "name": 1, "email": 1},
+            ).to_list(1000)
+            user_map = {str(u["_id"]): u for u in company_users}
+        else:
+            user_map = {}
+    else:
+        user_ids = [ObjectId(e["user_id"]) for e in enrollments]
+        users = await db.users.find(
+            {"_id": {"$in": user_ids}},
+            {"_id": 1, "name": 1, "email": 1},
+        ).to_list(1000)
+        user_map = {str(u["_id"]): u for u in users}
 
     result = []
     for e in enrollments:

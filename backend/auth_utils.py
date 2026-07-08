@@ -97,6 +97,7 @@ async def get_current_user(request: Request) -> dict:
             "email": user["email"],
             "name": user["name"],
             "role": user["role"],
+            "company_id": user.get("company_id"),
         }
     except jwt.ExpiredSignatureError as exc:
         raise HTTPException(status_code=401, detail="Token expired") from exc
@@ -119,3 +120,13 @@ def require_roles(*roles):
         return user
 
     return role_checker
+
+
+async def require_admin_or_manager(request: Request) -> dict:
+    """Return the current user if they are an admin or a company-assigned client manager."""
+    user = await get_current_user(request)
+    if user["role"] not in {"admin", "client_manager"}:
+        raise HTTPException(status_code=403, detail="Insufficient permissions")
+    if user["role"] == "client_manager" and not user.get("company_id"):
+        raise HTTPException(status_code=403, detail="Client manager is not assigned to a company")
+    return user

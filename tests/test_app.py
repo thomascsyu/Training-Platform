@@ -19,6 +19,8 @@ def mock_db(monkeypatch):
     db.users.count_documents = AsyncMock()
     db.companies = MagicMock()
     db.companies.create_index = AsyncMock()
+    db.courses = MagicMock()
+    db.courses.create_index = AsyncMock()
     db.enrollments = MagicMock()
     db.enrollments.create_index = AsyncMock()
     db.lesson_progress = MagicMock()

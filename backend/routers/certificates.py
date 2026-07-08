@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Request
 from starlette.responses import Response
 
-from auth_utils import get_current_user, require_roles
+from auth_utils import get_current_user, require_admin_or_manager, require_roles
 from certificate_pdf import generate_certificate_pdf
 from database import db
 from db_utils import parse_object_id
@@ -54,10 +54,16 @@ async def download_certificate_pdf(certificate_id: str, request: Request):
     )
     if not cert:
         raise HTTPException(status_code=404, detail="Certificate not found")
-    if (
-        user["role"] not in ["admin", "client_manager"]
-        and cert.get("user_id") != user["id"]
-    ):
+    if user["role"] == "client_manager":
+        cert_user = await db.users.find_one(
+            {"_id": parse_object_id(cert.get("user_id", ""), "user")},
+            {"_id": 1, "company_id": 1},
+        )
+        if not cert_user or cert_user.get("company_id") != user.get("company_id"):
+            raise HTTPException(
+                status_code=403, detail="Not authorized to download this certificate"
+            )
+    elif user["role"] != "admin" and cert.get("user_id") != user["id"]:
         raise HTTPException(
             status_code=403, detail="Not authorized to download this certificate"
         )
@@ -79,10 +85,16 @@ async def get_certificate(certificate_id: str, request: Request):
     )
     if not cert:
         raise HTTPException(status_code=404, detail="Certificate not found")
-    if (
-        user["role"] not in ["admin", "client_manager"]
-        and cert.get("user_id") != user["id"]
-    ):
+    if user["role"] == "client_manager":
+        cert_user = await db.users.find_one(
+            {"_id": parse_object_id(cert.get("user_id", ""), "user")},
+            {"_id": 1, "company_id": 1},
+        )
+        if not cert_user or cert_user.get("company_id") != user.get("company_id"):
+            raise HTTPException(
+                status_code=403, detail="Not authorized to view this certificate"
+            )
+    elif user["role"] != "admin" and cert.get("user_id") != user["id"]:
         raise HTTPException(
             status_code=403, detail="Not authorized to view this certificate"
         )

@@ -3,7 +3,7 @@ from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Request
 
-from auth_utils import require_roles
+from auth_utils import require_admin_or_manager, require_roles
 from database import db
 from db_utils import parse_object_id
 from enrollment_utils import enroll_company_students_in_course
@@ -256,7 +256,19 @@ async def _build_company_dashboard_users(company_id: str, trainings: list[dict])
 
 @router.get("/companies")
 async def list_companies(request: Request):
-    await require_roles("admin", "client_manager")(request)
+    user = await require_admin_or_manager(request)
+    if user["role"] == "client_manager":
+        company = await db.companies.find_one({"_id": parse_object_id(user["company_id"], "company")})
+        if not company:
+            return []
+        trainings_by_company = await _company_training_map([user["company_id"]])
+        return [
+            _serialize_company(
+                company,
+                trainings=trainings_by_company.get(user["company_id"], []),
+            )
+        ]
+
     companies = await db.companies.find().sort("name", 1).to_list(1000)
     company_ids = [str(company["_id"]) for company in companies]
     trainings_by_company = await _company_training_map(company_ids)
@@ -271,7 +283,10 @@ async def list_companies(request: Request):
 
 @router.get("/companies/{company_id}/dashboard")
 async def get_company_dashboard(company_id: str, request: Request):
-    await require_roles("admin", "client_manager")(request)
+    user = await require_admin_or_manager(request)
+    if user["role"] == "client_manager" and company_id != user["company_id"]:
+        raise HTTPException(status_code=403, detail="Not authorized to view this company")
+
     oid = parse_object_id(company_id, "company")
     company = await db.companies.find_one({"_id": oid})
     if not company:
