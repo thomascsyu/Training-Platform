@@ -11,7 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
-  ArrowLeft, Bot, Globe, Loader2, Pencil, Plus, Trash2, Video, X
+  ArrowLeft, Bot, Globe, Loader2, Pencil, Plus, Trash2, Upload, Video, X
 } from "lucide-react";
 import { courseLanguages } from "@/i18n";
 import { API, formatError } from "@/lib/api";
@@ -24,6 +24,97 @@ const createEmptyQuizQuestion = () => ({
   options: ["", "", "", "", ""],
   correct_answer: 0,
 });
+
+const parseCsvLine = (line) => {
+  const values = [];
+  let current = "";
+  let inQuotes = false;
+  for (let idx = 0; idx < line.length; idx += 1) {
+    const char = line[idx];
+    if (char === "\"") {
+      if (inQuotes && line[idx + 1] === "\"") {
+        current += "\"";
+        idx += 1;
+      } else {
+        inQuotes = !inQuotes;
+      }
+      continue;
+    }
+    if (char === "," && !inQuotes) {
+      values.push(current.trim());
+      current = "";
+      continue;
+    }
+    current += char;
+  }
+  values.push(current.trim());
+  return values;
+};
+
+const parseQuizCsv = (text) => {
+  const lines = text
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  if (lines.length === 0) {
+    return { questions: [], errors: ["CSV is empty."] };
+  }
+
+  const firstRow = parseCsvLine(lines[0]).map((col) => col.toLowerCase());
+  const hasHeader = firstRow[0] === "question";
+  const dataRows = hasHeader ? lines.slice(1) : lines;
+  const questions = [];
+  const errors = [];
+
+  dataRows.forEach((line, rowIdx) => {
+    const columns = parseCsvLine(line).map((column) => column.replace(/^"|"$/g, "").trim());
+    const lineNumber = hasHeader ? rowIdx + 2 : rowIdx + 1;
+    if (columns.length < 7) {
+      errors.push(`Line ${lineNumber}: expected 7 columns.`);
+      return;
+    }
+
+    const [question, optionA, optionB, optionC, optionD, optionE, correctAnswerRaw] = columns;
+    const options = [optionA, optionB, optionC, optionD, optionE].map((option) => option.trim());
+    if (!question?.trim() || options.some((option) => !option)) {
+      errors.push(`Line ${lineNumber}: question and options A-E are required.`);
+      return;
+    }
+
+    const normalizedCorrect = (correctAnswerRaw || "").trim();
+    const upperCorrect = normalizedCorrect.toUpperCase();
+    let correctAnswerIndex = -1;
+
+    if (["A", "B", "C", "D", "E"].includes(upperCorrect)) {
+      correctAnswerIndex = ["A", "B", "C", "D", "E"].indexOf(upperCorrect);
+    } else if (/^[0-4]$/.test(normalizedCorrect)) {
+      correctAnswerIndex = parseInt(normalizedCorrect, 10);
+    } else if (/^[1-5]$/.test(normalizedCorrect)) {
+      correctAnswerIndex = parseInt(normalizedCorrect, 10) - 1;
+    } else {
+      const byOptionText = options.findIndex(
+        (option) => option.toLowerCase() === normalizedCorrect.toLowerCase()
+      );
+      if (byOptionText >= 0) {
+        correctAnswerIndex = byOptionText;
+      }
+    }
+
+    if (correctAnswerIndex < 0 || correctAnswerIndex > 4) {
+      errors.push(`Line ${lineNumber}: correct_answer must be A-E, 1-5, 0-4, or option text.`);
+      return;
+    }
+
+    questions.push({
+      question: question.trim(),
+      options,
+      correct_answer: correctAnswerIndex,
+    });
+  });
+
+  return { questions, errors };
+};
 
 export const AdminCourseEditPage = () => {
   const { id } = useParams();
@@ -175,6 +266,36 @@ export const AdminCourseEditPage = () => {
 
   const handleRemoveQuizQuestion = (index) => {
     setQuizDraftQuestions((prev) => prev.filter((_, questionIdx) => questionIdx !== index));
+  };
+
+  const handleQuizCsvImport = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    try {
+      const text = await file.text();
+      const { questions, errors } = parseQuizCsv(text);
+
+      if (questions.length > 0) {
+        setQuizDraftQuestions((prev) => [...prev, ...questions]);
+        toast.success(`Imported ${questions.length} quiz question${questions.length > 1 ? "s" : ""}.`);
+      }
+
+      if (errors.length > 0) {
+        const preview = errors.slice(0, 3).join(" ");
+        toast.message(`CSV warnings (${errors.length}): ${preview}`);
+      }
+
+      if (questions.length === 0 && errors.length > 0) {
+        toast.error("No quiz questions were imported from CSV.");
+      }
+    } catch (e) {
+      toast.error("Unable to read CSV file.");
+    } finally {
+      event.target.value = "";
+    }
   };
 
   const handleCreateQuiz = async () => {
@@ -692,6 +813,38 @@ export const AdminCourseEditPage = () => {
                 placeholder="Quiz title"
                 className="rounded-sm"
               />
+
+              <div className="space-y-3 border border-slate-200 rounded-sm p-3">
+                <div className="space-y-1">
+                  <Label htmlFor="quiz-csv-upload">Import Questions & Answers (CSV)</Label>
+                  <p className="text-xs text-slate-500">
+                    Required columns: question, option_a, option_b, option_c, option_d, option_e, correct_answer
+                  </p>
+                </div>
+                <Input
+                  id="quiz-csv-upload"
+                  type="file"
+                  accept=".csv,text/csv"
+                  onChange={handleQuizCsvImport}
+                  className="rounded-sm"
+                  data-testid="quiz-csv-upload"
+                />
+                <p className="text-xs text-slate-500">
+                  correct_answer accepts A-E, 1-5, 0-4, or the exact option text.
+                </p>
+                <div className="bg-slate-50 border border-slate-200 rounded-sm p-3">
+                  <p className="text-xs font-medium text-slate-700 mb-1">CSV format example</p>
+                  <pre className="text-xs text-slate-600 whitespace-pre-wrap">
+{`question,option_a,option_b,option_c,option_d,option_e,correct_answer
+"What does PDCA stand for?","Plan","Do","Check","Act","Analyze","A"
+"ISO 9001 focuses on?","Quality management","Food safety","Cybersecurity","Accounting","Marketing","Quality management"`}
+                  </pre>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-slate-500">
+                  <Upload className="w-3 h-3" />
+                  Import appends questions to the current draft quiz.
+                </div>
+              </div>
 
               <div className="space-y-2 border border-slate-200 rounded-sm p-3">
                 <Label>Question</Label>
