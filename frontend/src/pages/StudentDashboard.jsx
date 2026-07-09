@@ -110,7 +110,7 @@ export const StudentDashboard = () => {
               >
                 <div className="aspect-video bg-slate-100 relative overflow-hidden">
                   <CourseThumbnail
-                    src={e.course_thumbnail}
+                    src={e.course_thumbnail || e.thumbnail_url}
                     alt={e.course_title}
                     fallbackClassName="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#002FA7]/10 to-[#002FA7]/5"
                     fallbackIconClassName="w-12 h-12 text-[#002FA7]/40"

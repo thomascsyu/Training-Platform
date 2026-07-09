@@ -37,16 +37,24 @@ export const resolveUploadUrl = (
     return trimmed;
   }
 
-  if (trimmed.startsWith("/api/uploads/thumbnails/")) {
-    return trimmed;
+  const normalizedThumbnailPath = trimmed.startsWith("/api/uploads/thumbnails/")
+    ? trimmed
+    : trimmed.startsWith("/uploads/thumbnails/")
+      ? `/api${trimmed}`
+      : trimmed.startsWith("uploads/thumbnails/")
+        ? `/api/${trimmed}`
+        : trimmed;
+
+  if (normalizedThumbnailPath.startsWith("/api/uploads/thumbnails/")) {
+    return normalizedThumbnailPath;
   }
 
-  if (trimmed.startsWith("/api/")) {
+  if (normalizedThumbnailPath.startsWith("/api/")) {
     const backend = (backendUrl || "").trim().replace(/\/$/, "");
-    return backend ? `${backend}${trimmed}` : trimmed;
+    return backend ? `${backend}${normalizedThumbnailPath}` : normalizedThumbnailPath;
   }
 
-  return trimmed;
+  return normalizedThumbnailPath;
 };
 
 /**
@@ -63,8 +71,15 @@ export const resolveUploadFallbackUrl = (
   const trimmed = (url || "").trim();
   if (!trimmed) return "";
   if (/^https?:\/\//i.test(trimmed)) return "";
-  if (!trimmed.startsWith("/api/uploads/thumbnails/")) return "";
+  const normalizedThumbnailPath = trimmed.startsWith("/api/uploads/thumbnails/")
+    ? trimmed
+    : trimmed.startsWith("/uploads/thumbnails/")
+      ? `/api${trimmed}`
+      : trimmed.startsWith("uploads/thumbnails/")
+        ? `/api/${trimmed}`
+        : trimmed;
+  if (!normalizedThumbnailPath.startsWith("/api/uploads/thumbnails/")) return "";
 
   const backend = (backendUrl || "").trim().replace(/\/$/, "");
-  return backend ? `${backend}${trimmed}` : "";
+  return backend ? `${backend}${normalizedThumbnailPath}` : "";
 };
