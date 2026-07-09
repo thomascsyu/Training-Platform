@@ -15,7 +15,8 @@ export default {
       analytics: "分析",
       manageGroups: "グループ管理",
       bulkEnroll: "一括登録",
-      groupProgress: "グループ進捗"
+      groupProgress: "グループ進捗",
+      aiSettings: "AI APIキー"
     },
     
     // Landing Page

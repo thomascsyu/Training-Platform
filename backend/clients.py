@@ -1,11 +1,10 @@
 import stripe
-from openai import OpenAI
 
-from config import DEEPSEEK_API_KEY, STRIPE_API_KEY
-
-deepseek_client = None
-if DEEPSEEK_API_KEY:
-    deepseek_client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url="https://api.deepseek.com")
+from ai_settings import get_active_client, get_client_for_provider
+from config import STRIPE_API_KEY
 
 if STRIPE_API_KEY:
     stripe.api_key = STRIPE_API_KEY
+
+
+__all__ = ["get_active_client", "get_client_for_provider", "stripe"]

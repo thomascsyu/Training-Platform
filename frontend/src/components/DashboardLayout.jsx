@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
-  Award, BarChart3, BookOpen, GraduationCap, Home, LogOut, Menu, Users
+  Award, BarChart3, BookOpen, GraduationCap, Home, Key, LogOut, Menu, Users
 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -21,7 +21,8 @@ export const DashboardLayout = ({ children }) => {
     { icon: Users, label: t("nav.users"), path: "/admin/users" },
     { icon: Users, label: t("nav.bulkEnroll"), path: "/admin/bulk-enroll" },
     { icon: BarChart3, label: t("nav.groupProgress"), path: "/manager/progress" },
-    { icon: BarChart3, label: t("nav.analytics"), path: "/admin/analytics" }
+    { icon: BarChart3, label: t("nav.analytics"), path: "/admin/analytics" },
+    { icon: Key, label: t("nav.aiSettings"), path: "/admin/ai-settings" }
   ] : user?.role === "client_manager" ? [
     { icon: Home, label: t("nav.dashboard"), path: "/dashboard" },
     { icon: BarChart3, label: t("nav.groupProgress"), path: "/manager/progress" },

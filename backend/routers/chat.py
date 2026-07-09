@@ -2,8 +2,8 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter, HTTPException, Request
 
+from ai_settings import get_active_client, get_active_provider_settings
 from auth_utils import get_current_user
-from clients import deepseek_client
 from config import logger
 from database import db
 from db_utils import parse_object_id
@@ -17,8 +17,12 @@ router = APIRouter(tags=["chat"])
 async def chat_with_ai(data: ChatMessageCreate, request: Request):
     user = await get_current_user(request)
 
-    if not deepseek_client:
+    settings = await get_active_provider_settings()
+    client = await get_active_client()
+    if not client or not settings:
         raise HTTPException(status_code=503, detail="AI service not configured")
+
+    model = settings.get("model", "deepseek-chat")
 
     await require_enrollment(user["id"], data.course_id)
 
@@ -63,8 +67,8 @@ async def chat_with_ai(data: ChatMessageCreate, request: Request):
     messages.append({"role": "user", "content": data.message})
 
     try:
-        response = deepseek_client.chat.completions.create(
-            model="deepseek-chat",
+        response = client.chat.completions.create(
+            model=model,
             messages=messages,
             temperature=0.7,
         )
