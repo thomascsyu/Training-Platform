@@ -262,6 +262,7 @@ Base path: `/api`
 
 | Method | Endpoint | Access |
 |--------|----------|--------|
+| POST | `/certificates` | Admin, client manager |
 | GET | `/certificates/my` | Owner |
 | GET | `/certificates/{id}` | Owner, admin, or client manager |
 | GET | `/certificates/{id}/pdf` | Owner, admin, or client manager — PDF download |

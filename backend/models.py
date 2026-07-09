@@ -146,6 +146,15 @@ class ChatMessageCreate(BaseModel):
     message: str
 
 
+class CertificateCreate(BaseModel):
+    course_id: str
+    user_id: str
+    score: int = Field(ge=0, le=100)
+    template: str = "default"
+    primary_color: str = "#002FA7"
+    secondary_color: str = "#0A0B10"
+
+
 class CertificateCustomize(BaseModel):
     template: str = "default"
     primary_color: str = "#002FA7"
