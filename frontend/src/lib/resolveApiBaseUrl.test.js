@@ -53,6 +53,15 @@ describe("resolveUploadUrl", () => {
     ).toBe("/api/uploads/thumbnails/example.jpg");
   });
 
+  it("normalizes legacy thumbnail paths to /api/uploads/thumbnails", () => {
+    expect(resolveUploadUrl("/uploads/thumbnails/example.jpg", "")).toBe(
+      "/api/uploads/thumbnails/example.jpg"
+    );
+    expect(resolveUploadUrl("uploads/thumbnails/example.jpg", "")).toBe(
+      "/api/uploads/thumbnails/example.jpg"
+    );
+  });
+
   it("prefixes other /api paths with the backend origin when configured", () => {
     expect(
       resolveUploadUrl("/api/files/example.jpg", "http://localhost:8001")
@@ -80,5 +89,20 @@ describe("resolveUploadFallbackUrl", () => {
     expect(resolveUploadFallbackUrl("/api/uploads/thumbnails/example.jpg", "")).toBe(
       ""
     );
+  });
+
+  it("normalizes legacy thumbnail paths before building backend fallback", () => {
+    expect(
+      resolveUploadFallbackUrl(
+        "/uploads/thumbnails/example.jpg",
+        "http://localhost:8001"
+      )
+    ).toBe("http://localhost:8001/api/uploads/thumbnails/example.jpg");
+    expect(
+      resolveUploadFallbackUrl(
+        "uploads/thumbnails/example.jpg",
+        "http://localhost:8001"
+      )
+    ).toBe("http://localhost:8001/api/uploads/thumbnails/example.jpg");
   });
 });
