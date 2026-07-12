@@ -20,18 +20,20 @@ import { CourseCard } from "@/components/CourseCard";
 
 export const LandingPage = () => {
   const { user } = useAuth();
-  const { t } = useLanguage();
+  const { lang, t } = useLanguage();
   const navigate = useNavigate();
   const [courses, setCourses] = useState([]);
 
   useEffect(() => {
     fetchCourses();
-  }, []);
+  }, [lang]);
 
   const fetchCourses = async () => {
     try {
-      const { data } = await API.get("/courses");
-      setCourses(data.slice(0, 6));
+      const { data } = await API.get("/courses", {
+        params: { paginate: true, limit: 6, skip: 0, lang },
+      });
+      setCourses(data.items || []);
     } catch (e) {
       console.error(e);
     }

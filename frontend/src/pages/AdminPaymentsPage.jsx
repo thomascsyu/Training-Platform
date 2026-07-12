@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CreditCard, DollarSign, CheckCircle, Clock } from "lucide-react";
+import { CreditCard, DollarSign, CheckCircle, Clock, Loader2 } from "lucide-react";
 import { API, formatError } from "@/lib/api";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { DashboardLayout } from "@/components/DashboardLayout";
@@ -38,6 +38,7 @@ export const AdminPaymentsPage = () => {
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("all");
+  const [refundingSessionId, setRefundingSessionId] = useState(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -69,6 +70,22 @@ export const AdminPaymentsPage = () => {
   const formatDate = (value) => {
     if (!value) return "—";
     return new Date(value).toLocaleString();
+  };
+
+  const handleRefundAndUnenroll = async (tx) => {
+    if (!window.confirm("Issue refund and unenroll this student from the course?")) return;
+    setRefundingSessionId(tx.session_id);
+    try {
+      await API.delete(`/enrollments/${tx.course_id}`, {
+        params: { user_id: tx.user_id, refund: true },
+      });
+      toast.success("Refund issued and enrollment removed.");
+      fetchData();
+    } catch (error) {
+      toast.error(formatError(error));
+    } finally {
+      setRefundingSessionId(null);
+    }
   };
 
   return (
@@ -149,6 +166,7 @@ export const AdminPaymentsPage = () => {
                     <th className="text-left p-4 font-medium text-slate-600">{t("adminPayments.amount")}</th>
                     <th className="text-left p-4 font-medium text-slate-600">{t("adminPayments.status")}</th>
                     <th className="text-left p-4 font-medium text-slate-600">{t("adminPayments.date")}</th>
+                    <th className="text-left p-4 font-medium text-slate-600">{t("users.actions")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -164,6 +182,21 @@ export const AdminPaymentsPage = () => {
                         </Badge>
                       </td>
                       <td className="p-4 text-slate-500 text-sm">{formatDate(tx.created_at)}</td>
+                      <td className="p-4">
+                        {tx.payment_status === "paid" ? (
+                          <Button
+                            variant="outline"
+                            className="rounded-sm text-red-600 hover:text-red-700"
+                            onClick={() => handleRefundAndUnenroll(tx)}
+                            disabled={refundingSessionId === tx.session_id}
+                            data-testid={`refund-enroll-${tx.id}`}
+                          >
+                            {refundingSessionId === tx.session_id ? <Loader2 className="w-4 h-4 animate-spin" /> : "Refund & Unenroll"}
+                          </Button>
+                        ) : (
+                          <span className="text-xs text-slate-400">—</span>
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Request
 
 from auth_utils import get_current_user
+from completion_utils import finalize_completion_if_eligible
 from database import db
 from db_utils import parse_object_id
 from models import LessonProgressUpdate
@@ -40,6 +41,7 @@ async def update_lesson_progress(
         last_position_sec=data.last_position_sec,
         completed=True if data.completed else None,
     )
+    await finalize_completion_if_eligible(user["id"], course_id)
     return await get_course_lesson_progress(user["id"], course_id)
 
 
@@ -56,4 +58,5 @@ async def complete_lesson(lesson_id: str, request: Request):
     await upsert_lesson_progress(
         user["id"], course_id, lesson_id, completed=True, watch_percent=100
     )
+    await finalize_completion_if_eligible(user["id"], course_id)
     return await get_course_lesson_progress(user["id"], course_id)

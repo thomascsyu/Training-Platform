@@ -18,7 +18,8 @@ export default {
       groupProgress: "Group Progress",
       aiSettings: "AI API Keys",
       payments: "Payments",
-      certificates: "Certificates"
+      certificates: "Certificates",
+      profile: "Profile"
     },
     
     // Landing Page
@@ -180,7 +181,10 @@ export default {
       lessonDeleted: "Lesson deleted",
       confirmDeleteLesson: "Are you sure you want to delete this lesson?",
       categoryPlaceholder: "e.g. Business",
-      hasVideo: "Has video"
+      hasVideo: "Has video",
+      unenroll: "Unenroll",
+      unenrolled: "Unenrolled successfully",
+      confirmUnenroll: "Are you sure you want to unenroll from this course?"
     },
     
     // Quiz
@@ -194,7 +198,8 @@ export default {
       passingScoreLabel: "Passing Score",
       viewCertificate: "View Certificate",
       backToDashboard: "Back to Dashboard",
-      pleaseAnswer: "Please answer all questions"
+      pleaseAnswer: "Please answer all questions",
+      completeLessonsFirst: "Quiz passed. Complete all lessons to finish the course."
     },
     
     // Certificate
@@ -204,7 +209,23 @@ export default {
       awardedTo: "Awarded to",
       noCertificates: "No certificates yet. Complete a course to earn your first certificate!",
       download: "Download",
-      issuedOn: "Issued"
+      issuedOn: "Issued",
+      verify: "Verify",
+      view: "View",
+      verifyTitle: "Certificate Verification",
+      enterCertificateId: "Enter certificate ID",
+      verified: "Certificate verified",
+      notVerified: "Certificate verification failed"
+    },
+
+    profile: {
+      accountInfo: "Account Information",
+      updated: "Profile updated",
+      changePassword: "Change Password",
+      currentPassword: "Current Password",
+      newPassword: "New Password",
+      passwordChanged: "Password changed successfully",
+      passwordRequired: "Current and new password are required"
     },
 
     // Certificate Templates
@@ -455,6 +476,7 @@ export default {
       cancel: "Cancel",
       delete: "Delete",
       edit: "Edit",
+      view: "View",
       refresh: "Refresh",
       completed: "Completed",
       youtube: "YouTube",

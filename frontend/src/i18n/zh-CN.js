@@ -18,7 +18,8 @@ export default {
       groupProgress: "群組進度",
       aiSettings: "AI API 密钥",
       payments: "付款",
-      certificates: "证书"
+      certificates: "证书",
+      profile: "个人资料"
     },
     
     // Landing Page
@@ -179,7 +180,10 @@ export default {
       lessonDeleted: "课时已删除",
       confirmDeleteLesson: "确定要删除此课时吗？",
       categoryPlaceholder: "例如：商业",
-      hasVideo: "含视频"
+      hasVideo: "含视频",
+      unenroll: "取消报名",
+      unenrolled: "已取消报名",
+      confirmUnenroll: "确定要取消这门课程的报名吗？"
     },
     
     // Quiz
@@ -193,7 +197,8 @@ export default {
       passingScoreLabel: "及格分数",
       viewCertificate: "查看证书",
       backToDashboard: "返回控制台",
-      pleaseAnswer: "请回答所有问题"
+      pleaseAnswer: "请回答所有问题",
+      completeLessonsFirst: "测验已通过，请先完成所有课时。"
     },
     
     // Certificate
@@ -203,7 +208,23 @@ export default {
       awardedTo: "授予",
       noCertificates: "还沒有证书。完成一门课程以获得您的第一張证书！",
       download: "下载",
-      issuedOn: "颁发日期"
+      issuedOn: "颁发日期",
+      verify: "验证",
+      view: "查看",
+      verifyTitle: "证书验证",
+      enterCertificateId: "输入证书 ID",
+      verified: "证书验证成功",
+      notVerified: "证书验证失败"
+    },
+
+    profile: {
+      accountInfo: "账户信息",
+      updated: "个人资料已更新",
+      changePassword: "修改密码",
+      currentPassword: "当前密码",
+      newPassword: "新密码",
+      passwordChanged: "密码修改成功",
+      passwordRequired: "请填写当前密码和新密码"
     },
 
     // Certificate Templates
@@ -424,7 +445,8 @@ export default {
       save: "保存",
       cancel: "取消",
       delete: "删除",
-      edit: "辑輯",
+      edit: "编辑",
+      view: "查看",
       refresh: "刷新",
       completed: "已完成",
       youtube: "YouTube",

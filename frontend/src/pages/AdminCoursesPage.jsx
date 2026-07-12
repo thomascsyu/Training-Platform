@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { BookOpen, Edit, Globe, Loader2, Plus, Trash2 } from "lucide-react";
+import { BookOpen, Edit, Globe, Loader2, Plus, Search, Trash2 } from "lucide-react";
 import { courseLanguages, getCourseLanguageDisplay } from "@/i18n";
 import { API, formatError } from "@/lib/api";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -21,14 +21,27 @@ import { CourseThumbnail } from "@/components/CourseThumbnail";
 import PageHeader from "@/components/enhanced/PageHeader";
 import EmptyState from "@/components/enhanced/EmptyState";
 import { TableSkeleton } from "@/components/enhanced/Skeletons";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 export const AdminCoursesPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { t } = useLanguage();
+  const { lang, t } = useLanguage();
   const [courses, setCourses] = useState([]);
   const [companies, setCompanies] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const pageSize = 10;
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
@@ -47,23 +60,40 @@ export const AdminCoursesPage = () => {
   const [creating, setCreating] = useState(false);
 
   const fetchCourses = useCallback(async () => {
+    setLoading(true);
     try {
       const [coursesRes, companiesRes] = await Promise.all([
-        API.get("/courses?include_private=true"),
-        API.get("/companies")
+        API.get("/courses", {
+          params: {
+            include_private: true,
+            paginate: true,
+            skip: (page - 1) * pageSize,
+            limit: pageSize,
+            search: searchQuery || undefined,
+            category: selectedCategory !== "all" ? selectedCategory : undefined,
+            lang,
+          },
+        }),
+        API.get("/companies"),
       ]);
-      setCourses(coursesRes.data);
+      setCourses(coursesRes.data.items || []);
+      setTotal(coursesRes.data.total || 0);
+      setCategories(coursesRes.data.categories || []);
       setCompanies(companiesRes.data);
     } catch (e) {
       console.error(e);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [lang, page, searchQuery, selectedCategory]);
 
   useEffect(() => {
     fetchCourses();
   }, [fetchCourses, location.key]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery, selectedCategory]);
 
   const handleCreate = async () => {
     setCreating(true);
@@ -287,6 +317,32 @@ export const AdminCoursesPage = () => {
           </Dialog>
         </PageHeader>
 
+        <div className="flex flex-col md:flex-row gap-3 mb-6">
+          <div className="relative flex-1">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Input
+              className="pl-9 rounded-sm"
+              placeholder={t("courses.search")}
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              data-testid="admin-course-search-input"
+            />
+          </div>
+          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+            <SelectTrigger className="w-full md:w-56 rounded-sm" data-testid="admin-course-category-filter">
+              <SelectValue placeholder={t("courses.category")} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t("courses.category")}</SelectItem>
+              {categories.map((category) => (
+                <SelectItem key={category} value={category}>
+                  {category}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
         {loading ? (
           <TableSkeleton rows={5} cols={1} />
         ) : courses.length > 0 ? (
@@ -358,6 +414,38 @@ export const AdminCoursesPage = () => {
             onAction={() => setShowCreateDialog(true)}
             testId="admin-courses-empty"
           />
+        )}
+
+        {total > pageSize && (
+          <Pagination className="mt-6">
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  href="#"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    setPage((prev) => Math.max(1, prev - 1));
+                  }}
+                  className={page <= 1 ? "pointer-events-none opacity-50" : ""}
+                />
+              </PaginationItem>
+              <PaginationItem className="px-3 text-sm text-slate-600">
+                {page} / {Math.max(1, Math.ceil(total / pageSize))}
+              </PaginationItem>
+              <PaginationItem>
+                <PaginationNext
+                  href="#"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    if (page * pageSize < total) {
+                      setPage((prev) => prev + 1);
+                    }
+                  }}
+                  className={page * pageSize >= total ? "pointer-events-none opacity-50" : ""}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
         )}
       </div>
     </DashboardLayout>

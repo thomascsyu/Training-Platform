@@ -18,7 +18,8 @@ export default {
       groupProgress: "グループ進捗",
       aiSettings: "AI APIキー",
       payments: "支払い",
-      certificates: "修了証"
+      certificates: "修了証",
+      profile: "プロフィール"
     },
     
     // Landing Page
@@ -180,7 +181,10 @@ export default {
       lessonDeleted: "レッスンを削除しました",
       confirmDeleteLesson: "このレッスンを削除しますか？",
       categoryPlaceholder: "例：ビジネス",
-      hasVideo: "動画あり"
+      hasVideo: "動画あり",
+      unenroll: "受講解除",
+      unenrolled: "受講を解除しました",
+      confirmUnenroll: "このコースの受講を解除しますか？"
     },
     
     // Quiz
@@ -194,7 +198,8 @@ export default {
       passingScoreLabel: "合格スコア",
       viewCertificate: "修了証を表示",
       backToDashboard: "ダッシュボードに戻る",
-      pleaseAnswer: "すべての問題に回答してください"
+      pleaseAnswer: "すべての問題に回答してください",
+      completeLessonsFirst: "クイズには合格しました。コース完了には全レッスンの完了が必要です。"
     },
     
     // Certificate
@@ -204,7 +209,23 @@ export default {
       awardedTo: "授与先",
       noCertificates: "まだ修了証がありません。コースを完了して最初の修了証を取得しましょう！",
       download: "ダウンロード",
-      issuedOn: "発行日"
+      issuedOn: "発行日",
+      verify: "検証",
+      view: "表示",
+      verifyTitle: "修了証の検証",
+      enterCertificateId: "修了証IDを入力",
+      verified: "修了証を確認しました",
+      notVerified: "修了証を確認できませんでした"
+    },
+
+    profile: {
+      accountInfo: "アカウント情報",
+      updated: "プロフィールを更新しました",
+      changePassword: "パスワード変更",
+      currentPassword: "現在のパスワード",
+      newPassword: "新しいパスワード",
+      passwordChanged: "パスワードを変更しました",
+      passwordRequired: "現在のパスワードと新しいパスワードを入力してください"
     },
 
     // Certificate Templates
@@ -426,6 +447,7 @@ export default {
       cancel: "キャンセル",
       delete: "削除",
       edit: "編集",
+      view: "表示",
       refresh: "更新",
       completed: "完了",
       youtube: "YouTube",

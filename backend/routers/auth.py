@@ -16,7 +16,9 @@ from config import (
 from database import db
 from email_service import send_password_reset_email
 from models import (
+    ChangePasswordRequest,
     ForgotPasswordRequest,
+    ProfileUpdateRequest,
     ResetPasswordRequest,
     UserCreate,
     UserLogin,
@@ -216,3 +218,48 @@ async def refresh_session(request: Request):
 async def get_me(request: Request):
     user = await get_current_user(request)
     return user
+
+
+@router.put("/me")
+async def update_me(data: ProfileUpdateRequest, request: Request):
+    user = await get_current_user(request)
+    updates = {}
+    if data.name is not None:
+        name = data.name.strip()
+        if not name:
+            raise HTTPException(status_code=400, detail="Name is required")
+        updates["name"] = name
+
+    if not updates:
+        raise HTTPException(status_code=400, detail="No fields to update")
+
+    await db.users.update_one(
+        {"_id": ObjectId(user["id"])},
+        {"$set": updates},
+    )
+    refreshed = await db.users.find_one({"_id": ObjectId(user["id"])})
+    return {
+        "id": str(refreshed["_id"]),
+        "email": refreshed["email"],
+        "name": refreshed["name"],
+        "role": refreshed["role"],
+        "company_id": refreshed.get("company_id"),
+    }
+
+
+@router.post("/change-password")
+async def change_password(data: ChangePasswordRequest, request: Request):
+    user = await get_current_user(request)
+    user_doc = await db.users.find_one({"_id": ObjectId(user["id"])})
+    if not user_doc:
+        raise HTTPException(status_code=404, detail="User not found")
+    if not verify_password(data.current_password, user_doc["password_hash"]):
+        raise HTTPException(status_code=400, detail="Current password is incorrect")
+    if verify_password(data.new_password, user_doc["password_hash"]):
+        raise HTTPException(status_code=400, detail="New password must be different")
+
+    await db.users.update_one(
+        {"_id": user_doc["_id"]},
+        {"$set": {"password_hash": hash_password(data.new_password)}},
+    )
+    return {"message": "Password updated successfully"}

@@ -65,6 +65,15 @@ class ResetPasswordRequest(BaseModel):
     new_password: str = Field(min_length=8)
 
 
+class ProfileUpdateRequest(BaseModel):
+    name: Optional[str] = None
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str = Field(min_length=1)
+    new_password: str = Field(min_length=8)
+
+
 class CourseCreate(BaseModel):
     title: str
     description: str

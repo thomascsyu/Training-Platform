@@ -18,7 +18,8 @@ export default {
       groupProgress: "群組進度",
       aiSettings: "AI API 金鑰",
       payments: "付款",
-      certificates: "證書"
+      certificates: "證書",
+      profile: "個人資料"
     },
     
     // Landing Page
@@ -179,7 +180,10 @@ export default {
       lessonDeleted: "課時已刪除",
       confirmDeleteLesson: "確定要刪除此課時嗎？",
       categoryPlaceholder: "例如：商業",
-      hasVideo: "含影片"
+      hasVideo: "含影片",
+      unenroll: "取消報名",
+      unenrolled: "已取消報名",
+      confirmUnenroll: "確定要取消這門課程的報名嗎？"
     },
     
     // Quiz
@@ -193,7 +197,8 @@ export default {
       passingScoreLabel: "及格分數",
       viewCertificate: "查看證書",
       backToDashboard: "返回控制台",
-      pleaseAnswer: "請回答所有問題"
+      pleaseAnswer: "請回答所有問題",
+      completeLessonsFirst: "測驗已通過，請完成所有課時以完成課程。"
     },
     
     // Certificate
@@ -203,7 +208,23 @@ export default {
       awardedTo: "授予",
       noCertificates: "還沒有證書。完成一門課程以獲得您的第一張證書！",
       download: "下載",
-      issuedOn: "頒發日期"
+      issuedOn: "頒發日期",
+      verify: "驗證",
+      view: "查看",
+      verifyTitle: "證書驗證",
+      enterCertificateId: "輸入證書 ID",
+      verified: "證書驗證成功",
+      notVerified: "證書驗證失敗"
+    },
+
+    profile: {
+      accountInfo: "帳戶資訊",
+      updated: "個人資料已更新",
+      changePassword: "變更密碼",
+      currentPassword: "目前密碼",
+      newPassword: "新密碼",
+      passwordChanged: "密碼已成功變更",
+      passwordRequired: "請輸入目前密碼與新密碼"
     },
 
     // Certificate Templates
@@ -425,6 +446,7 @@ export default {
       cancel: "取消",
       delete: "刪除",
       edit: "編輯",
+      view: "查看",
       refresh: "重新整理",
       completed: "已完成",
       youtube: "YouTube",

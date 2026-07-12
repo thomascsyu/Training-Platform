@@ -123,11 +123,18 @@ async def get_courses(
     lang: Optional[str] = None,
     search: Optional[str] = None,
     category: Optional[str] = None,
+    skip: int = 0,
+    limit: int = 50,
+    paginate: bool = False,
 ):
     user = await get_optional_user(request)
     is_authenticated = user is not None
 
-    filters = []
+    skip = max(skip, 0)
+    limit = max(1, min(limit, 100))
+
+    filters: list[dict] = []
+    category_filters: list[dict] = []
     if not is_authenticated or (user and user["role"] == "student"):
         company_filter = [
             {"company_ids": {"$exists": False}},
@@ -136,15 +143,20 @@ async def get_courses(
         user_company_id = await _get_user_company_id(user)
         if user_company_id:
             company_filter.append({"company_ids": user_company_id})
-        filters.append({"is_private": False})
-        filters.append({"$or": company_filter})
+        visibility = {"$and": [{"is_private": False}, {"$or": company_filter}]}
+        filters.append(visibility)
+        category_filters.append(visibility)
     elif include_private and user and user["role"] in ["admin", "client_manager"]:
         pass
     else:
-        filters.append({"is_private": False})
+        public_filter = {"is_private": False}
+        filters.append(public_filter)
+        category_filters.append(public_filter)
 
     if language and language in SUPPORTED_LANGUAGES:
-        filters.append({"language": language})
+        lang_filter = {"language": language}
+        filters.append(lang_filter)
+        category_filters.append(lang_filter)
 
     if category:
         filters.append({"category": category})
@@ -156,8 +168,11 @@ async def get_courses(
         ]})
 
     query = {"$and": filters} if filters else {}
+    category_query = {"$and": category_filters} if category_filters else {}
 
-    courses = await db.courses.find(
+    total = await db.courses.count_documents(query) if paginate else None
+
+    cursor = db.courses.find(
         query,
         {
             "_id": 1,
@@ -173,11 +188,28 @@ async def get_courses(
             "company_ids": 1,
             "created_at": 1,
         },
-    ).to_list(100)
-    return [_apply_course_translation(
+    ).sort("created_at", -1)
+    if paginate:
+        cursor = cursor.skip(skip).limit(limit)
+    courses = await cursor.to_list(limit if paginate else 100)
+    items = [_apply_course_translation(
         {"id": str(c["_id"]), **{k: v for k, v in c.items() if k != "_id"}},
         lang,
     ) for c in courses]
+    if not paginate:
+        return items
+
+    categories = await db.courses.distinct("category", category_query)
+    categories = sorted([c for c in categories if c])
+    has_more = (skip + len(items)) < (total or 0)
+    return {
+        "items": items,
+        "total": total or 0,
+        "skip": skip,
+        "limit": limit,
+        "has_more": has_more,
+        "categories": categories,
+    }
 
 
 @router.get("/courses/{course_id}")

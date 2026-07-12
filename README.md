@@ -234,6 +234,8 @@ Base path: `/api`
 | POST | `/auth/forgot-password` | Send password reset email (always generic response) |
 | POST | `/auth/reset-password` | Reset password with one-time token |
 | GET | `/auth/me` | Current user |
+| PUT | `/auth/me` | Update current user profile (name) |
+| POST | `/auth/change-password` | Change password while logged in |
 
 ### Courses & content
 
@@ -252,6 +254,7 @@ Base path: `/api`
 | Method | Endpoint | Access |
 |--------|----------|--------|
 | POST | `/enrollments` | Self-enroll or admin bulk (`user_ids`) |
+| DELETE | `/enrollments/{course_id}` | Self-unenroll (free courses) or admin unenroll; optional admin refund (`?refund=true`) |
 | GET | `/enrollments/my` | Authenticated |
 | GET | `/enrollments/course/{id}` | Admin, client manager |
 | GET | `/groups/overview` | Admin, client manager |
@@ -264,6 +267,7 @@ Base path: `/api`
 |--------|----------|--------|
 | POST | `/certificates` | Admin, client manager |
 | GET | `/certificates/my` | Owner |
+| GET | `/certificates/verify/{certificate_id}` | Public verification endpoint |
 | GET | `/certificates/{id}` | Owner, admin, or client manager |
 | GET | `/certificates/{id}/pdf` | Owner, admin, or client manager — PDF download |
 | PUT | `/certificates/{id}/customize` | Admin |
@@ -292,6 +296,12 @@ Set `apply_to_course: true` to apply styling to all certificates for that certif
 | Users | `GET /users`, `PUT /users/{id}/role` |
 | Stats | `GET /stats/admin`, `GET /stats/admin/analytics`, `GET /stats/student` |
 | Progress | `GET /progress/course/{id}`, `PATCH /progress/lessons/{id}`, `POST /progress/lessons/{id}/complete` |
+
+### Pagination and search
+
+- `GET /courses` supports `search`, `category`, `language`, and paginated mode with `paginate=true&skip=<n>&limit=<n>`.
+- `GET /users` supports `search` and paginated mode with `paginate=true&skip=<n>&limit=<n>`.
+- Paginated responses return `{ items, total, skip, limit, has_more }` (courses also return `categories`).
 
 ---
 
@@ -528,9 +538,17 @@ Browse → free enroll **or** Stripe checkout → webhook/status confirms paymen
 
 Students track **lesson progress** per course (mark complete, watch percent). Group dashboards show lesson completion alongside quiz status.
 
-### Quiz & certificate
+### Quiz, lessons & certificate
 
-Take quiz → score computed vs `passing_score` → **pass:** mark enrollment complete, issue certificate (once), send cert email → **fail:** send progress email with score %. Certificates can be downloaded as PDF from `/certificates/{id}/pdf`.
+Take quiz → score computed vs `passing_score` → quiz pass is stored.  
+Course completion now requires **both**:
+
+1. passing quiz attempt, and
+2. all lessons marked completed.
+
+When both conditions are met, enrollment is marked complete, certificate is issued/updated, and certificate email is sent.
+
+Certificates can be downloaded as PDF from `/certificates/{id}/pdf` or publicly verified at `/certificates/verify/{certificate_id}`.
 
 ### AI translation
 

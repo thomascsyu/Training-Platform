@@ -18,7 +18,8 @@ export default {
       groupProgress: "그룹 진행 상황",
       aiSettings: "AI API 키",
       payments: "결제",
-      certificates: "수료증"
+      certificates: "수료증",
+      profile: "프로필"
     },
     
     // Landing Page
@@ -180,7 +181,10 @@ export default {
       lessonDeleted: "레슨이 삭제되었습니다",
       confirmDeleteLesson: "이 레슨을 삭제하시겠습니까?",
       categoryPlaceholder: "예: 비즈니스",
-      hasVideo: "동영상 있음"
+      hasVideo: "동영상 있음",
+      unenroll: "수강 취소",
+      unenrolled: "수강이 취소되었습니다",
+      confirmUnenroll: "이 코스의 수강을 취소하시겠습니까?"
     },
     
     // Quiz
@@ -194,7 +198,8 @@ export default {
       passingScoreLabel: "합격 점수",
       viewCertificate: "수료증 보기",
       backToDashboard: "대시보드로 돌아가기",
-      pleaseAnswer: "모든 문제에 답해 주세요"
+      pleaseAnswer: "모든 문제에 답해 주세요",
+      completeLessonsFirst: "퀴즈에는 합격했습니다. 코스를 완료하려면 모든 레슨을 완료하세요."
     },
     
     // Certificate
@@ -204,7 +209,23 @@ export default {
       awardedTo: "수여 대상",
       noCertificates: "아직 수료증이 없습니다. 코스를 완료하여 첫 번째 수료증을 받으세요!",
       download: "다운로드",
-      issuedOn: "발급일"
+      issuedOn: "발급일",
+      verify: "검증",
+      view: "보기",
+      verifyTitle: "수료증 검증",
+      enterCertificateId: "수료증 ID 입력",
+      verified: "수료증이 확인되었습니다",
+      notVerified: "수료증을 확인할 수 없습니다"
+    },
+
+    profile: {
+      accountInfo: "계정 정보",
+      updated: "프로필이 업데이트되었습니다",
+      changePassword: "비밀번호 변경",
+      currentPassword: "현재 비밀번호",
+      newPassword: "새 비밀번호",
+      passwordChanged: "비밀번호가 변경되었습니다",
+      passwordRequired: "현재 비밀번호와 새 비밀번호를 입력하세요"
     },
 
     // Certificate Templates
@@ -426,6 +447,7 @@ export default {
       cancel: "취소",
       delete: "삭제",
       edit: "편집",
+      view: "보기",
       refresh: "새로고침",
       completed: "완료",
       youtube: "YouTube",

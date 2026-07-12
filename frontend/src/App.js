@@ -19,6 +19,7 @@ const ResetPasswordPage = lazy(() => import("@/pages/ResetPasswordPage").then((m
 const CoursesPage = lazy(() => import("@/pages/CoursesPage").then((m) => ({ default: m.CoursesPage })));
 const CourseDetailPage = lazy(() => import("@/pages/CourseDetailPage").then((m) => ({ default: m.CourseDetailPage })));
 const PaymentSuccessPage = lazy(() => import("@/pages/PaymentSuccessPage").then((m) => ({ default: m.PaymentSuccessPage })));
+const CertificateVerifyPage = lazy(() => import("@/pages/CertificateVerifyPage").then((m) => ({ default: m.CertificateVerifyPage })));
 const StudentDashboard = lazy(() => import("@/pages/StudentDashboard").then((m) => ({ default: m.StudentDashboard })));
 const AdminDashboard = lazy(() => import("@/pages/AdminDashboard").then((m) => ({ default: m.AdminDashboard })));
 const ManagerDashboard = lazy(() => import("@/pages/ManagerDashboard").then((m) => ({ default: m.ManagerDashboard })));
@@ -36,6 +37,7 @@ const AdminAISettingsPage = lazy(() => import("@/pages/AdminAISettingsPage").the
 const AdminPaymentsPage = lazy(() => import("@/pages/AdminPaymentsPage").then((m) => ({ default: m.AdminPaymentsPage })));
 const AdminCertificatesPage = lazy(() => import("@/pages/AdminCertificatesPage").then((m) => ({ default: m.AdminCertificatesPage })));
 const AdminCertificateTemplatesPage = lazy(() => import("@/pages/AdminCertificateTemplatesPage").then((m) => ({ default: m.AdminCertificateTemplatesPage })));
+const ProfilePage = lazy(() => import("@/pages/ProfilePage").then((m) => ({ default: m.ProfilePage })));
 
 const RouteFallback = () => (
   // Skeletons beat spinners: layout doesn't jump when the chunk lands.
@@ -80,6 +82,7 @@ function App() {
               <Route path="/courses" element={<CoursesPage />} />
               <Route path="/courses/:id" element={<CourseDetailPage />} />
               <Route path="/payment/success" element={<PaymentSuccessPage />} />
+              <Route path="/certificates/verify/:certificateId" element={<CertificateVerifyPage />} />
 
               <Route
                 path="/dashboard"
@@ -104,6 +107,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <CertificatesPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/profile"
+                element={
+                  <ProtectedRoute>
+                    <ProfilePage />
                   </ProtectedRoute>
                 }
               />

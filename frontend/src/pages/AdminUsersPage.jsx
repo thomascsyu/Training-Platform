@@ -22,12 +22,19 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Plus, Trash2, Edit, Loader2, Upload } from "lucide-react";
+import { Plus, Trash2, Edit, Loader2, Search, Upload } from "lucide-react";
 import { API, formatError } from "@/lib/api";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import PageHeader from "@/components/enhanced/PageHeader";
 import { TableSkeleton } from "@/components/enhanced/Skeletons";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 const emptyUserForm = {
   name: "",
@@ -64,6 +71,10 @@ export const AdminUsersPage = () => {
   const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedCompany, setSelectedCompany] = useState(searchParams.get("company_id") || "all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const pageSize = 12;
   const [showUserDialog, setShowUserDialog] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
@@ -97,19 +108,30 @@ export const AdminUsersPage = () => {
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
-      const params = selectedCompany !== "all" ? { company_id: selectedCompany } : {};
+      const params = {
+        paginate: true,
+        skip: (page - 1) * pageSize,
+        limit: pageSize,
+      };
+      if (selectedCompany !== "all") params.company_id = selectedCompany;
+      if (searchQuery.trim()) params.search = searchQuery.trim();
       const { data } = await API.get("/users", { params });
-      setUsers(data);
+      setUsers(data.items || []);
+      setTotal(data.total || 0);
     } catch (e) {
       console.error(e);
     } finally {
       setLoading(false);
     }
-  }, [selectedCompany]);
+  }, [page, searchQuery, selectedCompany]);
 
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [selectedCompany, searchQuery]);
 
   const handleCompanyFilterChange = (value) => {
     setSelectedCompany(value);
@@ -257,6 +279,16 @@ export const AdminUsersPage = () => {
     <DashboardLayout>
       <div className="p-6" data-testid="admin-users-page">
         <PageHeader overline="Admin" title={t("users.manageUsers")}>
+          <div className="relative w-full sm:w-64">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <Input
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder={t("courses.search")}
+              className="pl-9 rounded-sm"
+              data-testid="users-search-input"
+            />
+          </div>
           <Select value={selectedCompany} onValueChange={handleCompanyFilterChange}>
             <SelectTrigger className="w-full sm:w-56 rounded-sm" data-testid="company-filter-select">
               <SelectValue placeholder={t("users.filterByCompany")} />
@@ -371,6 +403,38 @@ export const AdminUsersPage = () => {
               </table>
             </div>
           </Card>
+        )}
+
+        {total > pageSize && (
+          <Pagination className="mt-6">
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  href="#"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    setPage((prev) => Math.max(1, prev - 1));
+                  }}
+                  className={page <= 1 ? "pointer-events-none opacity-50" : ""}
+                />
+              </PaginationItem>
+              <PaginationItem className="px-3 text-sm text-slate-600">
+                {page} / {Math.max(1, Math.ceil(total / pageSize))}
+              </PaginationItem>
+              <PaginationItem>
+                <PaginationNext
+                  href="#"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    if (page * pageSize < total) {
+                      setPage((prev) => prev + 1);
+                    }
+                  }}
+                  className={page * pageSize >= total ? "pointer-events-none opacity-50" : ""}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
         )}
 
         <Dialog open={showUserDialog} onOpenChange={setShowUserDialog}>

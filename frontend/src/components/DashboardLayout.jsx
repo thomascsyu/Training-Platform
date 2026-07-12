@@ -3,7 +3,7 @@ import { Link, NavLink } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
-  Award, BarChart3, BookOpen, CreditCard, GraduationCap, Home, Key, LogOut, Menu, Users
+  Award, BarChart3, BookOpen, CreditCard, GraduationCap, Home, Key, LogOut, Menu, UserCircle, Users
 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -23,17 +23,20 @@ export const DashboardLayout = ({ children }) => {
     { icon: BarChart3, label: t("nav.analytics"), path: "/admin/analytics" },
     { icon: Key, label: t("nav.aiSettings"), path: "/admin/ai-settings" },
     { icon: CreditCard, label: t("nav.payments"), path: "/admin/payments" },
-    { icon: Award, label: t("nav.certificates"), path: "/admin/certificates" }
+    { icon: Award, label: t("nav.certificates"), path: "/admin/certificates" },
+    { icon: UserCircle, label: t("nav.profile"), path: "/profile" },
   ] : user?.role === "client_manager" ? [
     { icon: Home, label: t("nav.dashboard"), path: "/dashboard" },
     { icon: BarChart3, label: t("nav.groupProgress"), path: "/manager/progress" },
     { icon: BookOpen, label: t("nav.courses"), path: "/courses" },
     { icon: BookOpen, label: t("nav.myCourses"), path: "/my-courses" },
-    { icon: Award, label: t("nav.certificates"), path: "/certificates" }
+    { icon: Award, label: t("nav.certificates"), path: "/certificates" },
+    { icon: UserCircle, label: t("nav.profile"), path: "/profile" },
   ] : [
     { icon: Home, label: t("nav.dashboard"), path: "/dashboard" },
     { icon: BookOpen, label: t("nav.myCourses"), path: "/my-courses" },
-    { icon: Award, label: t("nav.certificates"), path: "/certificates" }
+    { icon: Award, label: t("nav.certificates"), path: "/certificates" },
+    { icon: UserCircle, label: t("nav.profile"), path: "/profile" },
   ];
 
   return (

@@ -45,7 +45,11 @@ export const QuizPage = () => {
       const { data } = await API.post(`/quizzes/${id}/submit`, { quiz_id: id, answers });
       setResult(data);
       if (data.passed) {
-        toast.success(t("toast.passedQuiz"));
+        if (data.completion_eligible) {
+          toast.success(t("toast.passedQuiz"));
+        } else {
+          toast.message(t("quiz.completeLessonsFirst"));
+        }
       } else {
         toast.error(t("toast.failedQuiz"));
       }
@@ -69,9 +73,9 @@ export const QuizPage = () => {
       <div className="container mx-auto px-6 md:px-12 lg:px-24 max-w-3xl">
         <Card className="card-swiss card-indexed animate-enter">
           <CardHeader>
-            <p className="overline">Quiz</p>
+            <p className="overline">{t("courses.quizzes")}</p>
             <CardTitle className="font-display text-xl">{quiz?.title}</CardTitle>
-            <CardDescription>Answer all questions to complete the quiz</CardDescription>
+            <CardDescription>{t("quiz.answerAll")}</CardDescription>
           </CardHeader>
           <CardContent>
             {result ? (
@@ -89,10 +93,10 @@ export const QuizPage = () => {
                   {result.passed ? t("quiz.congratulations") : t("quiz.tryAgain")}
                 </h3>
                 <p className="text-slate-600 mb-4">
-                  Your Score: <span className="font-medium">{result.score}%</span> ({result.correct}/{result.total} correct)
+                  {t("quiz.yourScore")}: <span className="font-medium">{result.score}%</span> ({result.correct}/{result.total} {t("quiz.correct")})
                 </p>
                 <p className="text-sm text-slate-500 mb-6">
-                  Passing Score: {result.passing_score}%
+                  {t("quiz.passingScoreLabel")}: {result.passing_score}%
                 </p>
                 <div className="flex gap-4 justify-center">
                   {result.passed ? (
@@ -101,7 +105,7 @@ export const QuizPage = () => {
                       className="btn-primary"
                       data-testid="view-certificate-btn"
                     >
-                      <Award className="w-4 h-4 mr-2" /> View Certificate
+                      <Award className="w-4 h-4 mr-2" /> {t("quiz.viewCertificate")}
                     </Button>
                   ) : (
                     <Button 
@@ -112,7 +116,7 @@ export const QuizPage = () => {
                       className="btn-primary"
                       data-testid="retry-btn"
                     >
-                      Try Again
+                      {t("quiz.tryAgain")}
                     </Button>
                   )}
                   <Button 
@@ -121,7 +125,7 @@ export const QuizPage = () => {
                     className="rounded-sm"
                     data-testid="back-dashboard-btn"
                   >
-                    Back to Dashboard
+                    {t("quiz.backToDashboard")}
                   </Button>
                 </div>
               </div>

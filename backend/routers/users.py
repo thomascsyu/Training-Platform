@@ -67,8 +67,14 @@ async def get_users(
     request: Request,
     role: Optional[str] = None,
     company_id: Optional[str] = None,
+    search: Optional[str] = None,
+    skip: int = 0,
+    limit: int = 100,
+    paginate: bool = False,
 ):
     user = await require_admin_or_manager(request)
+    skip = max(skip, 0)
+    limit = max(1, min(limit, 200))
     query = {}
     if role:
         query["role"] = role
@@ -79,7 +85,26 @@ async def get_users(
         await _validate_company_id(company_id)
         query["company_id"] = company_id
 
-    users = await db.users.find(query, USER_FIELDS).sort("name", 1).to_list(1000)
+    if search:
+        query["$or"] = [
+            {"name": {"$regex": search, "$options": "i"}},
+            {"email": {"$regex": search, "$options": "i"}},
+        ]
+
+    cursor = db.users.find(query, USER_FIELDS).sort("name", 1)
+    if paginate:
+        total = await db.users.count_documents(query)
+        cursor = cursor.skip(skip).limit(limit)
+        users = await cursor.to_list(limit)
+        return {
+            "items": [_serialize_user(u) for u in users],
+            "total": total,
+            "skip": skip,
+            "limit": limit,
+            "has_more": (skip + len(users)) < total,
+        }
+
+    users = await cursor.to_list(1000)
     return [_serialize_user(u) for u in users]
 
 

@@ -5,6 +5,18 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import PageHeader from "@/components/enhanced/PageHeader";
 import StatCard from "@/components/enhanced/StatCard";
 import { SkeletonGrid, TableSkeleton } from "@/components/enhanced/Skeletons";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Legend,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 export const AdminAnalyticsPage = () => {
   const { t } = useLanguage();
@@ -86,6 +98,51 @@ export const AdminAnalyticsPage = () => {
               <span className="text-slate-600">Total Students</span>
               <span className="font-medium">{overview.total_students || 0}</span>
             </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <Card className="card-swiss">
+          <CardHeader>
+            <CardTitle className="text-lg">Enrollment Trend (14 days)</CardTitle>
+          </CardHeader>
+          <CardContent className="h-72">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={analytics?.enrollment_trend || []}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" tick={{ fontSize: 12 }} />
+                <YAxis allowDecimals={false} />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="count" name="Enrollments" fill="#002FA7" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card className="card-swiss">
+          <CardHeader>
+            <CardTitle className="text-lg">Revenue Trend (14 days)</CardTitle>
+          </CardHeader>
+          <CardContent className="h-72">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={analytics?.revenue_trend || []}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" tick={{ fontSize: 12 }} />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Line
+                  type="monotone"
+                  dataKey="amount"
+                  name="Revenue (USD)"
+                  stroke="#16a34a"
+                  strokeWidth={2}
+                  dot={{ r: 2 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
       </div>

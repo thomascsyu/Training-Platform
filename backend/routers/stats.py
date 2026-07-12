@@ -1,9 +1,9 @@
+from datetime import datetime, timedelta, timezone
+
 from fastapi import APIRouter, Request
 
 from auth_utils import get_current_user, require_roles
 from database import db
-from db_utils import parse_object_id
-from progress_utils import get_bulk_lesson_progress
 
 router = APIRouter(tags=["stats"])
 
@@ -47,18 +47,29 @@ async def get_admin_analytics(request: Request):
         {"$group": {"_id": "$course_id", "enrollments": {"$sum": 1}, "completed": {"$sum": {"$cond": ["$completed", 1, 0]}}}},
         {"$sort": {"enrollments": -1}},
         {"$limit": 5},
+        {"$lookup": {
+            "from": "courses",
+            "let": {"cid": "$_id"},
+            "pipeline": [
+                {"$match": {"$expr": {"$eq": ["$_id", {"$toObjectId": "$$cid"}]}}},
+                {"$project": {"title": 1}},
+            ],
+            "as": "course",
+        }},
+        {"$project": {
+            "_id": 1,
+            "enrollments": 1,
+            "completed": 1,
+            "course_title": {"$ifNull": [{"$arrayElemAt": ["$course.title", 0]}, "Unknown"]},
+        }},
     ]):
-        course = await db.courses.find_one(
-            {"_id": parse_object_id(row["_id"], "course")}, {"title": 1}
-        )
-        if course:
-            top_courses.append({
-                "course_id": row["_id"],
-                "course_title": course.get("title"),
-                "enrollments": row["enrollments"],
-                "completed": row["completed"],
-                "completion_rate": round((row["completed"] / row["enrollments"]) * 100, 1) if row["enrollments"] else 0,
-            })
+        top_courses.append({
+            "course_id": row["_id"],
+            "course_title": row.get("course_title", "Unknown"),
+            "enrollments": row["enrollments"],
+            "completed": row["completed"],
+            "completion_rate": round((row["completed"] / row["enrollments"]) * 100, 1) if row["enrollments"] else 0,
+        })
 
     quiz_stats = {"total_attempts": 0, "passed": 0, "failed": 0}
     async for row in db.quiz_attempts.aggregate([
@@ -73,13 +84,72 @@ async def get_admin_analytics(request: Request):
         quiz_stats["failed"] = row["total"] - row["passed"]
 
     avg_lesson_progress = 0
-    enrollments = await db.enrollments.find({}, {"user_id": 1, "course_id": 1}).to_list(5000)
-    if enrollments:
-        progress_sum = 0
-        for e in enrollments:
-            bulk = await get_bulk_lesson_progress([e["user_id"]], e["course_id"])
-            progress_sum += bulk.get(e["user_id"], {}).get("progress_percent", 0)
-        avg_lesson_progress = round(progress_sum / len(enrollments), 1)
+    async for row in db.enrollments.aggregate([
+        {"$lookup": {
+            "from": "lessons",
+            "localField": "course_id",
+            "foreignField": "course_id",
+            "as": "lesson_docs",
+        }},
+        {"$lookup": {
+            "from": "lesson_progress",
+            "let": {"uid": "$user_id", "cid": "$course_id"},
+            "pipeline": [
+                {"$match": {"$expr": {"$and": [
+                    {"$eq": ["$user_id", "$$uid"]},
+                    {"$eq": ["$course_id", "$$cid"]},
+                    {"$eq": ["$completed", True]},
+                ]}}},
+                {"$count": "completed"},
+            ],
+            "as": "progress_docs",
+        }},
+        {"$project": {
+            "total_lessons": {"$size": "$lesson_docs"},
+            "completed_lessons": {"$ifNull": [{"$arrayElemAt": ["$progress_docs.completed", 0]}, 0]},
+        }},
+        {"$project": {
+            "progress_percent": {
+                "$cond": [
+                    {"$gt": ["$total_lessons", 0]},
+                    {"$multiply": [{"$divide": ["$completed_lessons", "$total_lessons"]}, 100]},
+                    0,
+                ]
+            }
+        }},
+        {"$group": {"_id": None, "avg_progress": {"$avg": "$progress_percent"}}},
+    ]):
+        avg_lesson_progress = round(row.get("avg_progress", 0), 1)
+
+    now = datetime.now(timezone.utc)
+    start_day = (now - timedelta(days=13)).date()
+    enrollment_trend_map = {}
+    async for row in db.enrollments.aggregate([
+        {"$addFields": {"created_dt": {"$dateFromString": {"dateString": "$created_at"}}}},
+        {"$match": {"created_dt": {"$gte": datetime.combine(start_day, datetime.min.time(), tzinfo=timezone.utc)}}},
+        {"$group": {"_id": {"$dateToString": {"format": "%Y-%m-%d", "date": "$created_dt"}}, "count": {"$sum": 1}}},
+    ]):
+        enrollment_trend_map[row["_id"]] = row["count"]
+
+    revenue_trend_map = {}
+    async for row in db.payment_transactions.aggregate([
+        {"$match": {"payment_status": "paid"}},
+        {"$addFields": {"created_dt": {"$dateFromString": {"dateString": "$created_at"}}}},
+        {"$match": {"created_dt": {"$gte": datetime.combine(start_day, datetime.min.time(), tzinfo=timezone.utc)}}},
+        {"$group": {
+            "_id": {"$dateToString": {"format": "%Y-%m-%d", "date": "$created_dt"}},
+            "amount": {"$sum": {"$toDouble": "$amount"}},
+        }},
+    ]):
+        revenue_trend_map[row["_id"]] = round(row["amount"], 2)
+
+    enrollment_trend = []
+    revenue_trend = []
+    for day_offset in range(14):
+        day = start_day + timedelta(days=day_offset)
+        day_label = day.isoformat()
+        enrollment_trend.append({"date": day_label, "count": enrollment_trend_map.get(day_label, 0)})
+        revenue_trend.append({"date": day_label, "amount": revenue_trend_map.get(day_label, 0)})
 
     return {
         "overview": {
@@ -94,6 +164,8 @@ async def get_admin_analytics(request: Request):
         },
         "quiz_stats": quiz_stats,
         "top_courses": top_courses,
+        "enrollment_trend": enrollment_trend,
+        "revenue_trend": revenue_trend,
     }
 
 

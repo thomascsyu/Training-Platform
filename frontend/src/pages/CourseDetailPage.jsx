@@ -175,6 +175,7 @@ export const CourseDetailPage = () => {
   const [lessonProgress, setLessonProgress] = useState(null);
   const [activeLesson, setActiveLesson] = useState(null);
   const [completingLesson, setCompletingLesson] = useState(false);
+  const [unenrolling, setUnenrolling] = useState(false);
 
   const fetchLessonProgress = useCallback(async () => {
     try {
@@ -322,6 +323,22 @@ export const CourseDetailPage = () => {
     }
   };
 
+  const handleUnenroll = async () => {
+    if (!window.confirm(t("courses.confirmUnenroll"))) return;
+    setUnenrolling(true);
+    try {
+      await API.delete(`/enrollments/${id}`);
+      toast.success(t("courses.unenrolled"));
+      await fetchCourse();
+      setActiveTab("overview");
+      setActiveLesson(null);
+    } catch (error) {
+      toast.error(formatError(error));
+    } finally {
+      setUnenrolling(false);
+    }
+  };
+
   const getVideoEmbed = (url, type) => {
     if (!url) return null;
     
@@ -414,13 +431,13 @@ export const CourseDetailPage = () => {
             <p className="text-slate-600 mb-4">{course.description}</p>
             <div className="flex gap-2">
               {course.is_free ? (
-                <Badge className="bg-green-100 text-green-700 rounded-sm">Free</Badge>
+                <Badge className="bg-green-100 text-green-700 rounded-sm">{t("courses.free")}</Badge>
               ) : (
                 <Badge className="bg-[#002FA7] text-white rounded-sm">${course.price?.toFixed(2)}</Badge>
               )}
               {course.is_private && (
                 <Badge variant="secondary" className="rounded-sm">
-                  <Lock className="w-3 h-3 mr-1" /> Private
+                  <Lock className="w-3 h-3 mr-1" /> {t("courses.private")}
                 </Badge>
               )}
             </div>
@@ -433,35 +450,48 @@ export const CourseDetailPage = () => {
                   <>
                     <div className="flex items-center gap-2 text-green-600 mb-4">
                       <CheckCircle className="w-5 h-5" />
-                      <span className="font-medium">Enrolled</span>
+                      <span className="font-medium">{t("courses.enrolled")}</span>
                     </div>
                     {enrollment.completed && (
                       <div className="mb-4">
-                        <p className="text-sm text-slate-600">Your Score: <span className="font-medium text-[#0A0B10]">{enrollment.score}%</span></p>
+                        <p className="text-sm text-slate-600">{t("quiz.yourScore")}: <span className="font-medium text-[#0A0B10]">{enrollment.score}%</span></p>
                       </div>
                     )}
                     {lessonProgress && lessonProgress.total_lessons > 0 && (
                       <div className="mb-4">
                         <div className="flex justify-between text-sm mb-1">
-                          <span className="text-slate-600">Lesson Progress</span>
+                          <span className="text-slate-600">{t("dashboard.lessonsCompleted")}</span>
                           <span className="font-medium">{lessonProgress.progress_percent}%</span>
                         </div>
                         <Progress value={lessonProgress.progress_percent} className="h-2" />
                         <p className="text-xs text-slate-500 mt-1">
-                          {lessonProgress.completed_lessons} / {lessonProgress.total_lessons} lessons
+                          {lessonProgress.completed_lessons} / {lessonProgress.total_lessons} {t("courses.lessons")}
                         </p>
                       </div>
                     )}
-                    <Button 
-                      onClick={() => navigate(`/certificates`)} 
-                      variant="outline" 
-                      className="w-full rounded-sm"
-                      disabled={!enrollment.completed}
-                      data-testid="view-certificate-btn"
-                    >
-                      <Award className="w-4 h-4 mr-2" />
-                      {enrollment.completed ? t("courses.viewCertificate") : t("courses.completeToGet")}
-                    </Button>
+                    <div className="space-y-2">
+                      <Button
+                        onClick={() => navigate(`/certificates`)}
+                        variant="outline"
+                        className="w-full rounded-sm"
+                        disabled={!enrollment.completed}
+                        data-testid="view-certificate-btn"
+                      >
+                        <Award className="w-4 h-4 mr-2" />
+                        {enrollment.completed ? t("courses.viewCertificate") : t("courses.completeToGet")}
+                      </Button>
+                      {user?.role === "student" && (
+                        <Button
+                          variant="outline"
+                          className="w-full rounded-sm text-red-600 hover:text-red-700"
+                          onClick={handleUnenroll}
+                          disabled={unenrolling}
+                          data-testid="course-unenroll-btn"
+                        >
+                          {unenrolling ? <Loader2 className="w-4 h-4 animate-spin" /> : t("courses.unenroll")}
+                        </Button>
+                      )}
+                    </div>
                   </>
                 ) : (
                   <Button 
@@ -477,7 +507,7 @@ export const CourseDetailPage = () => {
                     ) : (
                       <>
                         <DollarSign className="w-4 h-4 mr-1" />
-                        Buy Now - ${course.price?.toFixed(2)}
+                        {t("courses.buyNow")} - ${course.price?.toFixed(2)}
                       </>
                     )}
                   </Button>
@@ -487,15 +517,15 @@ export const CourseDetailPage = () => {
                 
                 <div className="space-y-3 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-slate-600">Lessons</span>
+                    <span className="text-slate-600">{t("courses.lessons")}</span>
                     <span className="font-medium">{course.lessons?.length || 0}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-600">Quizzes</span>
+                    <span className="text-slate-600">{t("courses.quizzes")}</span>
                     <span className="font-medium">{course.quizzes?.length || 0}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-600">Passing Score</span>
+                    <span className="text-slate-600">{t("courses.passingScore")}</span>
                     <span className="font-medium">{course.passing_score}%</span>
                   </div>
                 </div>
@@ -507,20 +537,20 @@ export const CourseDetailPage = () => {
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="card-swiss">
-            <TabsTrigger value="overview" className="rounded-sm" data-testid="tab-overview">Overview</TabsTrigger>
-            <TabsTrigger value="lessons" className="rounded-sm" data-testid="tab-lessons">Lessons</TabsTrigger>
-            {enrollment && <TabsTrigger value="quizzes" className="rounded-sm" data-testid="tab-quizzes">Quizzes</TabsTrigger>}
-            {enrollment && <TabsTrigger value="materials" className="rounded-sm" data-testid="tab-materials">Materials</TabsTrigger>}
+            <TabsTrigger value="overview" className="rounded-sm" data-testid="tab-overview">{t("courses.overview")}</TabsTrigger>
+            <TabsTrigger value="lessons" className="rounded-sm" data-testid="tab-lessons">{t("courses.lessons")}</TabsTrigger>
+            {enrollment && <TabsTrigger value="quizzes" className="rounded-sm" data-testid="tab-quizzes">{t("courses.quizzes")}</TabsTrigger>}
+            {enrollment && <TabsTrigger value="materials" className="rounded-sm" data-testid="tab-materials">{t("courses.materials")}</TabsTrigger>}
             {enrollment && (course?.ai_assistant_enabled ?? true) && (
-              <TabsTrigger value="chat" className="rounded-sm" data-testid="tab-chat">AI Assistant</TabsTrigger>
+              <TabsTrigger value="chat" className="rounded-sm" data-testid="tab-chat">{t("courses.aiAssistant")}</TabsTrigger>
             )}
-            {enrollment && <TabsTrigger value="forum" className="rounded-sm" data-testid="tab-forum">Forum</TabsTrigger>}
+            {enrollment && <TabsTrigger value="forum" className="rounded-sm" data-testid="tab-forum">{t("courses.forum")}</TabsTrigger>}
           </TabsList>
 
           <TabsContent value="overview" className="mt-6">
             <Card className="card-swiss">
               <CardContent className="p-6">
-                <h3 className="text-lg font-medium mb-4">About this course</h3>
+                <h3 className="text-lg font-medium mb-4">{t("courses.aboutCourse")}</h3>
                 <p className="text-slate-600 whitespace-pre-wrap">{course.description}</p>
               </CardContent>
             </Card>
@@ -553,7 +583,7 @@ export const CourseDetailPage = () => {
                     <div className="flex items-center gap-3">
                       {getLessonProgress(activeLesson.id)?.completed ? (
                         <Badge className="bg-green-100 text-green-700 rounded-sm">
-                          <CheckCircle className="w-3 h-3 mr-1" /> Completed
+                          <CheckCircle className="w-3 h-3 mr-1" /> {t("common.completed")}
                         </Badge>
                       ) : (
                         <Button
@@ -606,7 +636,7 @@ export const CourseDetailPage = () => {
               );}) : (
                 <Card className="card-swiss">
                   <CardContent className="p-12 text-center">
-                    <p className="text-slate-600">No lessons added yet</p>
+                    <p className="text-slate-600">{t("courses.noLessons")}</p>
                   </CardContent>
                 </Card>
               )}
@@ -620,21 +650,21 @@ export const CourseDetailPage = () => {
                   <CardContent className="p-4 flex items-center justify-between">
                     <div>
                       <h4 className="font-medium">{quiz.title}</h4>
-                      <p className="text-sm text-slate-600">Test your knowledge</p>
+                      <p className="text-sm text-slate-600">{t("courses.takeQuiz")}</p>
                     </div>
                     <Button 
                       onClick={() => navigate(`/quiz/${quiz.id}`)}
                       className="btn-primary"
                       data-testid={`take-quiz-${quiz.id}`}
                     >
-                      Take Quiz
+                      {t("courses.takeQuiz")}
                     </Button>
                   </CardContent>
                 </Card>
               )) : (
                 <Card className="card-swiss">
                   <CardContent className="p-12 text-center">
-                    <p className="text-slate-600">No quizzes available yet</p>
+                    <p className="text-slate-600">{t("courses.noQuizzes")}</p>
                   </CardContent>
                 </Card>
               )}
@@ -662,7 +692,7 @@ export const CourseDetailPage = () => {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-slate-600 text-center py-8">No downloadable materials available</p>
+                  <p className="text-slate-600 text-center py-8">{t("courses.noMaterials")}</p>
                 )}
               </CardContent>
             </Card>
@@ -674,9 +704,9 @@ export const CourseDetailPage = () => {
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center gap-2">
                     <Bot className="w-5 h-5 text-[#002FA7]" />
-                    AI Course Assistant
+                    {t("chat.aiCourseAssistant")}
                   </CardTitle>
-                  <CardDescription>Ask questions about the course content</CardDescription>
+                  <CardDescription>{t("chat.askQuestions")}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <ScrollArea className="h-80 mb-4 border border-slate-200 rounded-sm p-4">
@@ -689,7 +719,7 @@ export const CourseDetailPage = () => {
                         </div>
                       </div>
                     )) : (
-                      <p className="text-slate-500 text-center py-8">Start a conversation with the AI assistant</p>
+                      <p className="text-slate-500 text-center py-8">{t("chat.startConversation")}</p>
                     )}
                   </ScrollArea>
                   <div className="flex gap-2">
@@ -720,7 +750,7 @@ export const CourseDetailPage = () => {
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
                   <MessageSquare className="w-5 h-5 text-[#002FA7]" />
-                  Community Forum
+                  {t("forum.communityForum")}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -760,7 +790,7 @@ export const CourseDetailPage = () => {
                         <Input
                           value={replyInputs[post.id] || ""}
                           onChange={(e) => setReplyInputs((prev) => ({ ...prev, [post.id]: e.target.value }))}
-                          placeholder="Write a reply..."
+                          placeholder={t("forum.shareThoughts")}
                           className="rounded-sm border-slate-300"
                           data-testid={`forum-reply-input-${post.id}`}
                         />
@@ -771,7 +801,7 @@ export const CourseDetailPage = () => {
                           disabled={!replyInputs[post.id]?.trim()}
                           data-testid={`forum-reply-btn-${post.id}`}
                         >
-                          Reply
+                          {t("forum.post")}
                         </Button>
                       </div>
                       {post.replies?.length > 0 && (
@@ -791,7 +821,7 @@ export const CourseDetailPage = () => {
                       )}
                     </div>
                   )) : (
-                    <p className="text-slate-500 text-center py-8">No discussions yet. Be the first to post!</p>
+                    <p className="text-slate-500 text-center py-8">{t("forum.noDiscussions")}</p>
                   )}
                 </div>
               </CardContent>

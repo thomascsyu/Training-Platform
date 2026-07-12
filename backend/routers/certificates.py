@@ -181,6 +181,34 @@ async def create_certificate(data: CertificateCreate, request: Request):
     return _serialize_certificate(cert_doc)
 
 
+@router.get("/certificates/verify/{certificate_code}")
+async def verify_certificate(certificate_code: str):
+    cert = await db.certificates.find_one({"certificate_id": certificate_code.upper()})
+    if not cert:
+        raise HTTPException(status_code=404, detail="Certificate not found")
+
+    course_title = cert.get("course_title")
+    if not course_title:
+        try:
+            course = await db.courses.find_one(
+                {"_id": parse_object_id(cert.get("course_id", ""), "course")},
+                {"title": 1},
+            )
+            course_title = course.get("title") if course else None
+        except HTTPException:
+            course_title = None
+
+    return {
+        "verified": True,
+        "certificate_id": cert.get("certificate_id"),
+        "course_id": cert.get("course_id"),
+        "course_title": course_title,
+        "user_name": cert.get("user_name"),
+        "score": cert.get("score"),
+        "issued_at": cert.get("issued_at"),
+    }
+
+
 async def _get_authorized_certificate(certificate_id: str, request: Request) -> dict:
     user = await get_current_user(request)
     cert = await db.certificates.find_one(

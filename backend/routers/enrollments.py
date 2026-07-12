@@ -1,7 +1,11 @@
+from datetime import datetime, timezone
+
+import stripe
 from bson import ObjectId
 from fastapi import APIRouter, HTTPException, Request
 
 from auth_utils import get_current_user, require_admin_or_manager
+from config import STRIPE_API_KEY, logger
 from database import db
 from db_utils import parse_object_id
 from enrollment_utils import enroll_user_in_course, enroll_users_in_course
@@ -152,3 +156,95 @@ async def get_course_enrollments(course_id: str, request: Request):
                 "completed_at": e.get("completed_at"),
             })
     return result
+
+
+@router.delete("/enrollments/{course_id}")
+async def delete_enrollment(
+    course_id: str,
+    request: Request,
+    user_id: str | None = None,
+    refund: bool = False,
+):
+    actor = await get_current_user(request)
+    course = await db.courses.find_one({"_id": parse_object_id(course_id, "course")})
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+
+    target_user_id = actor["id"]
+    if user_id and user_id != actor["id"]:
+        if actor["role"] != "admin":
+            raise HTTPException(status_code=403, detail="Only admins can unenroll other users")
+        parse_object_id(user_id, "user")
+        target_user_id = user_id
+
+    if actor["role"] == "student" and target_user_id == actor["id"] and not course.get("is_free", True):
+        raise HTTPException(
+            status_code=403,
+            detail="Paid course unenrollment requires admin support",
+        )
+
+    enrollment = await db.enrollments.find_one({"course_id": course_id, "user_id": target_user_id})
+    if not enrollment:
+        raise HTTPException(status_code=404, detail="Enrollment not found")
+
+    refund_info = None
+    if refund:
+        if actor["role"] != "admin":
+            raise HTTPException(status_code=403, detail="Only admins can issue refunds")
+        if not STRIPE_API_KEY:
+            raise HTTPException(status_code=503, detail="Payment service not configured")
+        transaction = await db.payment_transactions.find_one(
+            {
+                "course_id": course_id,
+                "user_id": target_user_id,
+                "payment_status": "paid",
+            },
+            sort=[("created_at", -1)],
+        )
+        if not transaction:
+            raise HTTPException(status_code=404, detail="No paid transaction found to refund")
+        try:
+            session = stripe.checkout.Session.retrieve(transaction["session_id"])
+            payment_intent = getattr(session, "payment_intent", None)
+            if not payment_intent:
+                raise HTTPException(status_code=400, detail="No refundable payment intent found")
+            refund_resp = stripe.Refund.create(payment_intent=payment_intent)
+            refunded_at = datetime.now(timezone.utc).isoformat()
+            await db.payment_transactions.update_one(
+                {"_id": transaction["_id"]},
+                {
+                    "$set": {
+                        "payment_status": "refunded",
+                        "refunded_at": refunded_at,
+                        "updated_at": refunded_at,
+                        "refund_id": refund_resp.id,
+                    }
+                },
+            )
+            refund_info = {"status": "refunded", "refund_id": refund_resp.id}
+        except HTTPException:
+            raise
+        except Exception as exc:
+            logger.error("Refund failed for course=%s user=%s: %s", course_id, target_user_id, exc)
+            raise HTTPException(status_code=502, detail="Refund failed") from exc
+
+    user_posts = await db.forum_posts.find(
+        {"course_id": course_id, "user_id": target_user_id},
+        {"_id": 1},
+    ).to_list(1000)
+    post_ids = [str(post["_id"]) for post in user_posts]
+    if post_ids:
+        await db.forum_posts.delete_many({"course_id": course_id, "parent_id": {"$in": post_ids}})
+    await db.forum_posts.delete_many({"course_id": course_id, "user_id": target_user_id})
+    await db.chat_messages.delete_many({"course_id": course_id, "user_id": target_user_id})
+    await db.lesson_progress.delete_many({"course_id": course_id, "user_id": target_user_id})
+    await db.quiz_attempts.delete_many({"course_id": course_id, "user_id": target_user_id})
+    await db.certificates.delete_many({"course_id": course_id, "user_id": target_user_id})
+    await db.enrollments.delete_one({"_id": enrollment["_id"]})
+
+    return {
+        "message": "Enrollment removed",
+        "course_id": course_id,
+        "user_id": target_user_id,
+        "refund": refund_info,
+    }
