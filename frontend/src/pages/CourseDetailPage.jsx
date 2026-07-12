@@ -248,7 +248,7 @@ export const CourseDetailPage = () => {
                 />
               </div>
             ) : null}
-            <h1 className="text-2xl sm:text-3xl tracking-tight font-medium text-[#0A0B10] mb-4">
+            <h1 className="font-display text-2xl sm:text-3xl tracking-tight text-[#0A0B10] mb-4">
               {course.title}
             </h1>
             <p className="text-slate-600 mb-4">{course.description}</p>
@@ -267,7 +267,7 @@ export const CourseDetailPage = () => {
           </div>
 
           <div>
-            <Card className="bg-white border border-slate-200 rounded-sm sticky top-24">
+            <Card className="card-swiss sticky top-24">
               <CardContent className="p-6">
                 {enrollment ? (
                   <>
@@ -306,7 +306,7 @@ export const CourseDetailPage = () => {
                 ) : (
                   <Button 
                     onClick={handleEnroll} 
-                    className="w-full bg-[#002FA7] hover:bg-[#002585] text-white rounded-sm"
+                    className="w-full btn-primary"
                     disabled={enrolling}
                     data-testid="enroll-btn"
                   >
@@ -346,7 +346,7 @@ export const CourseDetailPage = () => {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="bg-white border border-slate-200 rounded-sm">
+          <TabsList className="card-swiss">
             <TabsTrigger value="overview" className="rounded-sm" data-testid="tab-overview">Overview</TabsTrigger>
             <TabsTrigger value="lessons" className="rounded-sm" data-testid="tab-lessons">Lessons</TabsTrigger>
             {enrollment && <TabsTrigger value="quizzes" className="rounded-sm" data-testid="tab-quizzes">Quizzes</TabsTrigger>}
@@ -358,7 +358,7 @@ export const CourseDetailPage = () => {
           </TabsList>
 
           <TabsContent value="overview" className="mt-6">
-            <Card className="bg-white border border-slate-200 rounded-sm">
+            <Card className="card-swiss">
               <CardContent className="p-6">
                 <h3 className="text-lg font-medium mb-4">About this course</h3>
                 <p className="text-slate-600 whitespace-pre-wrap">{course.description}</p>
@@ -368,7 +368,7 @@ export const CourseDetailPage = () => {
 
           <TabsContent value="lessons" className="mt-6">
             {activeLesson && (
-              <Card className="bg-white border border-slate-200 rounded-sm mb-6">
+              <Card className="card-swiss mb-6">
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between mb-4">
                     <div>
@@ -400,7 +400,7 @@ export const CourseDetailPage = () => {
                           <Button
                             onClick={() => markLessonComplete(activeLesson.id)}
                             disabled={completingLesson}
-                            className="bg-[#002FA7] hover:bg-[#002585] text-white rounded-sm"
+                            className="btn-primary"
                             data-testid={`complete-lesson-${activeLesson.id}`}
                           >
                             {completingLesson ? <Loader2 className="w-4 h-4 animate-spin" /> : t("courses.markComplete")}
@@ -453,7 +453,7 @@ export const CourseDetailPage = () => {
                   </CardContent>
                 </Card>
               );}) : (
-                <Card className="bg-white border border-slate-200 rounded-sm">
+                <Card className="card-swiss">
                   <CardContent className="p-12 text-center">
                     <p className="text-slate-600">No lessons added yet</p>
                   </CardContent>
@@ -465,7 +465,7 @@ export const CourseDetailPage = () => {
           <TabsContent value="quizzes" className="mt-6">
             <div className="space-y-4">
               {course.quizzes?.length > 0 ? course.quizzes.map((quiz) => (
-                <Card key={quiz.id} className="bg-white border border-slate-200 rounded-sm">
+                <Card key={quiz.id} className="card-swiss">
                   <CardContent className="p-4 flex items-center justify-between">
                     <div>
                       <h4 className="font-medium">{quiz.title}</h4>
@@ -473,7 +473,7 @@ export const CourseDetailPage = () => {
                     </div>
                     <Button 
                       onClick={() => navigate(`/quiz/${quiz.id}`)}
-                      className="bg-[#002FA7] hover:bg-[#002585] text-white rounded-sm"
+                      className="btn-primary"
                       data-testid={`take-quiz-${quiz.id}`}
                     >
                       Take Quiz
@@ -481,7 +481,7 @@ export const CourseDetailPage = () => {
                   </CardContent>
                 </Card>
               )) : (
-                <Card className="bg-white border border-slate-200 rounded-sm">
+                <Card className="card-swiss">
                   <CardContent className="p-12 text-center">
                     <p className="text-slate-600">No quizzes available yet</p>
                   </CardContent>
@@ -491,7 +491,7 @@ export const CourseDetailPage = () => {
           </TabsContent>
 
           <TabsContent value="materials" className="mt-6">
-            <Card className="bg-white border border-slate-200 rounded-sm">
+            <Card className="card-swiss">
               <CardContent className="p-6">
                 {course.materials?.length > 0 ? (
                   <div className="space-y-3">
@@ -519,7 +519,7 @@ export const CourseDetailPage = () => {
 
           {(course?.ai_assistant_enabled ?? true) && (
             <TabsContent value="chat" className="mt-6">
-              <Card className="bg-white border border-slate-200 rounded-sm">
+              <Card className="card-swiss">
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center gap-2">
                     <Bot className="w-5 h-5 text-[#002FA7]" />
@@ -553,7 +553,7 @@ export const CourseDetailPage = () => {
                     <Button
                       onClick={sendChatMessage}
                       disabled={chatLoading}
-                      className="bg-[#002FA7] hover:bg-[#002585] text-white rounded-sm"
+                      className="btn-primary"
                       data-testid="chat-send-btn"
                     >
                       {chatLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
@@ -565,7 +565,7 @@ export const CourseDetailPage = () => {
           )}
 
           <TabsContent value="forum" className="mt-6">
-            <Card className="bg-white border border-slate-200 rounded-sm">
+            <Card className="card-swiss">
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
                   <MessageSquare className="w-5 h-5 text-[#002FA7]" />
@@ -583,7 +583,7 @@ export const CourseDetailPage = () => {
                   />
                   <Button 
                     onClick={postToForum}
-                    className="bg-[#002FA7] hover:bg-[#002585] text-white rounded-sm"
+                    className="btn-primary"
                     data-testid="forum-post-btn"
                   >
                     Post

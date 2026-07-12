@@ -37,7 +37,7 @@ export const PaymentSuccessPage = () => {
 
   return (
     <div className="min-h-screen bg-[#F4F5F7] flex items-center justify-center p-6" data-testid="payment-success-page">
-      <Card className="w-full max-w-md bg-white border border-slate-200 rounded-sm">
+      <Card className="w-full max-w-md card-swiss card-indexed animate-enter">
         <CardContent className="p-8 text-center">
           {status === "checking" && (
             <>
@@ -53,7 +53,7 @@ export const PaymentSuccessPage = () => {
               <p className="text-slate-600 mb-6">You have been enrolled in the course.</p>
               <Button 
                 onClick={() => navigate("/my-courses")}
-                className="bg-[#002FA7] hover:bg-[#002585] text-white rounded-sm"
+                className="btn-primary"
                 data-testid="go-to-courses-btn"
               >
                 Go to My Courses

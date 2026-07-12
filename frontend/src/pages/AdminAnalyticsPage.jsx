@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
 import { API } from "@/lib/api";
 import { useLanguage } from "@/contexts/LanguageContext";
+import PageHeader from "@/components/enhanced/PageHeader";
+import StatCard from "@/components/enhanced/StatCard";
+import { SkeletonGrid, TableSkeleton } from "@/components/enhanced/Skeletons";
 
 export const AdminAnalyticsPage = () => {
   const { t } = useLanguage();
@@ -26,8 +28,9 @@ export const AdminAnalyticsPage = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <Loader2 className="w-8 h-8 animate-spin text-[#002FA7]" />
+      <div className="p-6 space-y-8">
+        <SkeletonGrid n={4} />
+        <TableSkeleton rows={4} cols={4} />
       </div>
     );
   }
@@ -36,42 +39,17 @@ export const AdminAnalyticsPage = () => {
 
   return (
     <div className="p-6" data-testid="admin-analytics-page">
-      <div className="mb-8">
-        <h1 className="text-2xl sm:text-3xl tracking-tight font-medium text-[#0A0B10]">
-          {t("nav.analytics")}
-        </h1>
-        <p className="text-slate-600">Platform-wide performance and engagement metrics</p>
-      </div>
+      <PageHeader overline="Admin" title={t("nav.analytics")} description="Platform-wide performance and engagement metrics" />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <Card className="bg-white border border-slate-200 rounded-sm">
-          <CardContent className="p-6">
-            <p className="text-2xl font-medium">{overview.completion_rate || 0}%</p>
-            <p className="text-sm text-slate-600">Course Completion Rate</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-white border border-slate-200 rounded-sm">
-          <CardContent className="p-6">
-            <p className="text-2xl font-medium">{overview.avg_lesson_progress_percent || 0}%</p>
-            <p className="text-sm text-slate-600">Avg Lesson Progress</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-white border border-slate-200 rounded-sm">
-          <CardContent className="p-6">
-            <p className="text-2xl font-medium">{overview.total_certificates || 0}</p>
-            <p className="text-sm text-slate-600">Certificates Issued</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-white border border-slate-200 rounded-sm">
-          <CardContent className="p-6">
-            <p className="text-2xl font-medium">{overview.total_lesson_completions || 0}</p>
-            <p className="text-sm text-slate-600">Lessons Completed</p>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 stagger">
+        <StatCard label="Course Completion Rate" value={`${overview.completion_rate || 0}%`} testId="stat-completion-rate" />
+        <StatCard label="Avg Lesson Progress" value={`${overview.avg_lesson_progress_percent || 0}%`} testId="stat-lesson-progress" />
+        <StatCard label="Certificates Issued" value={overview.total_certificates || 0} testId="stat-certificates-issued" />
+        <StatCard label="Lessons Completed" value={overview.total_lesson_completions || 0} testId="stat-lessons-completed" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <Card className="bg-white border border-slate-200 rounded-sm">
+        <Card className="card-swiss">
           <CardHeader>
             <CardTitle className="text-lg">Quiz Performance</CardTitle>
           </CardHeader>
@@ -91,7 +69,7 @@ export const AdminAnalyticsPage = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-white border border-slate-200 rounded-sm">
+        <Card className="card-swiss">
           <CardHeader>
             <CardTitle className="text-lg">Platform Overview</CardTitle>
           </CardHeader>

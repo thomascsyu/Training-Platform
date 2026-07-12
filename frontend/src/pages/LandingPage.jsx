@@ -57,7 +57,7 @@ export const LandingPage = () => {
             <div className="flex flex-col sm:flex-row gap-4">
               <Button
                 onClick={() => navigate(user ? "/dashboard" : "/register")}
-                className="bg-[#002FA7] hover:bg-[#002585] text-white rounded-sm px-8 py-6 text-lg"
+                className="btn-primary px-8 py-6 text-lg"
                 data-testid="hero-cta-btn"
               >
                 {t("landing.startLearning")}
@@ -126,12 +126,12 @@ export const LandingPage = () => {
             ].map((f, i) => (
               <Card
                 key={i}
-                className="bg-white border border-slate-200 rounded-sm hover:-translate-y-1 hover:shadow-md transition-all duration-200"
+                className="card-swiss"
                 data-testid={`feature-card-${i}`}
               >
                 <CardContent className="p-6">
                   <f.icon className="w-8 h-8 text-[#002FA7] mb-4" />
-                  <h3 className="text-xl font-medium text-[#0A0B10] mb-2">{f.title}</h3>
+                  <h3 className="text-xl text-[#0A0B10] mb-2">{f.title}</h3>
                   <p className="text-slate-600">{f.desc}</p>
                 </CardContent>
               </Card>
@@ -161,7 +161,7 @@ export const LandingPage = () => {
                 {t("landing.viewAll")} <ChevronRight className="w-4 h-4 ml-1" />
               </Button>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 stagger">
               {courses.map((course) => (
                 <CourseCard key={course.id} course={course} />
               ))}
@@ -174,7 +174,7 @@ export const LandingPage = () => {
         <div className="container mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-2">
             <GraduationCap className="w-6 h-6 text-[#002FA7]" />
-            <span className="font-medium">LearnHub</span>
+            <span className="font-display">LearnHub</span>
           </div>
           <p className="text-slate-400 text-sm">{t("landing.footer")}</p>
         </div>

@@ -1,12 +1,15 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { BarChart3, BookOpen, ChevronRight, Loader2, Users } from "lucide-react";
+import { BarChart3, BookOpen, ChevronRight, Users } from "lucide-react";
 import { API } from "@/lib/api";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { DashboardLayout } from "@/components/DashboardLayout";
+import PageHeader from "@/components/enhanced/PageHeader";
+import EmptyState from "@/components/enhanced/EmptyState";
+import { SkeletonGrid } from "@/components/enhanced/Skeletons";
 
 export const ManagerDashboard = () => {
   const { t } = useLanguage();
@@ -24,8 +27,8 @@ export const ManagerDashboard = () => {
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center min-h-[40vh]">
-          <Loader2 className="w-8 h-8 animate-spin text-[#002FA7]" />
+        <div className="p-8 max-w-7xl mx-auto">
+          <SkeletonGrid n={3} />
         </div>
       </DashboardLayout>
     );
@@ -34,37 +37,28 @@ export const ManagerDashboard = () => {
   return (
     <DashboardLayout>
       <div className="p-8 max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-2xl font-medium text-[#0A0B10]">{t("nav.dashboard")}</h1>
-            <p className="text-slate-600 mt-1">{t("nav.groupProgress")}</p>
-          </div>
+        <PageHeader overline={t("nav.groupProgress")} title={t("nav.dashboard")}>
           <Button
             onClick={() => navigate("/manager/progress")}
-            className="bg-[#002FA7] hover:bg-[#002585] text-white rounded-sm"
+            className="btn-primary"
           >
             <BarChart3 className="w-4 h-4 mr-2" />
             {t("nav.groupProgress")}
           </Button>
-        </div>
+        </PageHeader>
 
         {overview.length === 0 ? (
-          <Card className="bg-white border border-slate-200 rounded-sm">
-            <CardContent className="p-12 text-center">
-              <BookOpen className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-              <p className="text-slate-600">{t("manager.noEnrollments")}</p>
-            </CardContent>
-          </Card>
+          <EmptyState icon={BookOpen} title={t("manager.noEnrollments")} testId="manager-dashboard-empty" />
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 stagger">
             {overview.map((course) => (
               <Card
                 key={course.course_id}
-                className="bg-white border border-slate-200 rounded-sm hover:shadow-md transition-shadow cursor-pointer"
+                className="card-swiss cursor-pointer"
                 onClick={() => navigate("/manager/progress")}
               >
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-lg font-medium line-clamp-2">
+                  <CardTitle className="font-display text-lg line-clamp-2">
                     {course.course_title}
                   </CardTitle>
                 </CardHeader>
