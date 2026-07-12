@@ -16,7 +16,8 @@ export default {
       manageGroups: "群組管理",
       bulkEnroll: "批量报名",
       groupProgress: "群組進度",
-      aiSettings: "AI API 密钥"
+      aiSettings: "AI API 密钥",
+      certificateTemplates: "证书模板"
     },
     
     // Landing Page
@@ -202,6 +203,29 @@ export default {
       noCertificates: "还沒有证书。完成一门课程以获得您的第一張证书！",
       download: "下载",
       issuedOn: "颁发日期"
+    },
+
+    // Certificate Templates
+    certificateTemplates: {
+      manageTemplates: "证书模板",
+      description: "创建和管理可打印的证书模板。",
+      name: "模板名称",
+      html: "HTML 模板",
+      primaryColor: "主色",
+      secondaryColor: "辅色",
+      default: "默认",
+      createTemplate: "创建模板",
+      editTemplate: "编辑模板",
+      generateDefault: "生成默认 HTML",
+      preview: "预览",
+      noTemplates: "尚无证书模板。创建一个开始使用。",
+      save: "保存模板",
+      nameRequired: "模板名称为必填。",
+      deleteConfirm: "确定要删除此证书模板吗？",
+      created: "模板已创建。",
+      updated: "模板已更新。",
+      deleted: "模板已删除。",
+      generated: "已生成默认 HTML。"
     },
     
     // Chat
