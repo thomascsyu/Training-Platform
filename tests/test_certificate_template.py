@@ -1,4 +1,8 @@
-from certificate_template import create_certification_template
+from certificate_template import (
+    create_certification_template,
+    create_certification_template_source,
+    render_certification_template,
+)
 
 
 def test_create_certification_template_returns_styled_html():
@@ -51,3 +55,26 @@ def test_create_certification_template_handles_missing_fields():
     assert "0%" in html
     assert "Certificate ID: <strong>—</strong>" in html
     assert "Issued: <strong>—</strong>" in html
+
+
+def test_create_source_and_render_template():
+    source = create_certification_template_source("#002FA7", "#0A0B10")
+    assert "{{user_name}}" in source
+    assert "{{course_title}}" in source
+    assert "{{score}}" in source
+
+    rendered = render_certification_template(
+        source,
+        {
+            "course_title": "Security Training",
+            "user_name": "Jane Doe",
+            "score": 92,
+            "certificate_id": "ABCD1234",
+            "issued_at": "2026-06-08T12:00:00+00:00",
+        },
+    )
+
+    assert "{{user_name}}" not in rendered
+    assert "Jane Doe" in rendered
+    assert "Security Training" in rendered
+    assert "92%" in rendered

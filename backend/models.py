@@ -1,6 +1,7 @@
+import re
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 
 class UserCreate(BaseModel):
@@ -151,6 +152,7 @@ class CertificateCreate(BaseModel):
     user_id: str
     score: int = Field(ge=0, le=100)
     template: str = "default"
+    template_id: Optional[str] = None
     primary_color: str = "#002FA7"
     secondary_color: str = "#0A0B10"
 
@@ -219,3 +221,47 @@ class AITestConnectionResponse(BaseModel):
     latency_ms: Optional[int] = None
     message: Optional[str] = None
     error: Optional[str] = None
+
+
+class CertificateTemplateCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+    html: Optional[str] = None
+    primary_color: str = "#002fa7"
+    secondary_color: str = "#0a0b10"
+    is_default: bool = False
+
+    @field_validator("primary_color", "secondary_color")
+    @classmethod
+    def _validate_hex(cls, value: str) -> str:
+        if not re.match(r"^#[0-9A-Fa-f]{6}$", value):
+            raise ValueError("Color must be a valid 6-digit hex code")
+        return value.lower()
+
+
+class CertificateTemplateUpdate(BaseModel):
+    name: Optional[str] = Field(default=None, min_length=1, max_length=120)
+    html: Optional[str] = None
+    primary_color: Optional[str] = None
+    secondary_color: Optional[str] = None
+    is_default: Optional[bool] = None
+
+    @field_validator("primary_color", "secondary_color")
+    @classmethod
+    def _validate_hex(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return value
+        if not re.match(r"^#[0-9A-Fa-f]{6}$", value):
+            raise ValueError("Color must be a valid 6-digit hex code")
+        return value.lower()
+
+
+class CertificateTemplateRender(BaseModel):
+    primary_color: str = "#002fa7"
+    secondary_color: str = "#0a0b10"
+
+    @field_validator("primary_color", "secondary_color")
+    @classmethod
+    def _validate_hex(cls, value: str) -> str:
+        if not re.match(r"^#[0-9A-Fa-f]{6}$", value):
+            raise ValueError("Color must be a valid 6-digit hex code")
+        return value.lower()

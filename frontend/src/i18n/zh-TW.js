@@ -205,6 +205,29 @@ export default {
       download: "下載",
       issuedOn: "頒發日期"
     },
+
+    // Certificate Templates
+    certificateTemplates: {
+      manageTemplates: "證書範本",
+      description: "建立和管理可列印的證書範本。",
+      name: "範本名稱",
+      html: "HTML 範本",
+      primaryColor: "主色",
+      secondaryColor: "輔色",
+      default: "預設",
+      createTemplate: "建立範本",
+      editTemplate: "編輯範本",
+      generateDefault: "產生預設 HTML",
+      preview: "預覽",
+      noTemplates: "尚無證書範本。建立一個開始使用。",
+      save: "儲存範本",
+      nameRequired: "範本名稱為必填。",
+      deleteConfirm: "確定要刪除此證書範本嗎？",
+      created: "範本已建立。",
+      updated: "範本已更新。",
+      deleted: "範本已刪除。",
+      generated: "已產生預設 HTML。"
+    },
     
     // Chat
     chat: {

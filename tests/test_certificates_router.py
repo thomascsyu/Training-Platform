@@ -12,6 +12,7 @@ STUDENT_A = "507f1f77bcf86cd7994390d0"
 STUDENT_B = "507f1f77bcf86cd7994390e0"
 COMPANY_A = "507f1f77bcf86cd7994390a0"
 COMPANY_B = "507f1f77bcf86cd7994390b0"
+TEMPLATE_A = "507f1f77bcf86cd7994390f0"
 
 
 async def _fake_admin(_request):
@@ -27,10 +28,12 @@ def _build_mock_db():
     mock_db.courses = MagicMock()
     mock_db.users = MagicMock()
     mock_db.certificates = MagicMock()
+    mock_db.certificate_templates = MagicMock()
     mock_db.courses.find_one = AsyncMock()
     mock_db.users.find_one = AsyncMock()
     mock_db.certificates.find_one = AsyncMock()
     mock_db.certificates.insert_one = AsyncMock()
+    mock_db.certificate_templates.find_one = AsyncMock(return_value=None)
     return mock_db
 
 
@@ -71,6 +74,59 @@ async def test_create_certificate_as_admin(monkeypatch):
     inserted_doc = mock_db.certificates.insert_one.await_args.args[0]
     assert inserted_doc["course_title"] == "Security Training"
     assert inserted_doc["user_id"] == STUDENT_A
+    assert inserted_doc["template_id"] is None
+    assert "<!DOCTYPE html" in inserted_doc["template_html"]
+
+
+@pytest.mark.asyncio
+async def test_create_certificate_with_selected_template(monkeypatch):
+    mock_db = _build_mock_db()
+    mock_db.courses.find_one.return_value = {
+        "_id": ObjectId(COURSE_A),
+        "title": "Security Training",
+        "company_ids": [COMPANY_A],
+    }
+    mock_db.users.find_one.return_value = {
+        "_id": ObjectId(STUDENT_A),
+        "name": "Student A",
+        "email": "student.a@example.com",
+        "role": "student",
+        "company_id": COMPANY_A,
+    }
+    mock_db.certificates.find_one.return_value = None
+    mock_db.certificate_templates.find_one.return_value = {
+        "_id": ObjectId(TEMPLATE_A),
+        "name": "Executive Certificate",
+        "html": "<html><body>{{user_name}} - {{course_title}} - {{score}}%</body></html>",
+        "primary_color": "#111111",
+        "secondary_color": "#222222",
+        "is_default": False,
+    }
+    mock_db.certificates.insert_one.return_value = MagicMock(inserted_id=ObjectId())
+
+    monkeypatch.setattr(certificates_router, "db", mock_db)
+    monkeypatch.setattr(certificates_router, "require_admin_or_manager", _fake_admin)
+    monkeypatch.setattr(certificates_router, "send_certificate_email", AsyncMock())
+
+    response = await certificates_router.create_certificate(
+        CertificateCreate(
+            course_id=COURSE_A,
+            user_id=STUDENT_A,
+            score=92,
+            template_id=TEMPLATE_A,
+        ),
+        request=object(),
+    )
+
+    assert response["template_id"] == TEMPLATE_A
+    assert response["template_name"] == "Executive Certificate"
+    assert response["template"] == "Executive Certificate"
+    assert response["primary_color"] == "#111111"
+    inserted_doc = mock_db.certificates.insert_one.await_args.args[0]
+    assert inserted_doc["template_id"] == TEMPLATE_A
+    assert inserted_doc["template_html"] == (
+        "<html><body>Student A - Security Training - 92%</body></html>"
+    )
 
 
 @pytest.mark.asyncio

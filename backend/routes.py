@@ -4,6 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from routers.ai_settings import router as ai_settings_router
 from routers.auth import router as auth_router
 from routers.certificates import router as certificates_router
+from routers.certificate_templates import router as certificate_templates_router
 from routers.chat import router as chat_router
 from routers.courses import router as courses_router
 from routers.enrollments import router as enrollments_router
@@ -34,6 +35,7 @@ api_router.include_router(quizzes_router)
 api_router.include_router(enrollments_router)
 api_router.include_router(groups_router)
 api_router.include_router(certificates_router)
+api_router.include_router(certificate_templates_router)
 api_router.include_router(forums_router)
 api_router.include_router(chat_router)
 api_router.include_router(translate_router)

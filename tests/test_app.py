@@ -27,6 +27,8 @@ def mock_db(monkeypatch):
     db.lesson_progress.create_index = AsyncMock()
     db.chat_messages = MagicMock()
     db.chat_messages.create_index = AsyncMock()
+    db.certificate_templates = MagicMock()
+    db.certificate_templates.create_index = AsyncMock()
     monkeypatch.setattr(app, "db", db)
     return db
 

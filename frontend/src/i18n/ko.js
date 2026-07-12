@@ -206,6 +206,29 @@ export default {
       download: "다운로드",
       issuedOn: "발급일"
     },
+
+    // Certificate Templates
+    certificateTemplates: {
+      manageTemplates: "수료증 템플릿",
+      description: "인쇄 가능한 수료증 템플릿을 생성하고 관리합니다.",
+      name: "템플릿 이름",
+      html: "HTML 템플릿",
+      primaryColor: "기본 색상",
+      secondaryColor: "보조 색상",
+      default: "기본",
+      createTemplate: "템플릿 만들기",
+      editTemplate: "템플릿 편집",
+      generateDefault: "기본 HTML 생성",
+      preview: "미리보기",
+      noTemplates: "수료증 템플릿이 아직 없습니다. 하나를 만들어 시작하세요.",
+      save: "템플릿 저장",
+      nameRequired: "템플릿 이름은 필수입니다.",
+      deleteConfirm: "이 수료증 템플릿을 삭제하시겠습니까?",
+      created: "템플릿이 생성되었습니다.",
+      updated: "템플릿이 업데이트되었습니다.",
+      deleted: "템플릿이 삭제되었습니다.",
+      generated: "기본 HTML이 생성되었습니다."
+    },
     
     // Chat
     chat: {

@@ -206,6 +206,29 @@ export default {
       download: "ダウンロード",
       issuedOn: "発行日"
     },
+
+    // Certificate Templates
+    certificateTemplates: {
+      manageTemplates: "修了証テンプレート",
+      description: "印刷可能な修了証テンプレートを作成・管理します。",
+      name: "テンプレート名",
+      html: "HTMLテンプレート",
+      primaryColor: "プライマリカラー",
+      secondaryColor: "セカンダリカラー",
+      default: "デフォルト",
+      createTemplate: "テンプレート作成",
+      editTemplate: "テンプレート編集",
+      generateDefault: "デフォルトHTML生成",
+      preview: "プレビュー",
+      noTemplates: "修了証テンプレートはまだありません。作成して始めましょう。",
+      save: "テンプレート保存",
+      nameRequired: "テンプレート名は必須です。",
+      deleteConfirm: "この修了証テンプレートを削除してもよろしいですか？",
+      created: "テンプレートを作成しました。",
+      updated: "テンプレートを更新しました。",
+      deleted: "テンプレートを削除しました。",
+      generated: "デフォルトHTMLを生成しました。"
+    },
     
     // Chat
     chat: {
