@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime, timezone
+from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Request
 from starlette.responses import Response
@@ -55,6 +56,53 @@ async def get_my_certificates(request: Request):
             )
         )
     return certificates
+
+
+@router.get("/certificates")
+async def list_certificates(
+    request: Request,
+    course_id: Optional[str] = None,
+    user_id: Optional[str] = None,
+    limit: int = 100,
+    skip: int = 0,
+):
+    user = await require_admin_or_manager(request)
+    query: dict = {}
+
+    if user["role"] == "client_manager":
+        company_users = await db.users.find(
+            {"company_id": user["company_id"]}, {"_id": 1}
+        ).to_list(1000)
+        allowed_user_ids = {str(u["_id"]) for u in company_users}
+        if user_id and user_id not in allowed_user_ids:
+            return []
+        query["user_id"] = {"$in": [user_id] if user_id else list(allowed_user_ids)}
+    elif user_id:
+        query["user_id"] = user_id
+
+    if course_id:
+        query["course_id"] = course_id
+
+    certs = await db.certificates.find(query).sort(
+        "issued_at", -1
+    ).skip(skip).limit(limit).to_list(limit)
+
+    course_ids = list({c["course_id"] for c in certs if c.get("course_id")})
+    course_map = {}
+    if course_ids:
+        courses = await db.courses.find(
+            {"_id": {"$in": [parse_object_id(cid, "course") for cid in course_ids]}},
+            {"_id": 1, "title": 1},
+        ).to_list(len(course_ids))
+        course_map = {str(c["_id"]): c for c in courses}
+
+    return [
+        _serialize_certificate(
+            cert,
+            fallback_course_title=course_map.get(cert.get("course_id", ""), {}).get("title"),
+        )
+        for cert in certs
+    ]
 
 
 @router.post("/certificates")
