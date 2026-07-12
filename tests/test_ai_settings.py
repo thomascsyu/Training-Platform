@@ -37,6 +37,7 @@ async def test_load_ai_settings_returns_defaults_when_missing(mock_db):
     settings = await ai_settings.load_ai_settings()
 
     assert settings["default_provider"] == "deepseek"
+    assert settings["default_prompt"] == ""
     assert "deepseek" in settings["providers"]
     assert "xai" in settings["providers"]
     assert settings["providers"]["deepseek"]["model"] == "deepseek-chat"
@@ -51,6 +52,7 @@ async def test_save_ai_settings_encrypts_and_stores_keys(mock_db, monkeypatch):
     await ai_settings.save_ai_settings(
         {
             "default_provider": "xai",
+            "default_prompt": "Be concise and encouraging.",
             "providers": {
                 "deepseek": {"api_key": "sk-deepseek", "model": "deepseek-v3", "enabled": False},
                 "xai": {"api_key": "sk-xai", "model": "grok-3", "enabled": True},
@@ -63,6 +65,7 @@ async def test_save_ai_settings_encrypts_and_stores_keys(mock_db, monkeypatch):
     args, kwargs = mock_db.platform_settings.replace_one.await_args
     assert args[0] == {"_id": "ai"}
     assert args[1]["default_provider"] == "xai"
+    assert args[1]["default_prompt"] == "Be concise and encouraging."
     assert args[1]["providers"]["deepseek"]["model"] == "deepseek-v3"
     assert args[1]["providers"]["deepseek"]["enabled"] is False
     assert args[1]["providers"]["xai"]["enabled"] is True
@@ -178,3 +181,20 @@ def test_mask_key_masks_middle_and_handles_empty():
     assert ai_settings._mask_key("") == ""
     assert ai_settings._mask_key("short") == "•••••"
     assert ai_settings._mask_key("sk-1234567890abcdef") == "sk-1••••cdef"
+
+
+@pytest.mark.asyncio
+async def test_get_default_prompt_falls_back_when_unset(mock_db):
+    assert await ai_settings.get_default_prompt() == ai_settings.DEFAULT_SYSTEM_PROMPT
+
+
+@pytest.mark.asyncio
+async def test_get_default_prompt_returns_configured_value(mock_db):
+    mock_db.platform_settings.find_one.return_value = {
+        "_id": "ai",
+        "default_provider": "deepseek",
+        "default_prompt": "Speak like a friendly mentor.",
+        "providers": {},
+    }
+
+    assert await ai_settings.get_default_prompt() == "Speak like a friendly mentor."

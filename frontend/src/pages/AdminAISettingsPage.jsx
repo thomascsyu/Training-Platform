@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -37,6 +38,7 @@ export const AdminAISettingsPage = () => {
     xai: emptyDraft(),
   });
   const [defaultProvider, setDefaultProvider] = useState("deepseek");
+  const [defaultPrompt, setDefaultPrompt] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState({});
@@ -51,6 +53,7 @@ export const AdminAISettingsPage = () => {
       const { data } = await API.get("/admin/ai-settings");
       setSettings(data);
       setDefaultProvider(data.default_provider || "deepseek");
+      setDefaultPrompt(data.default_prompt || "");
       setDraft((prev) => {
         const next = { ...prev };
         for (const key of PROVIDERS) {
@@ -89,6 +92,7 @@ export const AdminAISettingsPage = () => {
     try {
       const payload = {
         default_provider: defaultProvider,
+        default_prompt: defaultPrompt,
         providers: {},
       };
       for (const key of PROVIDERS) {
@@ -176,7 +180,7 @@ export const AdminAISettingsPage = () => {
               <CardHeader>
                 <CardTitle className="font-display">{t("aiSettings.defaultProvider")}</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-6">
                 <Select value={defaultProvider} onValueChange={setDefaultProvider}>
                   <SelectTrigger className="w-full sm:w-64 rounded-sm">
                     <SelectValue />
@@ -186,6 +190,19 @@ export const AdminAISettingsPage = () => {
                     <SelectItem value="xai">{t("aiSettings.xai")}</SelectItem>
                   </SelectContent>
                 </Select>
+
+                <div className="space-y-2">
+                  <Label htmlFor="default-prompt">{t("aiSettings.defaultPrompt")}</Label>
+                  <Textarea
+                    id="default-prompt"
+                    value={defaultPrompt}
+                    onChange={(e) => setDefaultPrompt(e.target.value)}
+                    placeholder={t("aiSettings.defaultPromptPlaceholder")}
+                    rows={4}
+                    className="rounded-sm"
+                  />
+                  <p className="text-xs text-slate-500">{t("aiSettings.defaultPromptHint")}</p>
+                </div>
               </CardContent>
             </Card>
 

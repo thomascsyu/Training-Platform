@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter, HTTPException, Request
 
-from ai_settings import get_active_client, get_active_provider_settings
+from ai_settings import get_active_client, get_active_provider_settings, get_default_prompt
 from auth_utils import get_current_user
 from config import logger
 from database import db
@@ -49,11 +49,12 @@ async def chat_with_ai(data: ChatMessageCreate, request: Request):
     }).sort("created_at", -1).limit(10).to_list(10)
     history.reverse()
 
+    default_prompt = await get_default_prompt()
     messages = [
         {
             "role": "system",
             "content": (
-                f"You are a helpful course assistant. {course_context}\n\n"
+                f"{default_prompt} {course_context}\n\n"
                 "Help students understand the course material and answer their questions."
                 f"{prompt_suffix}"
             ),
