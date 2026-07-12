@@ -14,7 +14,7 @@ from config import (
     RESET_PASSWORD_TOKEN_TTL_MINUTES,
 )
 from database import db
-from email_service import send_password_reset_email
+from email_service import send_password_reset_email, send_welcome_email
 from models import (
     ChangePasswordRequest,
     ForgotPasswordRequest,
@@ -72,6 +72,7 @@ async def register(data: UserCreate):
     }
     result = await db.users.insert_one(user_doc)
     user_id = str(result.inserted_id)
+    await send_welcome_email(email, data.name)
 
     resp = JSONResponse(
         content={
@@ -97,6 +98,10 @@ async def login(data: UserLogin):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     user_id = str(user["_id"])
+    await db.users.update_one(
+        {"_id": user["_id"]},
+        {"$set": {"last_login_at": datetime.now(timezone.utc).isoformat()}},
+    )
     resp = JSONResponse(
         content={
             "id": user_id,

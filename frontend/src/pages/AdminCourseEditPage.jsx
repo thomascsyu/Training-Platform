@@ -161,6 +161,7 @@ export const AdminCourseEditPage = () => {
         video_type: data.video_type || "youtube",
         price: data.price || 0,
         is_free: data.is_free ?? true,
+        course_type: data.course_type || (data.is_free ? "free" : "payment_required"),
         is_private: data.is_private ?? false,
         passing_score: data.passing_score ?? 70,
         materials: Array.isArray(data.materials) ? data.materials : [],
@@ -535,7 +536,7 @@ export const AdminCourseEditPage = () => {
                   value={formData.price}
                   onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
                   className="rounded-sm"
-                  disabled={formData.is_free}
+                  disabled={formData.course_type === "free"}
                 />
               </div>
               <div className="space-y-2">
@@ -550,15 +551,28 @@ export const AdminCourseEditPage = () => {
                 />
               </div>
             </div>
-            <div className="flex items-center gap-6">
-              <div className="flex items-center gap-2">
-                <Switch
-                  checked={formData.is_free}
-                  onCheckedChange={(v) => setFormData({ ...formData, is_free: v, price: v ? 0 : formData.price })}
-                />
-                <Label>{t("courses.freeCourse")}</Label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>{t("courses.courseType")}</Label>
+                <Select
+                  value={formData.course_type}
+                  onValueChange={(v) => setFormData({
+                    ...formData,
+                    course_type: v,
+                    is_free: v === "free",
+                    price: v === "free" ? 0 : formData.price
+                  })}
+                >
+                  <SelectTrigger className="rounded-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="free">{t("courses.free")}</SelectItem>
+                    <SelectItem value="payment_required">{t("courses.paymentRequired")}</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 md:pt-6">
                 <Switch
                   checked={formData.is_private}
                   onCheckedChange={(v) => setFormData({ ...formData, is_private: v })}

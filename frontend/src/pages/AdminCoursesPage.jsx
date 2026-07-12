@@ -51,6 +51,7 @@ export const AdminCoursesPage = () => {
     video_type: "youtube",
     price: 0,
     is_free: true,
+    course_type: "free",
     is_private: false,
     passing_score: 70,
     language: "en",
@@ -109,6 +110,7 @@ export const AdminCoursesPage = () => {
         video_type: "youtube",
         price: 0,
         is_free: true,
+        course_type: "free",
         is_private: false,
         passing_score: 70,
         language: "en",
@@ -232,12 +234,12 @@ export const AdminCoursesPage = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Price ($)</Label>
-                    <Input 
+                    <Input
                       type="number"
                       value={formData.price}
                       onChange={(e) => setFormData({...formData, price: parseFloat(e.target.value) || 0})}
                       className="rounded-sm"
-                      disabled={formData.is_free}
+                      disabled={formData.course_type === "free"}
                       data-testid="course-price-input"
                     />
                   </div>
@@ -254,22 +256,34 @@ export const AdminCoursesPage = () => {
                     />
                   </div>
                 </div>
-                <div className="flex items-center gap-6">
-                  <div className="flex items-center gap-2">
-                    <Switch 
-                      checked={formData.is_free}
-                      onCheckedChange={(v) => setFormData({...formData, is_free: v, price: v ? 0 : formData.price})}
-                      data-testid="course-free-switch"
-                    />
-                    <Label>Free Course</Label>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>{t("courses.courseType")}</Label>
+                    <Select
+                      value={formData.course_type}
+                      onValueChange={(v) => setFormData({
+                        ...formData,
+                        course_type: v,
+                        is_free: v === "free",
+                        price: v === "free" ? 0 : formData.price
+                      })}
+                    >
+                      <SelectTrigger className="rounded-sm" data-testid="course-type-select">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="free">{t("courses.free")}</SelectItem>
+                        <SelectItem value="payment_required">{t("courses.paymentRequired")}</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Switch 
+                  <div className="flex items-center gap-2 pt-6">
+                    <Switch
                       checked={formData.is_private}
                       onCheckedChange={(v) => setFormData({...formData, is_private: v})}
                       data-testid="course-private-switch"
                     />
-                    <Label>Private Course</Label>
+                    <Label>{t("courses.privateCourse")}</Label>
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -366,10 +380,10 @@ export const AdminCoursesPage = () => {
                           {getCourseLanguageDisplay(course.language)}
                         </Badge>
                       )}
-                      {course.is_free ? (
-                        <Badge variant="secondary" className="bg-green-100 text-green-700 rounded-sm text-xs">Free</Badge>
+                      {(course.course_type || (course.is_free ? "free" : "payment_required")) === "free" ? (
+                        <Badge variant="secondary" className="bg-green-100 text-green-700 rounded-sm text-xs">{t("courses.free")}</Badge>
                       ) : (
-                        <Badge className="bg-amber-100 text-amber-700 rounded-sm text-xs">${course.price}</Badge>
+                        <Badge className="bg-amber-100 text-amber-700 rounded-sm text-xs">{t("courses.paymentRequired")} ${course.price}</Badge>
                       )}
                       {course.is_private && (
                         <Badge variant="outline" className="rounded-sm text-xs">Private</Badge>

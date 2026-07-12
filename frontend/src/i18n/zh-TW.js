@@ -17,6 +17,7 @@ export default {
       bulkEnroll: "批量報名",
       groupProgress: "群組進度",
       aiSettings: "AI API 金鑰",
+      emailNotifications: "Email Notifications",
       payments: "付款",
       certificates: "證書",
       profile: "個人資料"
@@ -137,6 +138,8 @@ export default {
       passingScore: "及格分數",
       freeCourse: "免費課程",
       privateCourse: "私人課程",
+      courseType: "課程類型",
+      paymentRequired: "需付款",
       language: "語言",
       category: "分類",
       filter: "篩選",
