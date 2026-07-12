@@ -14,6 +14,25 @@ from models import CourseCreate, CourseUpdate
 router = APIRouter(tags=["courses"])
 
 
+def _resolve_course_type(
+    is_free: Optional[bool],
+    price: Optional[float],
+    course_type: Optional[str],
+) -> tuple[bool, float, str]:
+    if course_type == "payment_required":
+        return False, price if price is not None else 0.0, "payment_required"
+    if course_type == "free":
+        return True, 0.0, "free"
+    free = is_free if is_free is not None else True
+    return free, price if price is not None else 0.0, "free" if free else "payment_required"
+
+
+def _course_type_for(course: dict) -> str:
+    return course.get("course_type") or (
+        "free" if course.get("is_free", True) else "payment_required"
+    )
+
+
 async def _validate_company_ids(company_ids: Optional[list[str]]) -> list[str]:
     if not company_ids:
         return []
@@ -56,14 +75,18 @@ async def create_course(data: CourseCreate, request: Request):
         )
 
     company_ids = await _validate_company_ids(data.company_ids)
+    is_free, price, course_type = _resolve_course_type(
+        data.is_free, data.price, data.course_type
+    )
     course_doc = {
         "title": data.title,
         "description": data.description,
         "thumbnail_url": data.thumbnail_url,
         "video_url": data.video_url,
         "video_type": data.video_type,
-        "price": data.price,
-        "is_free": data.is_free,
+        "price": price,
+        "is_free": is_free,
+        "course_type": course_type,
         "is_private": data.is_private,
         "passing_score": data.passing_score,
         "materials": data.materials,
@@ -150,6 +173,7 @@ async def get_courses(
             "thumbnail_url": 1,
             "price": 1,
             "is_free": 1,
+            "course_type": 1,
             "is_private": 1,
             "language": 1,
             "category": 1,
@@ -158,7 +182,11 @@ async def get_courses(
         },
     ).to_list(100)
     return [
-        {"id": str(c["_id"]), **{k: v for k, v in c.items() if k != "_id"}}
+        {
+            "id": str(c["_id"]),
+            **{k: v for k, v in c.items() if k != "_id"},
+            "course_type": _course_type_for(c),
+        }
         for c in courses
     ]
 
@@ -229,6 +257,7 @@ async def get_course(course_id: str, request: Request):
     return {
         "id": str(course["_id"]),
         **{k: v for k, v in course.items() if k != "_id"},
+        "course_type": _course_type_for(course),
         "lessons": [
             {"id": str(l["_id"]), **{k: v for k, v in l.items() if k != "_id"}}
             for l in lessons
@@ -244,6 +273,15 @@ async def get_course(course_id: str, request: Request):
 async def update_course(course_id: str, data: CourseUpdate, request: Request):
     user = await require_roles("admin")(request)
     update_data = {k: v for k, v in data.model_dump(exclude_unset=True).items() if v is not None}
+    if "course_type" in update_data:
+        is_free, price, course_type = _resolve_course_type(
+            update_data.get("is_free"),
+            update_data.get("price"),
+            update_data["course_type"],
+        )
+        update_data["is_free"] = is_free
+        update_data["price"] = price
+        update_data["course_type"] = course_type
     if "company_ids" in update_data:
         update_data["company_ids"] = await _validate_company_ids(update_data["company_ids"])
     update_data["updated_at"] = datetime.now(timezone.utc).isoformat()

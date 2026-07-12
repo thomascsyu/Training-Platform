@@ -81,6 +81,16 @@ class CourseCreate(BaseModel):
     language: str = "en"
     category: Optional[str] = None
     company_ids: List[str] = Field(default_factory=list)
+    course_type: Optional[str] = None
+
+    @field_validator("course_type")
+    @classmethod
+    def _validate_course_type(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return value
+        if value not in {"free", "payment_required"}:
+            raise ValueError("course_type must be 'free' or 'payment_required'")
+        return value
 
 
 class CourseUpdate(BaseModel):
@@ -99,6 +109,16 @@ class CourseUpdate(BaseModel):
     language: Optional[str] = None
     category: Optional[str] = None
     company_ids: Optional[List[str]] = None
+    course_type: Optional[str] = None
+
+    @field_validator("course_type")
+    @classmethod
+    def _validate_course_type(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return value
+        if value not in {"free", "payment_required"}:
+            raise ValueError("course_type must be 'free' or 'payment_required'")
+        return value
 
 
 class LessonCreate(BaseModel):
