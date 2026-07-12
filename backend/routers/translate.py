@@ -306,6 +306,7 @@ async def create_translated_course(course_id: str, target_language: str, request
         "ai_assistant_prompt": course.get("ai_assistant_prompt"),
         "language": target_language,
         "category": course.get("category"),
+        "company_ids": course.get("company_ids", []),
         "source_course_id": course_id,  # Reference to original course
         "created_by": user["id"],
         "created_at": datetime.now(timezone.utc).isoformat(),
@@ -350,6 +351,66 @@ async def create_translated_course(course_id: str, target_language: str, request
             "order": lesson.get("order"),
             "materials": lesson.get("materials", []),
             "created_at": datetime.now(timezone.utc).isoformat()
+        })
+
+    quizzes = await db.quizzes.find({"course_id": course_id}).to_list(100)
+    for quiz in quizzes:
+        stored_quiz_translation = quiz.get("translations", {}).get(target_language)
+        if stored_quiz_translation and not stored_quiz_translation.get("error"):
+            translated_quiz_title = stored_quiz_translation.get("title", quiz.get("title", ""))
+            translated_questions = stored_quiz_translation.get("questions", quiz.get("questions", []))
+        else:
+            quiz_title_resp = client.chat.completions.create(
+                model=model,
+                messages=[
+                    {
+                        "role": "system",
+                        "content": f"Translate this quiz title from {source_name} to {target_name}. Only output the translation."
+                    },
+                    {"role": "user", "content": quiz.get("title", "")}
+                ],
+                temperature=0.3
+            )
+            translated_quiz_title = quiz_title_resp.choices[0].message.content.strip()
+            translated_questions = []
+            for question in quiz.get("questions", []):
+                question_resp = client.chat.completions.create(
+                    model=model,
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": f"Translate this quiz question from {source_name} to {target_name}. Only output the translation."
+                        },
+                        {"role": "user", "content": question.get("question", "")}
+                    ],
+                    temperature=0.3
+                )
+                translated_options = []
+                for option in question.get("options", []):
+                    option_resp = client.chat.completions.create(
+                        model=model,
+                        messages=[
+                            {
+                                "role": "system",
+                                "content": f"Translate from {source_name} to {target_name}. Only output the translation."
+                            },
+                            {"role": "user", "content": option}
+                        ],
+                        temperature=0.3
+                    )
+                    translated_options.append(option_resp.choices[0].message.content.strip())
+                translated_questions.append({
+                    "question": question_resp.choices[0].message.content.strip(),
+                    "options": translated_options,
+                    "correct_answer": question.get("correct_answer"),
+                })
+
+        await db.quizzes.insert_one({
+            "course_id": new_course_id,
+            "title": translated_quiz_title,
+            "questions": translated_questions,
+            "source_quiz_id": str(quiz["_id"]),
+            "created_at": datetime.now(timezone.utc).isoformat(),
         })
     
     return {

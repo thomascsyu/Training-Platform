@@ -78,7 +78,7 @@ export const RegisterPage = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 className="rounded-sm border-slate-300 focus:ring-[#002FA7]/20 focus:border-[#002FA7]"
                 required
-                minLength={6}
+                minLength={8}
                 data-testid="register-password-input"
               />
             </div>

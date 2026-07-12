@@ -2,10 +2,11 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter, HTTPException, Request
 
-from auth_utils import require_roles
+from auth_utils import get_current_user, require_roles
 from database import db
 from db_utils import parse_object_id
 from models import LessonCreate, LessonUpdate
+from progress_utils import require_enrollment
 
 router = APIRouter(tags=["lessons"])
 
@@ -32,9 +33,12 @@ async def create_lesson(data: LessonCreate, request: Request):
 
 @router.get("/lessons/{lesson_id}")
 async def get_lesson(lesson_id: str, request: Request):
+    user = await get_current_user(request)
     lesson = await db.lessons.find_one({"_id": parse_object_id(lesson_id, "lesson")})
     if not lesson:
         raise HTTPException(status_code=404, detail="Lesson not found")
+    if user["role"] == "student":
+        await require_enrollment(user["id"], lesson["course_id"])
     return {
         "id": str(lesson["_id"]),
         **{k: v for k, v in lesson.items() if k != "_id"},

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -21,10 +21,145 @@ import { useAuth } from "@/contexts/AuthContext";
 import { PublicSiteHeader } from "@/components/PublicSiteHeader";
 import { CourseThumbnail } from "@/components/CourseThumbnail";
 
+const loadScriptOnce = (src, globalName) => new Promise((resolve, reject) => {
+  if (globalName && window[globalName]) {
+    resolve(window[globalName]);
+    return;
+  }
+  const existing = document.querySelector(`script[src="${src}"]`);
+  if (existing) {
+    existing.addEventListener("load", () => resolve(globalName ? window[globalName] : true), { once: true });
+    existing.addEventListener("error", reject, { once: true });
+    return;
+  }
+  const script = document.createElement("script");
+  script.src = src;
+  script.async = true;
+  script.onload = () => resolve(globalName ? window[globalName] : true);
+  script.onerror = reject;
+  document.body.appendChild(script);
+});
+
+const LessonVideoPlayer = ({ lesson, embedUrl, progress, onProgress }) => {
+  const iframeRef = useRef(null);
+  const playerRef = useRef(null);
+  const progressRef = useRef(progress);
+  const lastSentRef = useRef(progress?.watch_percent || 0);
+
+  useEffect(() => {
+    progressRef.current = progress;
+    lastSentRef.current = progress?.watch_percent || 0;
+  }, [lesson?.id, progress]);
+
+  useEffect(() => {
+    if (!lesson?.id || !embedUrl || !iframeRef.current) {
+      return undefined;
+    }
+
+    let cancelled = false;
+    let intervalId = null;
+
+    const syncProgress = (currentTime, duration, completed = false) => {
+      if (!duration || duration <= 0) return;
+      const watchPercent = completed ? 100 : Math.min(100, Math.round((currentTime / duration) * 100));
+      if (
+        completed
+        || watchPercent >= Math.min(100, lastSentRef.current + 5)
+        || (watchPercent > lastSentRef.current && watchPercent % 10 === 0)
+      ) {
+        lastSentRef.current = watchPercent;
+        onProgress(lesson.id, watchPercent, Math.round(currentTime), completed || watchPercent >= 95);
+      }
+    };
+
+    const initYouTube = async () => {
+      await loadScriptOnce("https://www.youtube.com/iframe_api", "YT");
+      if (cancelled || !window.YT?.Player || !iframeRef.current) return;
+      if (window.YT.loaded !== 1) {
+        await new Promise((resolve) => {
+          const previous = window.onYouTubeIframeAPIReady;
+          window.onYouTubeIframeAPIReady = () => {
+            if (typeof previous === "function") previous();
+            resolve();
+          };
+        });
+      }
+      if (cancelled || !iframeRef.current) return;
+      playerRef.current = new window.YT.Player(iframeRef.current, {
+        events: {
+          onReady: (event) => {
+            const currentProgress = progressRef.current || {};
+            const lastPosition = currentProgress.last_position_sec || 0;
+            if (lastPosition > 0 && !currentProgress.completed) {
+              event.target.seekTo(lastPosition, true);
+            }
+            intervalId = window.setInterval(() => {
+              const currentTime = event.target.getCurrentTime?.() || 0;
+              const duration = event.target.getDuration?.() || 0;
+              syncProgress(currentTime, duration);
+            }, 10000);
+          },
+          onStateChange: (event) => {
+            if (event.data === window.YT.PlayerState.ENDED) {
+              const duration = event.target.getDuration?.() || 0;
+              syncProgress(duration, duration, true);
+            }
+          },
+        },
+      });
+    };
+
+    const initVimeo = async () => {
+      await loadScriptOnce("https://player.vimeo.com/api/player.js", "Vimeo");
+      if (cancelled || !window.Vimeo?.Player || !iframeRef.current) return;
+      const player = new window.Vimeo.Player(iframeRef.current);
+      playerRef.current = player;
+      const currentProgress = progressRef.current || {};
+      const lastPosition = currentProgress.last_position_sec || 0;
+      if (lastPosition > 0 && !currentProgress.completed) {
+        player.setCurrentTime(lastPosition).catch(() => {});
+      }
+      player.on("timeupdate", ({ seconds, duration }) => {
+        syncProgress(seconds, duration);
+      });
+      player.on("ended", async () => {
+        const duration = await player.getDuration().catch(() => 0);
+        syncProgress(duration, duration, true);
+      });
+    };
+
+    if ((lesson.video_type || "youtube") === "vimeo") {
+      initVimeo().catch(() => {});
+    } else {
+      initYouTube().catch(() => {});
+    }
+
+    return () => {
+      cancelled = true;
+      if (intervalId) window.clearInterval(intervalId);
+      if (playerRef.current?.destroy) {
+        playerRef.current.destroy();
+      }
+      playerRef.current = null;
+    };
+  }, [embedUrl, lesson, onProgress]);
+
+  return (
+    <iframe
+      ref={iframeRef}
+      src={embedUrl}
+      className="w-full h-full"
+      allowFullScreen
+      title={lesson.title}
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+    />
+  );
+};
+
 export const CourseDetailPage = () => {
   const { id } = useParams();
   const { user } = useAuth();
-  const { t } = useLanguage();
+  const { lang, t } = useLanguage();
   const navigate = useNavigate();
   const [course, setCourse] = useState(null);
   const [enrollment, setEnrollment] = useState(null);
@@ -36,6 +171,7 @@ export const CourseDetailPage = () => {
   const [chatLoading, setChatLoading] = useState(false);
   const [forumPosts, setForumPosts] = useState([]);
   const [forumInput, setForumInput] = useState("");
+  const [replyInputs, setReplyInputs] = useState({});
   const [lessonProgress, setLessonProgress] = useState(null);
   const [activeLesson, setActiveLesson] = useState(null);
   const [completingLesson, setCompletingLesson] = useState(false);
@@ -51,7 +187,7 @@ export const CourseDetailPage = () => {
 
   const fetchCourse = useCallback(async () => {
     try {
-      const { data } = await API.get(`/courses/${id}`);
+      const { data } = await API.get(`/courses/${id}`, { params: { lang } });
       setCourse(data);
       
       if (user) {
@@ -92,7 +228,7 @@ export const CourseDetailPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [id, user, navigate, fetchLessonProgress]);
+  }, [id, lang, user, navigate, fetchLessonProgress]);
 
   useEffect(() => {
     fetchCourse();
@@ -164,18 +300,40 @@ export const CourseDetailPage = () => {
     }
   };
 
+  const postForumReply = async (postId) => {
+    const content = replyInputs[postId]?.trim();
+    if (!content) return;
+
+    try {
+      const { data } = await API.post("/forums/posts", {
+        course_id: id,
+        content,
+        parent_id: postId,
+      });
+      setForumPosts((posts) => posts.map((post) => (
+        post.id === postId
+          ? { ...post, replies: [...(post.replies || []), data] }
+          : post
+      )));
+      setReplyInputs((prev) => ({ ...prev, [postId]: "" }));
+      toast.success(t("toast.posted"));
+    } catch (e) {
+      toast.error(formatError(e));
+    }
+  };
+
   const getVideoEmbed = (url, type) => {
     if (!url) return null;
     
     if (type === "youtube") {
       const videoId = url.match(/(?:youtu\.be\/|youtube\.com(?:\/embed\/|\/v\/|\/watch\?v=|\/watch\?.+&v=))([\w-]{11})/)?.[1];
       if (videoId) {
-        return `https://www.youtube.com/embed/${videoId}`;
+        return `https://www.youtube.com/embed/${videoId}?enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}`;
       }
     } else if (type === "vimeo") {
       const videoId = url.match(/vimeo\.com\/(\d+)/)?.[1];
       if (videoId) {
-        return `https://player.vimeo.com/video/${videoId}`;
+        return `https://player.vimeo.com/video/${videoId}?dnt=1`;
       }
     }
     return url;
@@ -202,16 +360,18 @@ export const CourseDetailPage = () => {
     }
   };
 
-  const updateWatchProgress = async (lessonId, watchPercent) => {
+  const updateWatchProgress = useCallback(async (lessonId, watchPercent, lastPositionSec = 0, completed = false) => {
     try {
       const { data } = await API.patch(`/progress/lessons/${lessonId}`, {
         watch_percent: watchPercent,
+        last_position_sec: lastPositionSec,
+        completed,
       });
       setLessonProgress(data);
     } catch (e) {
       console.error(e);
     }
-  };
+  }, []);
 
   if (loading) {
     return (
@@ -381,11 +541,11 @@ export const CourseDetailPage = () => {
                   </div>
                   {activeLesson.video_url && (
                     <div className="aspect-video bg-black rounded-sm overflow-hidden mb-4">
-                      <iframe
-                        src={getVideoEmbed(activeLesson.video_url, activeLesson.video_type || "youtube")}
-                        className="w-full h-full"
-                        allowFullScreen
-                        title={activeLesson.title}
+                      <LessonVideoPlayer
+                        lesson={activeLesson}
+                        embedUrl={getVideoEmbed(activeLesson.video_url, activeLesson.video_type || "youtube")}
+                        progress={getLessonProgress(activeLesson.id)}
+                        onProgress={updateWatchProgress}
                       />
                     </div>
                   )}
@@ -396,23 +556,14 @@ export const CourseDetailPage = () => {
                           <CheckCircle className="w-3 h-3 mr-1" /> Completed
                         </Badge>
                       ) : (
-                        <>
-                          <Button
-                            onClick={() => markLessonComplete(activeLesson.id)}
-                            disabled={completingLesson}
-                            className="btn-primary"
-                            data-testid={`complete-lesson-${activeLesson.id}`}
-                          >
-                            {completingLesson ? <Loader2 className="w-4 h-4 animate-spin" /> : t("courses.markComplete")}
-                          </Button>
-                          <Button
-                            variant="outline"
-                            onClick={() => updateWatchProgress(activeLesson.id, 50)}
-                            className="rounded-sm"
-                          >
-                            Log 50% watched
-                          </Button>
-                        </>
+                        <Button
+                          onClick={() => markLessonComplete(activeLesson.id)}
+                          disabled={completingLesson}
+                          className="btn-primary"
+                          data-testid={`complete-lesson-${activeLesson.id}`}
+                        >
+                          {completingLesson ? <Loader2 className="w-4 h-4 animate-spin" /> : t("courses.markComplete")}
+                        </Button>
                       )}
                       {getLessonProgress(activeLesson.id)?.watch_percent > 0 && (
                         <span className="text-sm text-slate-500">
@@ -605,6 +756,24 @@ export const CourseDetailPage = () => {
                         </span>
                       </div>
                       <p className="text-slate-700">{post.content}</p>
+                      <div className="mt-3 flex gap-2">
+                        <Input
+                          value={replyInputs[post.id] || ""}
+                          onChange={(e) => setReplyInputs((prev) => ({ ...prev, [post.id]: e.target.value }))}
+                          placeholder="Write a reply..."
+                          className="rounded-sm border-slate-300"
+                          data-testid={`forum-reply-input-${post.id}`}
+                        />
+                        <Button
+                          variant="outline"
+                          className="rounded-sm"
+                          onClick={() => postForumReply(post.id)}
+                          disabled={!replyInputs[post.id]?.trim()}
+                          data-testid={`forum-reply-btn-${post.id}`}
+                        >
+                          Reply
+                        </Button>
+                      </div>
                       {post.replies?.length > 0 && (
                         <div className="ml-6 mt-3 space-y-2">
                           {post.replies.map((reply) => (

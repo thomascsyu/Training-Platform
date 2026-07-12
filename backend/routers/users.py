@@ -44,6 +44,24 @@ async def _validate_company_id(company_id: Optional[str]) -> Optional[str]:
     return company_id
 
 
+async def _delete_user_related_data(user_id: str) -> None:
+    user_posts = await db.forum_posts.find(
+        {"user_id": user_id},
+        {"_id": 1},
+    ).to_list(10000)
+    post_ids = [str(post["_id"]) for post in user_posts]
+    if post_ids:
+        await db.forum_posts.delete_many({"parent_id": {"$in": post_ids}})
+    await db.forum_posts.delete_many({"user_id": user_id})
+
+    await db.enrollments.delete_many({"user_id": user_id})
+    await db.certificates.delete_many({"user_id": user_id})
+    await db.lesson_progress.delete_many({"user_id": user_id})
+    await db.quiz_attempts.delete_many({"user_id": user_id})
+    await db.chat_messages.delete_many({"user_id": user_id})
+    await db.payment_transactions.delete_many({"user_id": user_id})
+
+
 @router.get("/users")
 async def get_users(
     request: Request,
@@ -153,6 +171,7 @@ async def delete_user(user_id: str, request: Request):
         if admin_count <= 1:
             raise HTTPException(status_code=400, detail="Cannot delete the last admin")
 
+    await _delete_user_related_data(user_id)
     await db.users.delete_one({"_id": oid})
     return {"message": "User deleted"}
 

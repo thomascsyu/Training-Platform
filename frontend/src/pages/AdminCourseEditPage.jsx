@@ -141,7 +141,9 @@ export const AdminCourseEditPage = () => {
   const [quizDraftTitle, setQuizDraftTitle] = useState("");
   const [quizDraftQuestions, setQuizDraftQuestions] = useState([]);
   const [quizQuestionDraft, setQuizQuestionDraft] = useState(createEmptyQuizQuestion);
+  const [editingQuizId, setEditingQuizId] = useState(null);
   const [creatingQuiz, setCreatingQuiz] = useState(false);
+  const [deletingQuizId, setDeletingQuizId] = useState(null);
 
   const fetchCourse = useCallback(async () => {
     try {
@@ -306,20 +308,65 @@ export const AdminCourseEditPage = () => {
     }
     setCreatingQuiz(true);
     try {
-      await API.post("/quizzes", {
-        course_id: id,
-        title,
-        questions: quizDraftQuestions,
-      });
-      toast.success("Quiz created");
+      if (editingQuizId) {
+        await API.put(`/quizzes/${editingQuizId}`, {
+          title,
+          questions: quizDraftQuestions,
+        });
+        toast.success("Quiz updated");
+      } else {
+        await API.post("/quizzes", {
+          course_id: id,
+          title,
+          questions: quizDraftQuestions,
+        });
+        toast.success("Quiz created");
+      }
       setQuizDraftQuestions([]);
       setQuizQuestionDraft(createEmptyQuizQuestion());
-      setQuizDraftTitle(`Quiz ${(course?.quizzes?.length || 0) + 2}`);
+      setEditingQuizId(null);
+      setQuizDraftTitle(`Quiz ${(course?.quizzes?.length || 0) + (editingQuizId ? 1 : 2)}`);
       fetchCourse();
     } catch (e) {
       toast.error(formatError(e));
     } finally {
       setCreatingQuiz(false);
+    }
+  };
+
+  const handleStartEditQuiz = async (quiz) => {
+    try {
+      const { data } = await API.get(`/quizzes/${quiz.id}`);
+      setEditingQuizId(quiz.id);
+      setQuizDraftTitle(data.title || "");
+      setQuizDraftQuestions(Array.isArray(data.questions) ? data.questions : []);
+      setQuizQuestionDraft(createEmptyQuizQuestion());
+    } catch (e) {
+      toast.error(formatError(e));
+    }
+  };
+
+  const handleCancelEditQuiz = () => {
+    setEditingQuizId(null);
+    setQuizDraftQuestions([]);
+    setQuizQuestionDraft(createEmptyQuizQuestion());
+    setQuizDraftTitle(`Quiz ${(course?.quizzes?.length || 0) + 1}`);
+  };
+
+  const handleDeleteQuiz = async (quizId) => {
+    if (!window.confirm("Delete this quiz? Student attempts for this quiz will also be removed.")) return;
+    setDeletingQuizId(quizId);
+    try {
+      await API.delete(`/quizzes/${quizId}`);
+      toast.success("Quiz deleted");
+      if (editingQuizId === quizId) {
+        handleCancelEditQuiz();
+      }
+      fetchCourse();
+    } catch (e) {
+      toast.error(formatError(e));
+    } finally {
+      setDeletingQuizId(null);
     }
   };
 
@@ -807,8 +854,31 @@ export const AdminCourseEditPage = () => {
               {course.quizzes?.length > 0 ? (
                 <div className="space-y-2">
                   {course.quizzes.map((quiz, idx) => (
-                    <div key={quiz.id} className="p-3 border border-slate-200 rounded-sm">
-                      <p className="font-medium">{idx + 1}. {quiz.title}</p>
+                    <div key={quiz.id} className="p-3 border border-slate-200 rounded-sm flex items-center gap-3">
+                      <p className="font-medium flex-1">{idx + 1}. {quiz.title}</p>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="rounded-sm"
+                        onClick={() => handleStartEditQuiz(quiz)}
+                        data-testid={`edit-quiz-${quiz.id}`}
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="rounded-sm text-red-600"
+                        onClick={() => handleDeleteQuiz(quiz.id)}
+                        disabled={deletingQuizId === quiz.id}
+                        data-testid={`delete-quiz-${quiz.id}`}
+                      >
+                        {deletingQuizId === quiz.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="w-4 h-4" />
+                        )}
+                      </Button>
                     </div>
                   ))}
                 </div>
@@ -820,7 +890,16 @@ export const AdminCourseEditPage = () => {
             <Separator />
 
             <div className="space-y-3">
-              <p className="text-sm font-medium">Create multiple-choice quiz (A-E)</p>
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-sm font-medium">
+                  {editingQuizId ? "Edit multiple-choice quiz (A-E)" : "Create multiple-choice quiz (A-E)"}
+                </p>
+                {editingQuizId && (
+                  <Button variant="ghost" className="rounded-sm" onClick={handleCancelEditQuiz}>
+                    Cancel edit
+                  </Button>
+                )}
+              </div>
               <Input
                 value={quizDraftTitle}
                 onChange={(e) => setQuizDraftTitle(e.target.value)}
@@ -952,7 +1031,13 @@ export const AdminCourseEditPage = () => {
                 disabled={creatingQuiz || !quizDraftTitle.trim() || quizDraftQuestions.length === 0}
                 className="btn-primary"
               >
-                {creatingQuiz ? <Loader2 className="w-4 h-4 animate-spin" /> : "Create Quiz"}
+                {creatingQuiz ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : editingQuizId ? (
+                  "Save Quiz"
+                ) : (
+                  "Create Quiz"
+                )}
               </Button>
             </div>
           </CardContent>
