@@ -8,6 +8,7 @@ from config import LANGUAGE_NAMES, SUPPORTED_LANGUAGES, logger
 from database import db
 from db_utils import parse_object_id
 from models import TranslateCourseRequest, TranslateQuizRequest, TranslateRequest
+from translation_utils import build_translation_system_prompt
 
 
 router = APIRouter(tags=["translate"])
@@ -33,16 +34,17 @@ async def translate_text(data: TranslateRequest, request: Request):
     if data.target_language not in SUPPORTED_LANGUAGES:
         raise HTTPException(status_code=400, detail=f"Unsupported target language: {data.target_language}")
     
-    source_name = LANGUAGE_NAMES.get(data.source_language, data.source_language)
-    target_name = LANGUAGE_NAMES.get(data.target_language, data.target_language)
-    
     try:
         response = client.chat.completions.create(
             model=model,
             messages=[
                 {
                     "role": "system",
-                    "content": f"You are a professional translator. Translate the following text from {source_name} to {target_name}. Only output the translation, nothing else. Preserve formatting, line breaks, and any special characters."
+                    "content": build_translation_system_prompt(
+                        data.source_language,
+                        data.target_language,
+                        preserve_formatting=True,
+                    ),
                 },
                 {
                     "role": "user",
@@ -74,7 +76,6 @@ async def translate_course(course_id: str, data: TranslateCourseRequest, request
             raise HTTPException(status_code=400, detail=f"Unsupported language: {lang}")
     
     source_lang = course.get("language", "en")
-    source_name = LANGUAGE_NAMES.get(source_lang, source_lang)
     
     translations = {}
     
@@ -91,7 +92,12 @@ async def translate_course(course_id: str, data: TranslateCourseRequest, request
                 messages=[
                     {
                         "role": "system",
-                        "content": f"You are a professional translator specializing in educational content. Translate the following course title from {source_name} to {target_name}. Only output the translation, nothing else."
+                        "content": build_translation_system_prompt(
+                            source_lang,
+                            target_lang,
+                            role="professional translator specializing in educational content",
+                            content_label="course title",
+                        ),
                     },
                     {"role": "user", "content": course.get("title", "")}
                 ],
@@ -105,7 +111,13 @@ async def translate_course(course_id: str, data: TranslateCourseRequest, request
                 messages=[
                     {
                         "role": "system",
-                        "content": f"You are a professional translator specializing in educational content. Translate the following course description from {source_name} to {target_name}. Preserve formatting and paragraph breaks. Only output the translation, nothing else."
+                        "content": build_translation_system_prompt(
+                            source_lang,
+                            target_lang,
+                            role="professional translator specializing in educational content",
+                            content_label="course description",
+                            preserve_formatting=True,
+                        ),
                     },
                     {"role": "user", "content": course.get("description", "")}
                 ],
@@ -149,7 +161,6 @@ async def translate_quiz(quiz_id: str, data: TranslateQuizRequest, request: Requ
     # Get course language
     course = await db.courses.find_one({"_id": parse_object_id(quiz.get("course_id"), "course")})
     source_lang = course.get("language", "en") if course else "en"
-    source_name = LANGUAGE_NAMES.get(source_lang, source_lang)
     
     translations = {}
     
@@ -166,7 +177,11 @@ async def translate_quiz(quiz_id: str, data: TranslateQuizRequest, request: Requ
                 messages=[
                     {
                         "role": "system",
-                        "content": f"Translate from {source_name} to {target_name}. Only output the translation."
+                        "content": build_translation_system_prompt(
+                            source_lang,
+                            target_lang,
+                            content_label="quiz title",
+                        ),
                     },
                     {"role": "user", "content": quiz.get("title", "")}
                 ],
@@ -183,7 +198,11 @@ async def translate_quiz(quiz_id: str, data: TranslateQuizRequest, request: Requ
                     messages=[
                         {
                             "role": "system",
-                            "content": f"Translate this quiz question from {source_name} to {target_name}. Only output the translation."
+                            "content": build_translation_system_prompt(
+                                source_lang,
+                                target_lang,
+                                content_label="quiz question",
+                            ),
                         },
                         {"role": "user", "content": q.get("question", "")}
                     ],
@@ -199,7 +218,11 @@ async def translate_quiz(quiz_id: str, data: TranslateQuizRequest, request: Requ
                         messages=[
                             {
                                 "role": "system",
-                                "content": f"Translate from {source_name} to {target_name}. Only output the translation."
+                                "content": build_translation_system_prompt(
+                                    source_lang,
+                                    target_lang,
+                                    content_label="quiz answer option",
+                                ),
                             },
                             {"role": "user", "content": opt}
                         ],
@@ -250,7 +273,6 @@ async def create_translated_course(course_id: str, target_language: str, request
         raise HTTPException(status_code=404, detail="Course not found")
     
     source_lang = course.get("language", "en")
-    source_name = LANGUAGE_NAMES.get(source_lang, source_lang)
     target_name = LANGUAGE_NAMES.get(target_language, target_language)
     
     # Check if translation already exists in stored translations
@@ -265,7 +287,11 @@ async def create_translated_course(course_id: str, target_language: str, request
             messages=[
                 {
                     "role": "system",
-                    "content": f"Translate this course title from {source_name} to {target_name}. Only output the translation."
+                    "content": build_translation_system_prompt(
+                        source_lang,
+                        target_language,
+                        content_label="course title",
+                    ),
                 },
                 {"role": "user", "content": course.get("title", "")}
             ],
@@ -279,7 +305,12 @@ async def create_translated_course(course_id: str, target_language: str, request
             messages=[
                 {
                     "role": "system",
-                    "content": f"Translate this course description from {source_name} to {target_name}. Preserve formatting. Only output the translation."
+                    "content": build_translation_system_prompt(
+                        source_lang,
+                        target_language,
+                        content_label="course description",
+                        preserve_formatting=True,
+                    ),
                 },
                 {"role": "user", "content": course.get("description", "")}
             ],
@@ -323,7 +354,11 @@ async def create_translated_course(course_id: str, target_language: str, request
             messages=[
                 {
                     "role": "system",
-                    "content": f"Translate from {source_name} to {target_name}. Only output the translation."
+                    "content": build_translation_system_prompt(
+                        source_lang,
+                        target_language,
+                        content_label="lesson title",
+                    ),
                 },
                 {"role": "user", "content": lesson.get("title", "")}
             ],
@@ -334,7 +369,11 @@ async def create_translated_course(course_id: str, target_language: str, request
             messages=[
                 {
                     "role": "system",
-                    "content": f"Translate from {source_name} to {target_name}. Only output the translation."
+                    "content": build_translation_system_prompt(
+                        source_lang,
+                        target_language,
+                        content_label="lesson description",
+                    ),
                 },
                 {"role": "user", "content": lesson.get("description", "")}
             ],

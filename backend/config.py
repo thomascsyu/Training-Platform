@@ -174,7 +174,7 @@ else:
 SUPPORTED_LANGUAGES = ["en", "zh-TW", "zh-CN", "ja", "ko"]
 LANGUAGE_NAMES = {
     "en": "English",
-    "zh-TW": "繁體中文",
+    "zh-TW": "香港繁體中文",
     "zh-CN": "简体中文",
     "ja": "日本語",
     "ko": "한국어",
