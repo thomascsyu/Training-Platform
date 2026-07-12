@@ -137,6 +137,8 @@ export default {
       passingScore: "合格スコア",
       freeCourse: "無料コース",
       privateCourse: "非公開コース",
+      courseType: "コースタイプ",
+      paymentRequired: "支払い必須",
       language: "言語",
       category: "カテゴリー",
       filter: "フィルター",
