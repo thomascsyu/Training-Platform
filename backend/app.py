@@ -25,6 +25,7 @@ async def initialize_database():
     await db.users.create_index("email", unique=True)
     await db.users.create_index("password_reset_token_hash")
     await db.companies.create_index("name", unique=True)
+    await db.certificate_templates.create_index("name", unique=True)
     await db.users.create_index("company_id")
     await db.courses.create_index("company_ids")
     await db.enrollments.create_index([("course_id", 1), ("user_id", 1)])

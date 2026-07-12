@@ -16,7 +16,8 @@ export default {
       manageGroups: "Manage Groups",
       bulkEnroll: "Bulk Enroll",
       groupProgress: "Group Progress",
-      aiSettings: "AI API Keys"
+      aiSettings: "AI API Keys",
+      certificateTemplates: "Certificate Templates"
     },
     
     // Landing Page
@@ -203,6 +204,29 @@ export default {
       noCertificates: "No certificates yet. Complete a course to earn your first certificate!",
       download: "Download",
       issuedOn: "Issued"
+    },
+
+    // Certificate Templates
+    certificateTemplates: {
+      manageTemplates: "Certificate Templates",
+      description: "Create and manage printable certificate templates for your platform.",
+      name: "Template Name",
+      html: "HTML Template",
+      primaryColor: "Primary Color",
+      secondaryColor: "Secondary Color",
+      default: "Default",
+      createTemplate: "Create Template",
+      editTemplate: "Edit Template",
+      generateDefault: "Generate Default HTML",
+      preview: "Preview",
+      noTemplates: "No certificate templates yet. Create one to get started.",
+      save: "Save Template",
+      nameRequired: "Template name is required.",
+      deleteConfirm: "Are you sure you want to delete this certificate template?",
+      created: "Template created.",
+      updated: "Template updated.",
+      deleted: "Template deleted.",
+      generated: "Default HTML generated."
     },
     
     // Chat

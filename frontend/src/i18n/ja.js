@@ -16,7 +16,8 @@ export default {
       manageGroups: "グループ管理",
       bulkEnroll: "一括登録",
       groupProgress: "グループ進捗",
-      aiSettings: "AI APIキー"
+      aiSettings: "AI APIキー",
+      certificateTemplates: "修了証テンプレート"
     },
     
     // Landing Page
@@ -203,6 +204,29 @@ export default {
       noCertificates: "まだ修了証がありません。コースを完了して最初の修了証を取得しましょう！",
       download: "ダウンロード",
       issuedOn: "発行日"
+    },
+
+    // Certificate Templates
+    certificateTemplates: {
+      manageTemplates: "修了証テンプレート",
+      description: "印刷可能な修了証テンプレートを作成・管理します。",
+      name: "テンプレート名",
+      html: "HTMLテンプレート",
+      primaryColor: "プライマリカラー",
+      secondaryColor: "セカンダリカラー",
+      default: "デフォルト",
+      createTemplate: "テンプレート作成",
+      editTemplate: "テンプレート編集",
+      generateDefault: "デフォルトHTML生成",
+      preview: "プレビュー",
+      noTemplates: "修了証テンプレートはまだありません。作成して始めましょう。",
+      save: "テンプレート保存",
+      nameRequired: "テンプレート名は必須です。",
+      deleteConfirm: "この修了証テンプレートを削除してもよろしいですか？",
+      created: "テンプレートを作成しました。",
+      updated: "テンプレートを更新しました。",
+      deleted: "テンプレートを削除しました。",
+      generated: "デフォルトHTMLを生成しました。"
     },
     
     // Chat

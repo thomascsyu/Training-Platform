@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Award, Download } from "lucide-react";
+import { Award, Download, Eye } from "lucide-react";
 import { API, formatError } from "@/lib/api";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import PageHeader from "@/components/enhanced/PageHeader";
@@ -42,6 +42,17 @@ export const CertificatesPage = () => {
     }
   };
 
+  const viewCertificateHtml = async (certId) => {
+    try {
+      const response = await API.get(`/certificates/${certId}/html`, { responseType: "blob" });
+      const url = window.URL.createObjectURL(new Blob([response.data], { type: "text/html" }));
+      window.open(url, "_blank", "noopener,noreferrer");
+      window.setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+    } catch (e) {
+      toast.error(formatError(e));
+    }
+  };
+
   return (
     <DashboardLayout>
       <div className="p-6" data-testid="certificates-page">
@@ -75,14 +86,24 @@ export const CertificatesPage = () => {
                         Issued: {new Date(cert.issued_at).toLocaleDateString()}
                       </p>
                     </div>
-                    <Button
-                      variant="outline"
-                      className="rounded-sm"
-                      onClick={() => downloadCertificate(cert.id, cert.certificate_id)}
-                      data-testid={`download-cert-${cert.id}`}
-                    >
-                      <Download className="w-4 h-4 mr-2" /> Download PDF
-                    </Button>
+                    <div className="flex flex-wrap gap-2 justify-end">
+                      <Button
+                        variant="outline"
+                        className="rounded-sm"
+                        onClick={() => viewCertificateHtml(cert.id)}
+                        data-testid={`view-cert-${cert.id}`}
+                      >
+                        <Eye className="w-4 h-4 mr-2" /> View
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="rounded-sm"
+                        onClick={() => downloadCertificate(cert.id, cert.certificate_id)}
+                        data-testid={`download-cert-${cert.id}`}
+                      >
+                        <Download className="w-4 h-4 mr-2" /> Download PDF
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
