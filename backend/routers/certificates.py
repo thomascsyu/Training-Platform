@@ -1,3 +1,6 @@
+import uuid
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, HTTPException, Request
 from starlette.responses import Response
 
@@ -5,9 +8,25 @@ from auth_utils import get_current_user, require_admin_or_manager, require_roles
 from certificate_pdf import generate_certificate_pdf
 from database import db
 from db_utils import parse_object_id
-from models import CertificateCustomize
+from email_service import send_certificate_email
+from models import CertificateCreate, CertificateCustomize
 
 router = APIRouter(tags=["certificates"])
+
+
+def _serialize_certificate(cert: dict, fallback_course_title: str | None = None) -> dict:
+    return {
+        "id": str(cert["_id"]),
+        "certificate_id": cert.get("certificate_id"),
+        "course_id": cert["course_id"],
+        "course_title": cert.get("course_title") or fallback_course_title,
+        "user_name": cert.get("user_name"),
+        "score": cert.get("score"),
+        "template": cert.get("template"),
+        "primary_color": cert.get("primary_color"),
+        "secondary_color": cert.get("secondary_color"),
+        "issued_at": cert.get("issued_at"),
+    }
 
 
 @router.get("/certificates/my")
@@ -29,21 +48,80 @@ async def get_my_certificates(request: Request):
     certificates = []
     for cert in certs:
         course = course_map.get(cert.get("course_id", ""))
-        certificates.append({
-            "id": str(cert["_id"]),
-            "certificate_id": cert.get("certificate_id"),
-            "course_id": cert["course_id"],
-            "course_title": cert.get("course_title") or (
-                course.get("title") if course else None
-            ),
-            "user_name": cert.get("user_name"),
-            "score": cert.get("score"),
-            "template": cert.get("template"),
-            "primary_color": cert.get("primary_color"),
-            "secondary_color": cert.get("secondary_color"),
-            "issued_at": cert.get("issued_at"),
-        })
+        certificates.append(
+            _serialize_certificate(
+                cert,
+                fallback_course_title=course.get("title") if course else None,
+            )
+        )
     return certificates
+
+
+@router.post("/certificates")
+async def create_certificate(data: CertificateCreate, request: Request):
+    actor = await require_admin_or_manager(request)
+
+    course = await db.courses.find_one(
+        {"_id": parse_object_id(data.course_id, "course")},
+        {"_id": 1, "title": 1, "company_ids": 1},
+    )
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+
+    target_user = await db.users.find_one(
+        {"_id": parse_object_id(data.user_id, "user")},
+        {"_id": 1, "name": 1, "email": 1, "role": 1, "company_id": 1},
+    )
+    if not target_user or target_user.get("role") != "student":
+        raise HTTPException(status_code=404, detail="Student not found")
+
+    if actor["role"] == "client_manager":
+        company_id = actor["company_id"]
+        if target_user.get("company_id") != company_id:
+            raise HTTPException(
+                status_code=403,
+                detail="Not authorized to create certificates for this student",
+            )
+        course_company_ids = course.get("company_ids", [])
+        if not course_company_ids or company_id not in course_company_ids:
+            raise HTTPException(
+                status_code=403,
+                detail="Not authorized to create certificates for this course",
+            )
+
+    existing_cert = await db.certificates.find_one({
+        "course_id": data.course_id,
+        "user_id": data.user_id,
+    })
+    if existing_cert:
+        raise HTTPException(
+            status_code=409,
+            detail="Certificate already exists for this student and course",
+        )
+
+    cert_doc = {
+        "certificate_id": str(uuid.uuid4())[:8].upper(),
+        "course_id": data.course_id,
+        "course_title": course.get("title") or "Course",
+        "user_id": data.user_id,
+        "user_name": target_user.get("name"),
+        "score": data.score,
+        "template": data.template,
+        "primary_color": data.primary_color,
+        "secondary_color": data.secondary_color,
+        "issued_at": datetime.now(timezone.utc).isoformat(),
+    }
+    result = await db.certificates.insert_one(cert_doc)
+    cert_doc["_id"] = result.inserted_id
+
+    await send_certificate_email(
+        target_user["email"],
+        target_user["name"],
+        cert_doc["course_title"],
+        cert_doc["certificate_id"],
+        data.score,
+    )
+    return _serialize_certificate(cert_doc)
 
 
 @router.get("/certificates/{certificate_id}/pdf")
@@ -98,18 +176,7 @@ async def get_certificate(certificate_id: str, request: Request):
         raise HTTPException(
             status_code=403, detail="Not authorized to view this certificate"
         )
-    return {
-        "id": str(cert["_id"]),
-        "certificate_id": cert.get("certificate_id"),
-        "course_id": cert["course_id"],
-        "course_title": cert.get("course_title"),
-        "user_name": cert.get("user_name"),
-        "score": cert.get("score"),
-        "template": cert.get("template"),
-        "primary_color": cert.get("primary_color"),
-        "secondary_color": cert.get("secondary_color"),
-        "issued_at": cert.get("issued_at"),
-    }
+    return _serialize_certificate(cert)
 
 
 @router.put("/certificates/{certificate_id}/customize")

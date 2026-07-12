@@ -1,0 +1,164 @@
+from unittest.mock import AsyncMock, MagicMock
+
+import pytest
+from bson import ObjectId
+from fastapi import HTTPException
+
+from models import CertificateCreate
+from routers import certificates as certificates_router
+
+COURSE_A = "507f1f77bcf86cd7994390c0"
+STUDENT_A = "507f1f77bcf86cd7994390d0"
+STUDENT_B = "507f1f77bcf86cd7994390e0"
+COMPANY_A = "507f1f77bcf86cd7994390a0"
+COMPANY_B = "507f1f77bcf86cd7994390b0"
+
+
+async def _fake_admin(_request):
+    return {"id": "admin-id", "role": "admin", "company_id": None}
+
+
+async def _fake_manager_a(_request):
+    return {"id": "manager-id", "role": "client_manager", "company_id": COMPANY_A}
+
+
+def _build_mock_db():
+    mock_db = MagicMock()
+    mock_db.courses = MagicMock()
+    mock_db.users = MagicMock()
+    mock_db.certificates = MagicMock()
+    mock_db.courses.find_one = AsyncMock()
+    mock_db.users.find_one = AsyncMock()
+    mock_db.certificates.find_one = AsyncMock()
+    mock_db.certificates.insert_one = AsyncMock()
+    return mock_db
+
+
+@pytest.mark.asyncio
+async def test_create_certificate_as_admin(monkeypatch):
+    mock_db = _build_mock_db()
+    mock_db.courses.find_one.return_value = {
+        "_id": ObjectId(COURSE_A),
+        "title": "Security Training",
+        "company_ids": [COMPANY_A],
+    }
+    mock_db.users.find_one.return_value = {
+        "_id": ObjectId(STUDENT_A),
+        "name": "Student A",
+        "email": "student.a@example.com",
+        "role": "student",
+        "company_id": COMPANY_A,
+    }
+    mock_db.certificates.find_one.return_value = None
+    mock_db.certificates.insert_one.return_value = MagicMock(inserted_id=ObjectId())
+
+    send_email = AsyncMock()
+    monkeypatch.setattr(certificates_router, "db", mock_db)
+    monkeypatch.setattr(certificates_router, "require_admin_or_manager", _fake_admin)
+    monkeypatch.setattr(certificates_router, "send_certificate_email", send_email)
+
+    response = await certificates_router.create_certificate(
+        CertificateCreate(course_id=COURSE_A, user_id=STUDENT_A, score=92),
+        request=object(),
+    )
+
+    assert response["course_id"] == COURSE_A
+    assert response["user_name"] == "Student A"
+    assert response["score"] == 92
+    assert response["template"] == "default"
+    assert len(response["certificate_id"]) == 8
+    send_email.assert_awaited_once()
+    inserted_doc = mock_db.certificates.insert_one.await_args.args[0]
+    assert inserted_doc["course_title"] == "Security Training"
+    assert inserted_doc["user_id"] == STUDENT_A
+
+
+@pytest.mark.asyncio
+async def test_create_certificate_rejects_duplicate(monkeypatch):
+    mock_db = _build_mock_db()
+    mock_db.courses.find_one.return_value = {
+        "_id": ObjectId(COURSE_A),
+        "title": "Security Training",
+        "company_ids": [COMPANY_A],
+    }
+    mock_db.users.find_one.return_value = {
+        "_id": ObjectId(STUDENT_A),
+        "name": "Student A",
+        "email": "student.a@example.com",
+        "role": "student",
+        "company_id": COMPANY_A,
+    }
+    mock_db.certificates.find_one.return_value = {"_id": ObjectId()}
+
+    monkeypatch.setattr(certificates_router, "db", mock_db)
+    monkeypatch.setattr(certificates_router, "require_admin_or_manager", _fake_admin)
+    monkeypatch.setattr(certificates_router, "send_certificate_email", AsyncMock())
+
+    with pytest.raises(HTTPException) as exc_info:
+        await certificates_router.create_certificate(
+            CertificateCreate(course_id=COURSE_A, user_id=STUDENT_A, score=92),
+            request=object(),
+        )
+
+    assert exc_info.value.status_code == 409
+    mock_db.certificates.insert_one.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_manager_cannot_create_certificate_for_other_company_student(monkeypatch):
+    mock_db = _build_mock_db()
+    mock_db.courses.find_one.return_value = {
+        "_id": ObjectId(COURSE_A),
+        "title": "Security Training",
+        "company_ids": [COMPANY_A],
+    }
+    mock_db.users.find_one.return_value = {
+        "_id": ObjectId(STUDENT_B),
+        "name": "Student B",
+        "email": "student.b@example.com",
+        "role": "student",
+        "company_id": COMPANY_B,
+    }
+
+    monkeypatch.setattr(certificates_router, "db", mock_db)
+    monkeypatch.setattr(certificates_router, "require_admin_or_manager", _fake_manager_a)
+    monkeypatch.setattr(certificates_router, "send_certificate_email", AsyncMock())
+
+    with pytest.raises(HTTPException) as exc_info:
+        await certificates_router.create_certificate(
+            CertificateCreate(course_id=COURSE_A, user_id=STUDENT_B, score=88),
+            request=object(),
+        )
+
+    assert exc_info.value.status_code == 403
+    mock_db.certificates.insert_one.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_manager_cannot_create_certificate_for_unassigned_course(monkeypatch):
+    mock_db = _build_mock_db()
+    mock_db.courses.find_one.return_value = {
+        "_id": ObjectId(COURSE_A),
+        "title": "Security Training",
+        "company_ids": [COMPANY_B],
+    }
+    mock_db.users.find_one.return_value = {
+        "_id": ObjectId(STUDENT_A),
+        "name": "Student A",
+        "email": "student.a@example.com",
+        "role": "student",
+        "company_id": COMPANY_A,
+    }
+
+    monkeypatch.setattr(certificates_router, "db", mock_db)
+    monkeypatch.setattr(certificates_router, "require_admin_or_manager", _fake_manager_a)
+    monkeypatch.setattr(certificates_router, "send_certificate_email", AsyncMock())
+
+    with pytest.raises(HTTPException) as exc_info:
+        await certificates_router.create_certificate(
+            CertificateCreate(course_id=COURSE_A, user_id=STUDENT_A, score=90),
+            request=object(),
+        )
+
+    assert exc_info.value.status_code == 403
+    mock_db.certificates.insert_one.assert_not_awaited()

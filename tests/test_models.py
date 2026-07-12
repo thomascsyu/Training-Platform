@@ -1,7 +1,14 @@
 import pytest
 from pydantic import ValidationError
 
-from models import CompanyCreate, CompanyUpdate, CourseCreate, CourseUpdate, UserCreate
+from models import (
+    CertificateCreate,
+    CompanyCreate,
+    CompanyUpdate,
+    CourseCreate,
+    CourseUpdate,
+    UserCreate,
+)
 
 
 def test_user_create_password_min_length():
@@ -49,3 +56,19 @@ def test_company_create_defaults_to_no_assigned_trainings():
 def test_company_update_accepts_training_assignments():
     update = CompanyUpdate(training_ids=["507f1f77bcf86cd799439011"])
     assert update.training_ids == ["507f1f77bcf86cd799439011"]
+
+
+def test_certificate_create_score_bounds():
+    with pytest.raises(ValidationError):
+        CertificateCreate(
+            course_id="507f1f77bcf86cd799439011",
+            user_id="507f1f77bcf86cd799439012",
+            score=101,
+        )
+
+    cert = CertificateCreate(
+        course_id="507f1f77bcf86cd799439011",
+        user_id="507f1f77bcf86cd799439012",
+        score=95,
+    )
+    assert cert.score == 95
