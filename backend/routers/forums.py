@@ -16,9 +16,20 @@ async def create_forum_post(data: ForumPostCreate, request: Request):
     user = await get_current_user(request)
     await require_enrollment(user["id"], data.course_id)
 
+    content = data.content.strip()
+    if not content:
+        raise HTTPException(status_code=400, detail="Post content is required")
+
+    if data.parent_id:
+        parent = await db.forum_posts.find_one({"_id": parse_object_id(data.parent_id, "post")})
+        if not parent or parent.get("course_id") != data.course_id:
+            raise HTTPException(status_code=404, detail="Parent post not found")
+        if parent.get("parent_id"):
+            raise HTTPException(status_code=400, detail="Replies can only be added to top-level posts")
+
     post_doc = {
         "course_id": data.course_id,
-        "content": data.content,
+        "content": content,
         "parent_id": data.parent_id,
         "user_id": user["id"],
         "user_name": user["name"],

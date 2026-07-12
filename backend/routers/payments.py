@@ -149,7 +149,7 @@ async def stripe_webhook(request: Request):
         raise HTTPException(status_code=400, detail="Invalid signature") from e
     except Exception as e:
         logger.error("Webhook error: %s", e)
-        return {"status": "error"}
+        raise HTTPException(status_code=500, detail="Webhook processing failed") from e
 
 
 @router.get("/payments/transactions")

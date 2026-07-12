@@ -126,6 +126,11 @@ class QuizCreate(BaseModel):
     questions: List[Dict[str, Any]]
 
 
+class QuizUpdate(BaseModel):
+    title: Optional[str] = None
+    questions: Optional[List[Dict[str, Any]]] = None
+
+
 class QuizAttemptCreate(BaseModel):
     quiz_id: str
     answers: List[int]

@@ -9,7 +9,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 
 export const QuizPage = () => {
   const { id } = useParams();
-  const { t } = useLanguage();
+  const { lang, t } = useLanguage();
   const navigate = useNavigate();
   const [quiz, setQuiz] = useState(null);
   const [answers, setAnswers] = useState([]);
@@ -19,7 +19,7 @@ export const QuizPage = () => {
 
   const fetchQuiz = useCallback(async () => {
     try {
-      const { data } = await API.get(`/quizzes/${id}`);
+      const { data } = await API.get(`/quizzes/${id}`, { params: { lang } });
       setQuiz(data);
       setAnswers(new Array(data.questions?.length || 0).fill(-1));
     } catch (e) {
@@ -28,7 +28,7 @@ export const QuizPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [id, navigate]);
+  }, [id, lang, navigate]);
 
   useEffect(() => {
     fetchQuiz();

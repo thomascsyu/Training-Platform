@@ -46,6 +46,21 @@ async def _get_user_company_id(user: Optional[dict]) -> Optional[str]:
     return user_doc.get("company_id") if user_doc else None
 
 
+def _apply_course_translation(course_data: dict, lang: Optional[str]) -> dict:
+    if not lang:
+        return course_data
+    translated = course_data.get("translations", {}).get(lang)
+    if not translated or translated.get("error"):
+        return course_data
+    course_data = dict(course_data)
+    course_data.update({
+        "title": translated.get("title", course_data.get("title")),
+        "description": translated.get("description", course_data.get("description")),
+        "display_language": lang,
+    })
+    return course_data
+
+
 @router.post("/courses")
 async def create_course(data: CourseCreate, request: Request):
     user = await require_roles("admin")(request)
@@ -105,6 +120,7 @@ async def get_courses(
     request: Request,
     include_private: bool = False,
     language: Optional[str] = None,
+    lang: Optional[str] = None,
     search: Optional[str] = None,
     category: Optional[str] = None,
 ):
@@ -153,18 +169,19 @@ async def get_courses(
             "is_private": 1,
             "language": 1,
             "category": 1,
+            "translations": 1,
             "company_ids": 1,
             "created_at": 1,
         },
     ).to_list(100)
-    return [
-        {"id": str(c["_id"]), **{k: v for k, v in c.items() if k != "_id"}}
-        for c in courses
-    ]
+    return [_apply_course_translation(
+        {"id": str(c["_id"]), **{k: v for k, v in c.items() if k != "_id"}},
+        lang,
+    ) for c in courses]
 
 
 @router.get("/courses/{course_id}")
-async def get_course(course_id: str, request: Request):
+async def get_course(course_id: str, request: Request, lang: Optional[str] = None):
     course = await db.courses.find_one(
         {"_id": parse_object_id(course_id, "course")}
     )
@@ -223,21 +240,29 @@ async def get_course(course_id: str, request: Request):
     ).sort("order", 1).to_list(100)
 
     quizzes = await db.quizzes.find(
-        {"course_id": course_id}, {"_id": 1, "title": 1}
+        {"course_id": course_id}, {"_id": 1, "title": 1, "translations": 1}
     ).to_list(100)
 
-    return {
+    course_data = _apply_course_translation({
         "id": str(course["_id"]),
         **{k: v for k, v in course.items() if k != "_id"},
         "lessons": [
             {"id": str(l["_id"]), **{k: v for k, v in l.items() if k != "_id"}}
             for l in lessons
         ],
-        "quizzes": [
-            {"id": str(q["_id"]), **{k: v for k, v in q.items() if k != "_id"}}
-            for q in quizzes
-        ],
-    }
+        "quizzes": [],
+    }, lang)
+    for q in quizzes:
+        quiz_data = {"id": str(q["_id"]), "title": q.get("title")}
+        if lang:
+            translated = q.get("translations", {}).get(lang)
+            if translated and not translated.get("error"):
+                quiz_data.update({
+                    "title": translated.get("title", quiz_data.get("title")),
+                    "display_language": lang,
+                })
+        course_data["quizzes"].append(quiz_data)
+    return course_data
 
 
 @router.put("/courses/{course_id}")

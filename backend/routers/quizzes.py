@@ -8,7 +8,7 @@ from certificate_utils import apply_template_to_certificate, resolve_certificate
 from database import db
 from db_utils import parse_object_id
 from email_service import send_certificate_email, send_progress_email
-from models import QuizAttemptCreate, QuizCreate
+from models import QuizAttemptCreate, QuizCreate, QuizUpdate
 from progress_utils import require_enrollment
 
 router = APIRouter(tags=["quizzes"])
@@ -31,7 +31,7 @@ async def create_quiz(data: QuizCreate, request: Request):
 
 
 @router.get("/quizzes/{quiz_id}")
-async def get_quiz(quiz_id: str, request: Request):
+async def get_quiz(quiz_id: str, request: Request, lang: str | None = None):
     user = await get_current_user(request)
     quiz = await db.quizzes.find_one({"_id": parse_object_id(quiz_id, "quiz")})
     if not quiz:
@@ -44,10 +44,50 @@ async def get_quiz(quiz_id: str, request: Request):
         "id": str(quiz["_id"]),
         **{k: v for k, v in quiz.items() if k != "_id"},
     }
+    if lang:
+        translated = quiz.get("translations", {}).get(lang)
+        if translated and not translated.get("error"):
+            quiz_data.update({
+                "title": translated.get("title", quiz_data.get("title")),
+                "questions": translated.get("questions", quiz_data.get("questions", [])),
+                "display_language": lang,
+            })
     if user["role"] == "student":
         for q in quiz_data.get("questions", []):
             q.pop("correct_answer", None)
     return quiz_data
+
+
+@router.put("/quizzes/{quiz_id}")
+async def update_quiz(quiz_id: str, data: QuizUpdate, request: Request):
+    await require_roles("admin")(request)
+    update_data = {
+        k: v for k, v in data.model_dump(exclude_unset=True).items() if v is not None
+    }
+    if not update_data:
+        raise HTTPException(status_code=400, detail="No fields to update")
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    if "questions" in update_data:
+        update_data["translations"] = {}
+
+    result = await db.quizzes.update_one(
+        {"_id": parse_object_id(quiz_id, "quiz")},
+        {"$set": update_data},
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Quiz not found")
+    return {"message": "Quiz updated"}
+
+
+@router.delete("/quizzes/{quiz_id}")
+async def delete_quiz(quiz_id: str, request: Request):
+    await require_roles("admin")(request)
+    oid = parse_object_id(quiz_id, "quiz")
+    result = await db.quizzes.delete_one({"_id": oid})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Quiz not found")
+    await db.quiz_attempts.delete_many({"quiz_id": quiz_id})
+    return {"message": "Quiz deleted"}
 
 
 @router.post("/quizzes/{quiz_id}/submit")
