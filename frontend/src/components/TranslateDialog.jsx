@@ -77,7 +77,7 @@ export const TranslateDialog = ({ courseId, courseTitle, onTranslated }) => {
             AI Auto-Translate
           </DialogTitle>
           <DialogDescription>
-            Create a translated version of "{courseTitle}" using Deepseek AI
+            Create a Hong Kong Traditional Chinese version of "{courseTitle}" using Deepseek AI (e.g. Audit → 審核, Quality → 品質)
           </DialogDescription>
         </DialogHeader>
         

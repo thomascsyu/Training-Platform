@@ -14,7 +14,7 @@ export const translations = {
 
 export const languageNames = {
   en: "English",
-  "zh-TW": "繁體中文",
+  "zh-TW": "香港繁體中文",
   "zh-CN": "简体中文",
   ja: "日本語",
   ko: "한국어",
@@ -22,7 +22,7 @@ export const languageNames = {
 
 export const uiLanguages = [
   { value: "en", label: "English" },
-  { value: "zh-TW", label: "繁體中文" },
+  { value: "zh-TW", label: "香港繁體中文" },
   { value: "zh-CN", label: "简体中文" },
   { value: "ja", label: "日本語" },
   { value: "ko", label: "한국어" },
@@ -32,7 +32,7 @@ export const UI_LANGUAGES = uiLanguages.map(({ value }) => value);
 
 export const courseLanguages = [
   { value: "en", label: "English" },
-  { value: "zh-TW", label: "繁體中文 (Traditional Chinese)" },
+  { value: "zh-TW", label: "香港繁體中文 (Hong Kong Traditional Chinese)" },
   { value: "zh-CN", label: "简体中文 (Simplified Chinese)" },
   { value: "ja", label: "日本語 (Japanese)" },
   { value: "ko", label: "한국어 (Korean)" },
