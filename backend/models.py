@@ -285,3 +285,21 @@ class CertificateTemplateRender(BaseModel):
         if not re.match(r"^#[0-9A-Fa-f]{6}$", value):
             raise ValueError("Color must be a valid 6-digit hex code")
         return value.lower()
+
+
+class EmailNotificationEventUpdate(BaseModel):
+    enabled: Optional[bool] = None
+    subject: Optional[str] = Field(default=None, min_length=1, max_length=200)
+    html_content: Optional[str] = Field(default=None, min_length=1)
+    text_content: Optional[str] = None
+    inactivity_days: Optional[int] = Field(default=None, ge=1, le=365)
+
+
+class EmailNotificationSettingsUpdate(BaseModel):
+    events: Dict[str, EmailNotificationEventUpdate]
+
+
+class EmailNotificationTestRequest(BaseModel):
+    event_key: str
+    email: EmailStr
+    name: str = "Test Learner"
