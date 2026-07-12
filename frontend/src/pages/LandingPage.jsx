@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -24,11 +24,7 @@ export const LandingPage = () => {
   const navigate = useNavigate();
   const [courses, setCourses] = useState([]);
 
-  useEffect(() => {
-    fetchCourses();
-  }, [lang]);
-
-  const fetchCourses = async () => {
+  const fetchCourses = useCallback(async () => {
     try {
       const { data } = await API.get("/courses", {
         params: { paginate: true, limit: 6, skip: 0, lang },
@@ -37,7 +33,11 @@ export const LandingPage = () => {
     } catch (e) {
       console.error(e);
     }
-  };
+  }, [lang]);
+
+  useEffect(() => {
+    fetchCourses();
+  }, [fetchCourses]);
 
   return (
     <div className="min-h-screen bg-[#F4F5F7]">
