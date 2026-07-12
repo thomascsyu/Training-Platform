@@ -49,7 +49,7 @@ const LessonVideoPlayer = ({ lesson, embedUrl, progress, onProgress }) => {
   useEffect(() => {
     progressRef.current = progress;
     lastSentRef.current = progress?.watch_percent || 0;
-  }, [lesson?.id, progress?.watch_percent]);
+  }, [lesson?.id, progress]);
 
   useEffect(() => {
     if (!lesson?.id || !embedUrl || !iframeRef.current) {
