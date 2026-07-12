@@ -121,13 +121,13 @@ Bind the **frontend** domain to the `frontend` service. Bind the **API** domain 
 
 ## Overview
 
-LearnHub is a full-featured LMS for creating, managing, and delivering courses. Organizations can run paid or free programs, track group progress, and issue certificates on quiz completion.
+LearnHub is a full-featured LMS for creating, managing, and delivering courses. Organizations can run paid or free programs, track group progress, and issue certificates after full completion requirements are met.
 
 | Capability | Summary |
 |------------|---------|
 | Courses & lessons | YouTube/Vimeo embeds, materials, private courses |
 | Assessments | Multiple-choice quizzes, configurable pass threshold |
-| Credentials | Auto-generated certificates on pass |
+| Credentials | Auto-generated certificates after quiz + lesson completion |
 | Commerce | Stripe checkout + webhooks |
 | AI | Deepseek chatbot + course/quiz translation |
 | Comms | Brevo emails (enrollment, quiz progress, certificate) |
@@ -141,14 +141,15 @@ LearnHub is a full-featured LMS for creating, managing, and delivering courses. 
 ┌─────────────────────────────────────────────────────────────────┐
 │                         CLIENT (React SPA)                        │
 │  Landing · Auth · Dashboards · Course player · Quiz · Certs      │
-│  i18n: EN + 繁中 (partial — see Internationalization)            │
+│  i18n: EN + 繁中 + 简中 + 日本語 + 한국어                         │
 └───────────────────────────────┬─────────────────────────────────┘
                                 │ HTTPS + cookies (JWT)
                                 ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │                      API (FastAPI + Motor)                        │
 │  Auth · Courses · Quizzes · Enrollments · Payments · Groups      │
-│  Forums · Chat · Translate · Certificates · Stats              │
+│  Forums · Chat · Translate · Certificates · Users · Stats       │
+│  Companies · Uploads · AI settings · Email notifications        │
 └───────────────────────────────┬─────────────────────────────────┘
                                 │
         ┌───────────────────────┼───────────────────────┐
@@ -167,7 +168,7 @@ LearnHub is a full-featured LMS for creating, managing, and delivering courses. 
 | `server.py` | Uvicorn entry point |
 | `app.py` | App factory, CORS, lifespan, indexes, admin seed |
 | `routes.py` | Aggregates routers under `/api` |
-| `routers/` | Domain route modules (`auth`, `courses`, `lessons`, `quizzes`, `enrollments`, `groups`, `certificates`, `forums`, `chat`, `translate`, `payments`, `users`, `stats`, `root`) |
+| `routers/` | Domain route modules (`auth`, `courses`, `lessons`, `quizzes`, `enrollments`, `groups`, `certificates`, `certificate_templates`, `forums`, `chat`, `translate`, `payments`, `users`, `companies`, `uploads`, `ai_settings`, `email_notifications`, `stats`, `progress`, `root`) |
 | `clients.py` | Shared Deepseek + Stripe client init |
 | `course_utils.py` | Course cascade-delete helpers |
 | `config.py` | Environment configuration |
@@ -185,7 +186,7 @@ LearnHub is a full-featured LMS for creating, managing, and delivering courses. 
 | `src/contexts/` | Auth and language providers |
 | `src/components/` | Shared UI (guards, language switcher) |
 | `src/i18n.js` | UI strings (EN, 繁中, 简中, 日本語, 한국어) |
-| `src/pages/` | Extracted pages (`DashboardLayout`, `AdminCourseEditPage`) |
+| `src/pages/` | App pages (public + protected), including admin management pages, `ProfilePage`, and `CertificateVerifyPage` |
 
 See [frontend/README.md](frontend/README.md) for frontend-specific setup.
 
@@ -211,7 +212,7 @@ See [frontend/README.md](frontend/README.md) for frontend-specific setup.
 
 | Role | Capabilities |
 |------|--------------|
-| **Admin** | Courses, quizzes, users/roles, bulk enroll, analytics, AI translate, certificate styling |
+| **Admin** | Courses, quizzes, users/roles, companies, bulk enroll, analytics, AI settings, email notification settings, payments, certificate styling/templates |
 | **Client manager** | Enrollments, group progress dashboards (assigned by admin only) |
 | **Student** | Browse, enroll (free/paid), quiz, certificates, AI chat, forums |
 
@@ -267,7 +268,7 @@ Base path: `/api`
 |--------|----------|--------|
 | POST | `/certificates` | Admin, client manager |
 | GET | `/certificates/my` | Owner |
-| GET | `/certificates/verify/{certificate_id}` | Public verification endpoint |
+| GET | `/certificates/verify/{certificate_code}` | Public verification endpoint |
 | GET | `/certificates/{id}` | Owner, admin, or client manager |
 | GET | `/certificates/{id}/pdf` | Owner, admin, or client manager — PDF download |
 | PUT | `/certificates/{id}/customize` | Admin |
@@ -292,8 +293,12 @@ Set `apply_to_course: true` to apply styling to all certificates for that certif
 | Translation | `POST /translate/text`, `/translate/course/{id}`, `/translate/quiz/{id}` |
 | Chat | `POST /chat`, `GET /chat/{course_id}/history` |
 | Forums | `GET /forums/{course_id}`, `POST /forums/posts`, `DELETE /forums/posts/{id}` |
-| Payments | `POST /payments/checkout`, `GET /payments/status/{session_id}`, `POST /webhook/stripe` |
-| Users | `GET /users`, `PUT /users/{id}/role` |
+| Payments | `POST /payments/checkout`, `GET /payments/status/{session_id}`, `POST /webhook/stripe`, `GET /payments/transactions`, `GET /payments/summary` |
+| Users | `GET/POST /users`, `PUT/DELETE /users/{id}`, `POST /users/import`, `PUT /users/{id}/role` |
+| Companies | `GET/POST /companies`, `PUT/DELETE /companies/{id}`, `GET /companies/{id}/dashboard` |
+| Certificate templates | `GET/POST /certificate-templates`, `PUT/DELETE /certificate-templates/{id}`, `POST /certificate-templates/render-default` |
+| AI settings | `GET/PUT /admin/ai-settings`, `POST /admin/ai-settings/test` |
+| Email notifications | `GET/PUT /admin/email-notifications`, `POST /admin/email-notifications/test`, `POST /admin/email-notifications/trigger-inactivity` |
 | Stats | `GET /stats/admin`, `GET /stats/admin/analytics`, `GET /stats/student` |
 | Progress | `GET /progress/course/{id}`, `PATCH /progress/lessons/{id}`, `POST /progress/lessons/{id}/complete` |
 
@@ -344,8 +349,9 @@ Optional. If `BREVO_API_KEY` is unset, emails are skipped (logged only).
 |-------|---------|
 | Enrollment | Self-enroll, bulk enroll, or paid checkout |
 | Progress | Failed quiz attempt (score sent as %) |
-| Certificate | First successful quiz pass |
+| Certificate | Course completion (quiz pass + lessons completed) |
 | Password reset | User submits forgot-password request |
+| Inactivity reminder | Optional admin-triggered reminder for inactive enrolled users |
 
 ```env
 BREVO_API_KEY=xkeysib-...
@@ -370,7 +376,7 @@ Course content supports **5 languages**: `en`, `zh-TW`, `zh-CN`, `ja`, `ko`. UI 
 
 ## Database Collections
 
-`users` · `courses` · `lessons` · `quizzes` · `quiz_attempts` · `enrollments` · `certificates` · `forum_posts` · `chat_messages` · `payment_transactions`
+`users` · `courses` · `lessons` · `lesson_progress` · `quizzes` · `quiz_attempts` · `enrollments` · `certificates` · `certificate_templates` · `forum_posts` · `chat_messages` · `payment_transactions` · `companies` · `platform_settings` · `email_notification_settings` · `email_notification_logs`
 
 <details>
 <summary>Schema reference (expand)</summary>
@@ -548,7 +554,7 @@ Course completion now requires **both**:
 
 When both conditions are met, enrollment is marked complete, certificate is issued/updated, and certificate email is sent.
 
-Certificates can be downloaded as PDF from `/certificates/{id}/pdf` or publicly verified at `/certificates/verify/{certificate_id}`.
+Certificates can be downloaded as PDF from `/certificates/{id}/pdf` or publicly verified at `/certificates/verify/{certificate_code}`.
 
 ### AI translation
 
@@ -589,7 +595,7 @@ Test accounts and role promotion steps: **[memory/test_credentials.md](memory/te
 
 - [x] Full UI translation (5 languages: EN, zh-TW, zh-CN, ja, ko)
 - [x] Split `App.js` into `src/pages/` components
-- [ ] Course categories/tags, ratings, instructor profiles
+- [ ] Ratings, reviews, and instructor profiles
 - [ ] Mobile app (React Native)
 
 ---
