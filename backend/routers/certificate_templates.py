@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, Request
 
 from auth_utils import require_roles
-from certificate_template import create_certification_template
+from certificate_template import create_certification_template_source
 from database import db
 from db_utils import parse_object_id
 from models import CertificateTemplateCreate, CertificateTemplateRender, CertificateTemplateUpdate
@@ -28,15 +28,7 @@ def _serialize_template(doc: dict) -> dict:
 
 
 def _default_html(primary: str, secondary: str) -> str:
-    return create_certification_template({
-        "course_title": "Sample Course",
-        "user_name": "Sample Student",
-        "score": 85,
-        "certificate_id": "SAMPLE01",
-        "issued_at": datetime.now(timezone.utc).isoformat(),
-        "primary_color": primary,
-        "secondary_color": secondary,
-    })
+    return create_certification_template_source(primary, secondary)
 
 
 async def _ensure_single_default(exclude_id: str | None = None) -> None:

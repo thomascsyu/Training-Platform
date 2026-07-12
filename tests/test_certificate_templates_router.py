@@ -71,6 +71,7 @@ async def test_create_template_generates_default_html(monkeypatch):
 
     assert response["name"] == "Training Certificate"
     assert "<!DOCTYPE html" in response["html"]
+    assert "{{user_name}}" in response["html"]
     assert response["primary_color"] == "#002fa7"
     assert response["secondary_color"] == "#0a0b10"
     assert response["is_default"] is False
@@ -140,6 +141,7 @@ async def test_render_default_template(monkeypatch):
 
     assert "html" in response
     assert "<!DOCTYPE html" in response["html"]
+    assert "{{course_title}}" in response["html"]
 
 
 @pytest.mark.asyncio

@@ -40,6 +40,56 @@ def _format_date(value: str | None) -> str:
         return html.escape(str(value)[:10])
 
 
+def _base_certificate_html(primary: str, secondary: str) -> str:
+    return _CERTIFICATE_HTML.replace("__PRIMARY_COLOR__", primary).replace(
+        "__SECONDARY_COLOR__", secondary
+    )
+
+
+def create_certification_template_source(
+    primary_color: str = _PRIMARY_DEFAULT,
+    secondary_color: str = _SECONDARY_DEFAULT,
+) -> str:
+    """Return reusable certificate template HTML with user-data placeholders."""
+    primary = _validate_color(primary_color, _PRIMARY_DEFAULT)
+    secondary = _validate_color(secondary_color, _SECONDARY_DEFAULT)
+    return (
+        _base_certificate_html(primary, secondary)
+        .replace("__USER_NAME__", "{{user_name}}")
+        .replace("__COURSE_TITLE__", "{{course_title}}")
+        .replace("__SCORE__", "{{score}}")
+        .replace("__CERTIFICATE_ID__", "{{certificate_id}}")
+        .replace("__ISSUED_AT__", "{{issued_at}}")
+    )
+
+
+def render_certification_template(template_html: str, cert: dict) -> str:
+    """Render certificate data into a reusable HTML certificate template."""
+    values = {
+        "user_name": _safe(cert.get("user_name"), "Student"),
+        "course_title": _safe(cert.get("course_title", cert.get("course", "Course"))),
+        "score": str(_format_score(cert.get("score"))),
+        "certificate_id": _safe(cert.get("certificate_id"), "—"),
+        "issued_at": _format_date(cert.get("issued_at")),
+    }
+    replacements = {
+        "__USER_NAME__": values["user_name"],
+        "__COURSE_TITLE__": values["course_title"],
+        "__SCORE__": values["score"],
+        "__CERTIFICATE_ID__": values["certificate_id"],
+        "__ISSUED_AT__": values["issued_at"],
+        "{{user_name}}": values["user_name"],
+        "{{course_title}}": values["course_title"],
+        "{{score}}": values["score"],
+        "{{certificate_id}}": values["certificate_id"],
+        "{{issued_at}}": values["issued_at"],
+    }
+    rendered = template_html
+    for token, value in replacements.items():
+        rendered = rendered.replace(token, value)
+    return rendered
+
+
 def create_certification_template(cert: dict) -> str:
     """Return a styled HTML training certificate for the given certificate data.
 
@@ -49,20 +99,10 @@ def create_certification_template(cert: dict) -> str:
     """
     primary = _validate_color(cert.get("primary_color"), _PRIMARY_DEFAULT)
     secondary = _validate_color(cert.get("secondary_color"), _SECONDARY_DEFAULT)
-
-    user_name = _safe(cert.get("user_name"), "Student")
-    course_title = _safe(cert.get("course_title", cert.get("course", "Course")))
-    score = _format_score(cert.get("score"))
-    certificate_id = _safe(cert.get("certificate_id"), "—")
-    issued_at = _format_date(cert.get("issued_at"))
-
-    return _CERTIFICATE_HTML.replace("__PRIMARY_COLOR__", primary).replace(
-        "__SECONDARY_COLOR__", secondary
-    ).replace("__USER_NAME__", user_name).replace(
-        "__COURSE_TITLE__", course_title
-    ).replace("__SCORE__", str(score)).replace(
-        "__CERTIFICATE_ID__", certificate_id
-    ).replace("__ISSUED_AT__", issued_at)
+    return render_certification_template(
+        _base_certificate_html(primary, secondary),
+        cert,
+    )
 
 
 _CERTIFICATE_HTML = """<!DOCTYPE html>
