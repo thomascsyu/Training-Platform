@@ -6,7 +6,10 @@ from starlette.responses import Response
 
 from auth_utils import get_current_user, require_admin_or_manager, require_roles
 from certificate_pdf import generate_certificate_pdf
-from certificate_utils import apply_template_to_certificate, resolve_certificate_template
+from certificate_utils import (
+    apply_course_settings_to_certificate,
+    resolve_course_certificate_settings,
+)
 from database import db
 from db_utils import parse_object_id
 from email_service import send_certificate_email
@@ -26,8 +29,12 @@ def _serialize_certificate(cert: dict, fallback_course_title: str | None = None)
         "template": cert.get("template"),
         "template_id": cert.get("template_id"),
         "template_name": cert.get("template_name"),
+        "certificate_settings_id": cert.get("certificate_settings_id"),
         "primary_color": cert.get("primary_color"),
         "secondary_color": cert.get("secondary_color"),
+        "background_url": cert.get("background_url"),
+        "validity_days": cert.get("validity_days"),
+        "valid_until": cert.get("valid_until"),
         "issued_at": cert.get("issued_at"),
     }
 
@@ -102,8 +109,6 @@ async def create_certificate(data: CertificateCreate, request: Request):
             detail="Certificate already exists for this student and course",
         )
 
-    template = await resolve_certificate_template(db, data.template_id)
-
     cert_doc = {
         "certificate_id": str(uuid.uuid4())[:8].upper(),
         "course_id": data.course_id,
@@ -113,13 +118,8 @@ async def create_certificate(data: CertificateCreate, request: Request):
         "score": data.score,
         "issued_at": datetime.now(timezone.utc).isoformat(),
     }
-    apply_template_to_certificate(
-        cert_doc,
-        template,
-        fallback_template=data.template,
-        fallback_primary_color=data.primary_color,
-        fallback_secondary_color=data.secondary_color,
-    )
+    settings = await resolve_course_certificate_settings(db, data.course_id)
+    apply_course_settings_to_certificate(cert_doc, settings)
     result = await db.certificates.insert_one(cert_doc)
     cert_doc["_id"] = result.inserted_id
 
@@ -174,12 +174,14 @@ async def view_certificate_html(certificate_id: str, request: Request):
     cert = await _get_authorized_certificate(certificate_id, request)
     html = cert.get("template_html")
     if not html:
-        apply_template_to_certificate(
+        apply_course_settings_to_certificate(
             cert,
-            None,
-            fallback_template=cert.get("template", "default"),
-            fallback_primary_color=cert.get("primary_color", "#002FA7"),
-            fallback_secondary_color=cert.get("secondary_color", "#0A0B10"),
+            {
+                "primary_color": cert.get("primary_color", "#002FA7"),
+                "secondary_color": cert.get("secondary_color", "#0A0B10"),
+                "background_url": cert.get("background_url"),
+                "validity_days": cert.get("validity_days"),
+            },
         )
         html = cert["template_html"]
     return Response(content=html, media_type="text/html")

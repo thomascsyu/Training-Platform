@@ -12,7 +12,7 @@ STUDENT_A = "507f1f77bcf86cd7994390d0"
 STUDENT_B = "507f1f77bcf86cd7994390e0"
 COMPANY_A = "507f1f77bcf86cd7994390a0"
 COMPANY_B = "507f1f77bcf86cd7994390b0"
-TEMPLATE_A = "507f1f77bcf86cd7994390f0"
+SETTINGS_A = "507f1f77bcf86cd7994390f0"
 
 
 async def _fake_admin(_request):
@@ -28,12 +28,12 @@ def _build_mock_db():
     mock_db.courses = MagicMock()
     mock_db.users = MagicMock()
     mock_db.certificates = MagicMock()
-    mock_db.certificate_templates = MagicMock()
+    mock_db.course_certificate_settings = MagicMock()
     mock_db.courses.find_one = AsyncMock()
     mock_db.users.find_one = AsyncMock()
     mock_db.certificates.find_one = AsyncMock()
     mock_db.certificates.insert_one = AsyncMock()
-    mock_db.certificate_templates.find_one = AsyncMock(return_value=None)
+    mock_db.course_certificate_settings.find_one = AsyncMock(return_value=None)
     return mock_db
 
 
@@ -68,18 +68,19 @@ async def test_create_certificate_as_admin(monkeypatch):
     assert response["course_id"] == COURSE_A
     assert response["user_name"] == "Student A"
     assert response["score"] == 92
-    assert response["template"] == "default"
+    assert response["template"] == "course_default"
     assert len(response["certificate_id"]) == 8
     send_email.assert_awaited_once()
     inserted_doc = mock_db.certificates.insert_one.await_args.args[0]
     assert inserted_doc["course_title"] == "Security Training"
     assert inserted_doc["user_id"] == STUDENT_A
     assert inserted_doc["template_id"] is None
+    assert inserted_doc["template_name"] == "Course Certificate"
     assert "<!DOCTYPE html" in inserted_doc["template_html"]
 
 
 @pytest.mark.asyncio
-async def test_create_certificate_with_selected_template(monkeypatch):
+async def test_create_certificate_uses_course_certificate_settings(monkeypatch):
     mock_db = _build_mock_db()
     mock_db.courses.find_one.return_value = {
         "_id": ObjectId(COURSE_A),
@@ -94,13 +95,13 @@ async def test_create_certificate_with_selected_template(monkeypatch):
         "company_id": COMPANY_A,
     }
     mock_db.certificates.find_one.return_value = None
-    mock_db.certificate_templates.find_one.return_value = {
-        "_id": ObjectId(TEMPLATE_A),
-        "name": "Executive Certificate",
-        "html": "<html><body>{{user_name}} - {{course_title}} - {{score}}%</body></html>",
+    mock_db.course_certificate_settings.find_one.return_value = {
+        "_id": ObjectId(SETTINGS_A),
+        "course_id": COURSE_A,
         "primary_color": "#111111",
         "secondary_color": "#222222",
-        "is_default": False,
+        "background_url": "https://example.com/art.png",
+        "validity_days": 365,
     }
     mock_db.certificates.insert_one.return_value = MagicMock(inserted_id=ObjectId())
 
@@ -113,20 +114,22 @@ async def test_create_certificate_with_selected_template(monkeypatch):
             course_id=COURSE_A,
             user_id=STUDENT_A,
             score=92,
-            template_id=TEMPLATE_A,
         ),
         request=object(),
     )
 
-    assert response["template_id"] == TEMPLATE_A
-    assert response["template_name"] == "Executive Certificate"
-    assert response["template"] == "Executive Certificate"
+    assert response["certificate_settings_id"] == SETTINGS_A
+    assert response["template_name"] == "Course Certificate"
+    assert response["template"] == "course_default"
     assert response["primary_color"] == "#111111"
+    assert response["background_url"] == "https://example.com/art.png"
+    assert response["validity_days"] == 365
+    assert response["valid_until"] is not None
     inserted_doc = mock_db.certificates.insert_one.await_args.args[0]
-    assert inserted_doc["template_id"] == TEMPLATE_A
-    assert inserted_doc["template_html"] == (
-        "<html><body>Student A - Security Training - 92%</body></html>"
-    )
+    assert inserted_doc["certificate_settings_id"] == SETTINGS_A
+    assert "Student A" in inserted_doc["template_html"]
+    assert "Security Training" in inserted_doc["template_html"]
+    assert "https://example.com/art.png" in inserted_doc["template_html"]
 
 
 @pytest.mark.asyncio

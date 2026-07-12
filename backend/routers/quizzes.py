@@ -4,7 +4,10 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, Request
 
 from auth_utils import get_current_user, require_roles
-from certificate_utils import apply_template_to_certificate, resolve_certificate_template
+from certificate_utils import (
+    apply_course_settings_to_certificate,
+    resolve_course_certificate_settings,
+)
 from database import db
 from db_utils import parse_object_id
 from email_service import send_certificate_email, send_progress_email
@@ -110,8 +113,8 @@ async def submit_quiz(quiz_id: str, data: QuizAttemptCreate, request: Request):
                 "issued_at": datetime.now(timezone.utc).isoformat(),
                 "certificate_id": str(uuid.uuid4())[:8].upper(),
             }
-            template = await resolve_certificate_template(db)
-            apply_template_to_certificate(cert_doc, template)
+            settings = await resolve_course_certificate_settings(db, quiz["course_id"])
+            apply_course_settings_to_certificate(cert_doc, settings)
             await db.certificates.insert_one(cert_doc)
             await send_certificate_email(
                 user["email"],

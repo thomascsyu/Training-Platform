@@ -17,7 +17,7 @@ export default {
       bulkEnroll: "Bulk Enroll",
       groupProgress: "Group Progress",
       aiSettings: "AI API Keys",
-      certificateTemplates: "Certificate Templates"
+      certificateTemplates: "Course Certificates"
     },
     
     // Landing Page
@@ -208,23 +208,33 @@ export default {
 
     // Certificate Templates
     certificateTemplates: {
-      manageTemplates: "Certificate Templates",
-      description: "Create and manage printable certificate templates for your platform.",
+      manageTemplates: "Course Certificates",
+      description: "Define certificate colors, artwork backgrounds, validity, and previews per course.",
+      course: "Course",
       name: "Template Name",
       html: "HTML Template",
       primaryColor: "Primary Color",
       secondaryColor: "Secondary Color",
+      backgroundUrl: "Artwork Background URL",
+      validity: "Validity",
+      validityDays: "Certificate Validity (days)",
+      validityHint: "Leave blank for no expiration.",
+      validForDays: "{days} days",
+      noExpiration: "No expiration",
       default: "Default",
       createTemplate: "Create Template",
       editTemplate: "Edit Template",
+      editCourseSettings: "Edit Course Certificate",
       generateDefault: "Generate Default HTML",
       preview: "Preview",
       noTemplates: "No certificate templates yet. Create one to get started.",
+      noCourses: "No courses available yet. Create a course before configuring certificates.",
       save: "Save Template",
+      saveSettings: "Save Settings",
       nameRequired: "Template name is required.",
       deleteConfirm: "Are you sure you want to delete this certificate template?",
       created: "Template created.",
-      updated: "Template updated.",
+      updated: "Certificate settings updated.",
       deleted: "Template deleted.",
       generated: "Default HTML generated."
     },

@@ -17,7 +17,7 @@ export default {
       bulkEnroll: "批量報名",
       groupProgress: "群組進度",
       aiSettings: "AI API 金鑰",
-      certificateTemplates: "證書範本"
+      certificateTemplates: "課程證書"
     },
     
     // Landing Page
@@ -207,23 +207,33 @@ export default {
 
     // Certificate Templates
     certificateTemplates: {
-      manageTemplates: "證書範本",
-      description: "建立和管理可列印的證書範本。",
+      manageTemplates: "課程證書",
+      description: "依課程設定證書顏色、背景圖、有效期限與預覽。",
+      course: "課程",
       name: "範本名稱",
       html: "HTML 範本",
       primaryColor: "主色",
       secondaryColor: "輔色",
+      backgroundUrl: "背景圖 URL",
+      validity: "有效期限",
+      validityDays: "證書有效天數",
+      validityHint: "留空表示不過期。",
+      validForDays: "{days} 天",
+      noExpiration: "不過期",
       default: "預設",
       createTemplate: "建立範本",
       editTemplate: "編輯範本",
+      editCourseSettings: "編輯課程證書",
       generateDefault: "產生預設 HTML",
       preview: "預覽",
-      noTemplates: "尚無證書範本。建立一個開始使用。",
+      noTemplates: "尚無證書範本。",
+      noCourses: "尚無課程。請先建立課程再設定證書。",
       save: "儲存範本",
+      saveSettings: "儲存設定",
       nameRequired: "範本名稱為必填。",
       deleteConfirm: "確定要刪除此證書範本嗎？",
       created: "範本已建立。",
-      updated: "範本已更新。",
+      updated: "證書設定已更新。",
       deleted: "範本已刪除。",
       generated: "已產生預設 HTML。"
     },

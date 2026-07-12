@@ -256,6 +256,7 @@ class CertificateTemplateUpdate(BaseModel):
 class CertificateTemplateRender(BaseModel):
     primary_color: str = "#002fa7"
     secondary_color: str = "#0a0b10"
+    background_url: Optional[str] = None
 
     @field_validator("primary_color", "secondary_color")
     @classmethod
@@ -263,3 +264,25 @@ class CertificateTemplateRender(BaseModel):
         if not re.match(r"^#[0-9A-Fa-f]{6}$", value):
             raise ValueError("Color must be a valid 6-digit hex code")
         return value.lower()
+
+
+class CourseCertificateSettingsUpdate(BaseModel):
+    primary_color: str = "#002fa7"
+    secondary_color: str = "#0a0b10"
+    background_url: Optional[str] = None
+    validity_days: Optional[int] = Field(default=None, ge=1, le=3650)
+
+    @field_validator("primary_color", "secondary_color")
+    @classmethod
+    def _validate_hex(cls, value: str) -> str:
+        if not re.match(r"^#[0-9A-Fa-f]{6}$", value):
+            raise ValueError("Color must be a valid 6-digit hex code")
+        return value.lower()
+
+    @field_validator("background_url")
+    @classmethod
+    def _normalize_background_url(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return None
+        value = value.strip()
+        return value or None

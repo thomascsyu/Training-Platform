@@ -55,13 +55,20 @@ def test_create_certification_template_handles_missing_fields():
     assert "0%" in html
     assert "Certificate ID: <strong>—</strong>" in html
     assert "Issued: <strong>—</strong>" in html
+    assert "Valid until: <strong>No expiration</strong>" in html
 
 
 def test_create_source_and_render_template():
-    source = create_certification_template_source("#002FA7", "#0A0B10")
+    source = create_certification_template_source(
+        "#002FA7",
+        "#0A0B10",
+        "https://example.com/background.png",
+    )
     assert "{{user_name}}" in source
     assert "{{course_title}}" in source
     assert "{{score}}" in source
+    assert "{{valid_until}}" in source
+    assert "https://example.com/background.png" in source
 
     rendered = render_certification_template(
         source,
@@ -71,6 +78,7 @@ def test_create_source_and_render_template():
             "score": 92,
             "certificate_id": "ABCD1234",
             "issued_at": "2026-06-08T12:00:00+00:00",
+            "valid_until": "2027-06-08T12:00:00+00:00",
         },
     )
 
@@ -78,3 +86,4 @@ def test_create_source_and_render_template():
     assert "Jane Doe" in rendered
     assert "Security Training" in rendered
     assert "92%" in rendered
+    assert "June 08, 2027" in rendered

@@ -17,7 +17,7 @@ export default {
       bulkEnroll: "批量报名",
       groupProgress: "群組進度",
       aiSettings: "AI API 密钥",
-      certificateTemplates: "证书模板"
+      certificateTemplates: "课程证书"
     },
     
     // Landing Page
@@ -207,23 +207,33 @@ export default {
 
     // Certificate Templates
     certificateTemplates: {
-      manageTemplates: "证书模板",
-      description: "创建和管理可打印的证书模板。",
+      manageTemplates: "课程证书",
+      description: "按课程设置证书颜色、背景图、有效期与预览。",
+      course: "课程",
       name: "模板名称",
       html: "HTML 模板",
       primaryColor: "主色",
       secondaryColor: "辅色",
+      backgroundUrl: "背景图 URL",
+      validity: "有效期",
+      validityDays: "证书有效天数",
+      validityHint: "留空表示不过期。",
+      validForDays: "{days} 天",
+      noExpiration: "不过期",
       default: "默认",
       createTemplate: "创建模板",
       editTemplate: "编辑模板",
+      editCourseSettings: "编辑课程证书",
       generateDefault: "生成默认 HTML",
       preview: "预览",
-      noTemplates: "尚无证书模板。创建一个开始使用。",
+      noTemplates: "尚无证书模板。",
+      noCourses: "尚无课程。请先创建课程再设置证书。",
       save: "保存模板",
+      saveSettings: "保存设置",
       nameRequired: "模板名称为必填。",
       deleteConfirm: "确定要删除此证书模板吗？",
       created: "模板已创建。",
-      updated: "模板已更新。",
+      updated: "证书设置已更新。",
       deleted: "模板已删除。",
       generated: "已生成默认 HTML。"
     },

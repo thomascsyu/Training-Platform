@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta, timezone
+
 from fastapi import HTTPException
 
 from certificate_template import (
@@ -21,6 +23,68 @@ async def resolve_certificate_template(database, template_id: str | None = None)
             raise HTTPException(status_code=404, detail="Certificate template not found")
         return template
     return await database.certificate_templates.find_one({"is_default": True})
+
+
+async def resolve_course_certificate_settings(database, course_id: str) -> dict | None:
+    return await database.course_certificate_settings.find_one({"course_id": course_id})
+
+
+def _calculate_valid_until(issued_at: str | None, validity_days: int | None) -> str | None:
+    if not validity_days:
+        return None
+    try:
+        base = datetime.fromisoformat(issued_at) if issued_at else datetime.now(timezone.utc)
+    except (TypeError, ValueError):
+        base = datetime.now(timezone.utc)
+    return (base + timedelta(days=validity_days)).isoformat()
+
+
+def default_course_certificate_settings(settings: dict | None = None) -> dict:
+    settings = settings or {}
+    return {
+        "primary_color": settings.get("primary_color") or DEFAULT_PRIMARY_COLOR,
+        "secondary_color": settings.get("secondary_color") or DEFAULT_SECONDARY_COLOR,
+        "background_url": settings.get("background_url"),
+        "validity_days": settings.get("validity_days"),
+    }
+
+
+def render_course_certificate_preview(course: dict, settings: dict | None = None) -> str:
+    normalized = default_course_certificate_settings(settings)
+    issued_at = datetime.now(timezone.utc).isoformat()
+    cert = {
+        "course_title": course.get("title") or "Course",
+        "user_name": "Sample Student",
+        "score": course.get("passing_score", 85),
+        "certificate_id": "PREVIEW",
+        "issued_at": issued_at,
+        "valid_until": _calculate_valid_until(issued_at, normalized["validity_days"]),
+        **normalized,
+    }
+    return create_certification_template(cert)
+
+
+def apply_course_settings_to_certificate(
+    cert_doc: dict,
+    settings: dict | None,
+) -> dict:
+    normalized = default_course_certificate_settings(settings)
+    cert_doc.update({
+        "template": "course_default",
+        "template_id": None,
+        "template_name": "Course Certificate",
+        "certificate_settings_id": str(settings["_id"]) if settings and settings.get("_id") else None,
+        "primary_color": normalized["primary_color"],
+        "secondary_color": normalized["secondary_color"],
+        "background_url": normalized["background_url"],
+        "validity_days": normalized["validity_days"],
+        "valid_until": _calculate_valid_until(
+            cert_doc.get("issued_at"),
+            normalized["validity_days"],
+        ),
+    })
+    cert_doc["template_html"] = create_certification_template(cert_doc)
+    return cert_doc
 
 
 def apply_template_to_certificate(

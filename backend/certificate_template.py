@@ -1,6 +1,7 @@
 import html
 import re
 from datetime import datetime
+from urllib.parse import urlparse
 
 _PRIMARY_DEFAULT = "#002FA7"
 _SECONDARY_DEFAULT = "#0A0B10"
@@ -23,6 +24,15 @@ def _safe(value: str | None, default: str = "") -> str:
     return html.escape(str(value))
 
 
+def _safe_background_url(value: str | None) -> str:
+    if not value:
+        return ""
+    parsed = urlparse(str(value).strip())
+    if parsed.scheme not in {"http", "https"} and not str(value).startswith("/"):
+        return ""
+    return html.escape(str(value).strip(), quote=True)
+
+
 def _format_score(value: int | float | str | None) -> int:
     try:
         return int(value)
@@ -40,26 +50,42 @@ def _format_date(value: str | None) -> str:
         return html.escape(str(value)[:10])
 
 
-def _base_certificate_html(primary: str, secondary: str) -> str:
+def _format_valid_until(value: str | None) -> str:
+    if not value:
+        return "No expiration"
+    return _format_date(value)
+
+
+def _base_certificate_html(primary: str, secondary: str, background_url: str = "") -> str:
+    background = _safe_background_url(background_url)
+    background_style = ""
+    if background:
+        background_style = (
+            "background-image: linear-gradient(rgba(255,255,255,0.86), "
+            f"rgba(255,255,255,0.9)), url('{background}'); "
+            "background-size: cover; background-position: center;"
+        )
     return _CERTIFICATE_HTML.replace("__PRIMARY_COLOR__", primary).replace(
         "__SECONDARY_COLOR__", secondary
-    )
+    ).replace("__BACKGROUND_IMAGE_STYLE__", background_style)
 
 
 def create_certification_template_source(
     primary_color: str = _PRIMARY_DEFAULT,
     secondary_color: str = _SECONDARY_DEFAULT,
+    background_url: str = "",
 ) -> str:
     """Return reusable certificate template HTML with user-data placeholders."""
     primary = _validate_color(primary_color, _PRIMARY_DEFAULT)
     secondary = _validate_color(secondary_color, _SECONDARY_DEFAULT)
     return (
-        _base_certificate_html(primary, secondary)
+        _base_certificate_html(primary, secondary, background_url)
         .replace("__USER_NAME__", "{{user_name}}")
         .replace("__COURSE_TITLE__", "{{course_title}}")
         .replace("__SCORE__", "{{score}}")
         .replace("__CERTIFICATE_ID__", "{{certificate_id}}")
         .replace("__ISSUED_AT__", "{{issued_at}}")
+        .replace("__VALID_UNTIL__", "{{valid_until}}")
     )
 
 
@@ -71,6 +97,7 @@ def render_certification_template(template_html: str, cert: dict) -> str:
         "score": str(_format_score(cert.get("score"))),
         "certificate_id": _safe(cert.get("certificate_id"), "—"),
         "issued_at": _format_date(cert.get("issued_at")),
+        "valid_until": _format_valid_until(cert.get("valid_until")),
     }
     replacements = {
         "__USER_NAME__": values["user_name"],
@@ -78,11 +105,13 @@ def render_certification_template(template_html: str, cert: dict) -> str:
         "__SCORE__": values["score"],
         "__CERTIFICATE_ID__": values["certificate_id"],
         "__ISSUED_AT__": values["issued_at"],
+        "__VALID_UNTIL__": values["valid_until"],
         "{{user_name}}": values["user_name"],
         "{{course_title}}": values["course_title"],
         "{{score}}": values["score"],
         "{{certificate_id}}": values["certificate_id"],
         "{{issued_at}}": values["issued_at"],
+        "{{valid_until}}": values["valid_until"],
     }
     rendered = template_html
     for token, value in replacements.items():
@@ -100,7 +129,7 @@ def create_certification_template(cert: dict) -> str:
     primary = _validate_color(cert.get("primary_color"), _PRIMARY_DEFAULT)
     secondary = _validate_color(cert.get("secondary_color"), _SECONDARY_DEFAULT)
     return render_certification_template(
-        _base_certificate_html(primary, secondary),
+        _base_certificate_html(primary, secondary, cert.get("background_url", "")),
         cert,
     )
 
@@ -137,6 +166,7 @@ _CERTIFICATE_HTML = """<!DOCTYPE html>
       width: 11in;
       height: 8.5in;
       background: #FFFFFF;
+      __BACKGROUND_IMAGE_STYLE__
       position: relative;
       overflow: hidden;
       box-shadow: 0 20px 60px rgba(10, 11, 16, 0.12);
@@ -293,6 +323,7 @@ _CERTIFICATE_HTML = """<!DOCTYPE html>
       <div class="meta">
         <div>Certificate ID: <strong>__CERTIFICATE_ID__</strong></div>
         <div>Issued: <strong>__ISSUED_AT__</strong></div>
+        <div>Valid until: <strong>__VALID_UNTIL__</strong></div>
       </div>
     </div>
   </div>

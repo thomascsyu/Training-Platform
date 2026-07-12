@@ -3,9 +3,6 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import {
   Dialog,
@@ -14,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Plus, Edit, Trash2, Loader2, FileCheck, Palette } from "lucide-react";
+import { Edit, Eye, FileCheck, Loader2 } from "lucide-react";
 import { API, formatError } from "@/lib/api";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { DashboardLayout } from "@/components/DashboardLayout";
@@ -22,34 +19,35 @@ import PageHeader from "@/components/enhanced/PageHeader";
 import EmptyState from "@/components/enhanced/EmptyState";
 import { TableSkeleton } from "@/components/enhanced/Skeletons";
 
-const emptyTemplate = () => ({
-  id: null,
-  name: "",
-  html: "",
+const defaultSettings = () => ({
+  course_id: "",
+  course_title: "",
+  passing_score: 70,
   primary_color: "#002fa7",
   secondary_color: "#0a0b10",
-  is_default: false,
+  background_url: "",
+  validity_days: "",
 });
 
 export const AdminCertificateTemplatesPage = () => {
   const { t } = useLanguage();
-  const [templates, setTemplates] = useState([]);
+  const [settings, setSettings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState(emptyTemplate());
+  const [editing, setEditing] = useState(defaultSettings());
+  const [previewHtml, setPreviewHtml] = useState("");
   const [saving, setSaving] = useState(false);
-  const [generating, setGenerating] = useState(false);
+  const [previewing, setPreviewing] = useState(false);
 
   useEffect(() => {
-    fetchTemplates();
+    fetchSettings();
   }, []);
 
-  const fetchTemplates = async () => {
+  const fetchSettings = async () => {
     try {
       setLoading(true);
-      const { data } = await API.get("/certificate-templates");
-      setTemplates(data);
+      const { data } = await API.get("/certificate-templates/course-settings");
+      setSettings(data);
     } catch (e) {
       toast.error(formatError(e));
     } finally {
@@ -57,74 +55,59 @@ export const AdminCertificateTemplatesPage = () => {
     }
   };
 
-  const openCreate = () => {
-    setEditing(null);
-    setForm(emptyTemplate());
+  const openEditor = async (row) => {
+    const next = {
+      ...row,
+      background_url: row.background_url || "",
+      validity_days: row.validity_days || "",
+    };
+    setEditing(next);
+    setPreviewHtml("");
     setDialogOpen(true);
+    await refreshPreview(next);
   };
 
-  const openEdit = (template) => {
-    setEditing(template);
-    setForm({ ...template });
-    setDialogOpen(true);
+  const updateEditing = (field, value) => {
+    setEditing((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleGenerateDefault = async () => {
-    setGenerating(true);
+  const buildPayload = (source = editing) => ({
+    primary_color: source.primary_color,
+    secondary_color: source.secondary_color,
+    background_url: source.background_url?.trim() || null,
+    validity_days: source.validity_days ? Number(source.validity_days) : null,
+  });
+
+  const refreshPreview = async (source = editing) => {
+    if (!source.course_id) return;
+    setPreviewing(true);
     try {
-      const { data } = await API.post("/certificate-templates/render-default", {
-        primary_color: form.primary_color,
-        secondary_color: form.secondary_color,
-      });
-      setForm((prev) => ({ ...prev, html: data.html }));
-      toast.success(t("certificateTemplates.generated"));
+      const { data } = await API.post(
+        `/certificate-templates/course-settings/${source.course_id}/preview`,
+        buildPayload(source),
+      );
+      setPreviewHtml(data.html);
     } catch (e) {
       toast.error(formatError(e));
     } finally {
-      setGenerating(false);
+      setPreviewing(false);
     }
   };
 
   const handleSave = async () => {
-    if (!form.name.trim()) {
-      toast.error(t("certificateTemplates.nameRequired"));
-      return;
-    }
     setSaving(true);
     try {
-      const payload = {
-        name: form.name.trim(),
-        html: form.html,
-        primary_color: form.primary_color,
-        secondary_color: form.secondary_color,
-        is_default: form.is_default,
-      };
-      if (editing) {
-        await API.put(`/certificate-templates/${editing.id}`, payload);
-        toast.success(t("certificateTemplates.updated"));
-      } else {
-        await API.post("/certificate-templates", payload);
-        toast.success(t("certificateTemplates.created"));
-      }
+      await API.put(
+        `/certificate-templates/course-settings/${editing.course_id}`,
+        buildPayload(),
+      );
+      toast.success(t("certificateTemplates.updated"));
       setDialogOpen(false);
-      setForm(emptyTemplate());
-      fetchTemplates();
+      fetchSettings();
     } catch (e) {
       toast.error(formatError(e));
     } finally {
       setSaving(false);
-    }
-  };
-
-  const handleDelete = async (template) => {
-    if (!window.confirm(t("certificateTemplates.deleteConfirm"))) return;
-
-    try {
-      await API.delete(`/certificate-templates/${template.id}`);
-      toast.success(t("certificateTemplates.deleted"));
-      fetchTemplates();
-    } catch (e) {
-      toast.error(formatError(e));
     }
   };
 
@@ -135,22 +118,14 @@ export const AdminCertificateTemplatesPage = () => {
           overline="Admin"
           title={t("certificateTemplates.manageTemplates")}
           description={t("certificateTemplates.description")}
-        >
-          <Button
-            onClick={openCreate}
-            className="btn-primary"
-            data-testid="create-template-btn"
-          >
-            <Plus className="w-4 h-4 mr-2" /> {t("certificateTemplates.createTemplate")}
-          </Button>
-        </PageHeader>
+        />
 
         {loading ? (
           <TableSkeleton rows={5} cols={5} />
-        ) : templates.length === 0 ? (
+        ) : settings.length === 0 ? (
           <EmptyState
             icon={FileCheck}
-            title={t("certificateTemplates.noTemplates")}
+            title={t("certificateTemplates.noCourses")}
             testId="admin-certificate-templates-empty"
           />
         ) : (
@@ -160,7 +135,7 @@ export const AdminCertificateTemplatesPage = () => {
                 <thead className="bg-slate-50 border-b border-slate-200">
                   <tr>
                     <th className="text-left p-4 font-medium text-slate-600">
-                      {t("certificateTemplates.name")}
+                      {t("certificateTemplates.course")}
                     </th>
                     <th className="text-left p-4 font-medium text-slate-600">
                       {t("certificateTemplates.primaryColor")}
@@ -169,7 +144,7 @@ export const AdminCertificateTemplatesPage = () => {
                       {t("certificateTemplates.secondaryColor")}
                     </th>
                     <th className="text-left p-4 font-medium text-slate-600">
-                      {t("certificateTemplates.default")}
+                      {t("certificateTemplates.validity")}
                     </th>
                     <th className="text-left p-4 font-medium text-slate-600">
                       {t("users.actions")}
@@ -177,39 +152,40 @@ export const AdminCertificateTemplatesPage = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {templates.map((template) => (
+                  {settings.map((row) => (
                     <tr
-                      key={template.id}
+                      key={row.course_id}
                       className="border-b border-slate-100 hover:bg-slate-50/80"
-                      data-testid={`template-row-${template.id}`}
+                      data-testid={`certificate-course-row-${row.course_id}`}
                     >
-                      <td className="p-4 font-medium">{template.name}</td>
+                      <td className="p-4">
+                        <p className="font-medium">{row.course_title}</p>
+                        <p className="text-xs text-slate-500">
+                          {t("courses.passingScore")}: {row.passing_score}%
+                        </p>
+                      </td>
                       <td className="p-4">
                         <div className="flex items-center gap-2">
                           <span
                             className="w-6 h-6 rounded-sm border border-slate-200 inline-block"
-                            style={{ backgroundColor: template.primary_color }}
+                            style={{ backgroundColor: row.primary_color }}
                           />
-                          <span className="text-sm text-slate-600">{template.primary_color}</span>
+                          <span className="text-sm text-slate-600">{row.primary_color}</span>
                         </div>
                       </td>
                       <td className="p-4">
                         <div className="flex items-center gap-2">
                           <span
                             className="w-6 h-6 rounded-sm border border-slate-200 inline-block"
-                            style={{ backgroundColor: template.secondary_color }}
+                            style={{ backgroundColor: row.secondary_color }}
                           />
-                          <span className="text-sm text-slate-600">{template.secondary_color}</span>
+                          <span className="text-sm text-slate-600">{row.secondary_color}</span>
                         </div>
                       </td>
                       <td className="p-4">
-                        {template.is_default ? (
-                          <Badge className="bg-[#002FA7] text-white hover:bg-[#002FA7] rounded-sm">
-                            {t("certificateTemplates.default")}
-                          </Badge>
-                        ) : (
-                          <span className="text-slate-400">—</span>
-                        )}
+                        {row.validity_days
+                          ? t("certificateTemplates.validForDays", { days: row.validity_days })
+                          : t("certificateTemplates.noExpiration")}
                       </td>
                       <td className="p-4">
                         <div className="flex gap-2">
@@ -217,19 +193,10 @@ export const AdminCertificateTemplatesPage = () => {
                             variant="outline"
                             size="sm"
                             className="rounded-sm"
-                            onClick={() => openEdit(template)}
-                            data-testid={`edit-template-btn-${template.id}`}
+                            onClick={() => openEditor(row)}
+                            data-testid={`edit-certificate-settings-btn-${row.course_id}`}
                           >
                             <Edit className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="rounded-sm text-red-600 hover:text-red-700"
-                            onClick={() => handleDelete(template)}
-                            data-testid={`delete-template-btn-${template.id}`}
-                          >
-                            <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>
                       </td>
@@ -245,76 +212,74 @@ export const AdminCertificateTemplatesPage = () => {
           <DialogContent className="max-w-4xl">
             <DialogHeader>
               <DialogTitle>
-                {editing ? t("certificateTemplates.editTemplate") : t("certificateTemplates.createTemplate")}
+                {t("certificateTemplates.editCourseSettings")}
               </DialogTitle>
-              <DialogDescription>{t("certificateTemplates.description")}</DialogDescription>
+              <DialogDescription>{editing.course_title}</DialogDescription>
             </DialogHeader>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label>{t("certificateTemplates.name")}</Label>
-                  <Input
-                    value={form.name}
-                    onChange={(e) => setForm({ ...form, name: e.target.value })}
-                    className="rounded-sm"
-                    data-testid="template-name-input"
-                  />
-                </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>{t("certificateTemplates.primaryColor")}</Label>
                     <Input
                       type="color"
-                      value={form.primary_color}
-                      onChange={(e) => setForm({ ...form, primary_color: e.target.value })}
+                      value={editing.primary_color}
+                      onChange={(e) => updateEditing("primary_color", e.target.value)}
                       className="rounded-sm h-10 p-1"
-                      data-testid="template-primary-color-input"
+                      data-testid="course-certificate-primary-color-input"
                     />
                   </div>
                   <div className="space-y-2">
                     <Label>{t("certificateTemplates.secondaryColor")}</Label>
                     <Input
                       type="color"
-                      value={form.secondary_color}
-                      onChange={(e) => setForm({ ...form, secondary_color: e.target.value })}
+                      value={editing.secondary_color}
+                      onChange={(e) => updateEditing("secondary_color", e.target.value)}
                       className="rounded-sm h-10 p-1"
-                      data-testid="template-secondary-color-input"
+                      data-testid="course-certificate-secondary-color-input"
                     />
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <Switch
-                    id="template-default"
-                    checked={form.is_default}
-                    onCheckedChange={(checked) => setForm({ ...form, is_default: checked })}
-                    data-testid="template-default-switch"
+                <div className="space-y-2">
+                  <Label>{t("certificateTemplates.backgroundUrl")}</Label>
+                  <Input
+                    value={editing.background_url}
+                    onChange={(e) => updateEditing("background_url", e.target.value)}
+                    placeholder="https://example.com/certificate-art.png"
+                    className="rounded-sm"
+                    data-testid="course-certificate-background-url-input"
                   />
-                  <Label htmlFor="template-default">{t("certificateTemplates.default")}</Label>
                 </div>
                 <div className="space-y-2">
-                  <Label>{t("certificateTemplates.html")}</Label>
-                  <Textarea
-                    value={form.html}
-                    onChange={(e) => setForm({ ...form, html: e.target.value })}
-                    rows={10}
-                    className="rounded-sm font-mono text-xs"
-                    data-testid="template-html-input"
+                  <Label>{t("certificateTemplates.validityDays")}</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    max="3650"
+                    value={editing.validity_days}
+                    onChange={(e) => updateEditing("validity_days", e.target.value)}
+                    placeholder={t("certificateTemplates.noExpiration")}
+                    className="rounded-sm"
+                    data-testid="course-certificate-validity-days-input"
                   />
+                  <p className="text-xs text-slate-500">
+                    {t("certificateTemplates.validityHint")}
+                  </p>
                 </div>
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
-                    onClick={handleGenerateDefault}
-                    disabled={generating}
+                    onClick={() => refreshPreview()}
+                    disabled={previewing}
                     className="rounded-sm"
-                    data-testid="generate-default-html-btn"
+                    data-testid="preview-course-certificate-btn"
                   >
-                    {generating ? (
+                    {previewing ? (
                       <Loader2 className="w-4 h-4 animate-spin mr-2" />
                     ) : (
-                      <Palette className="w-4 h-4 mr-2" />
+                      <Eye className="w-4 h-4 mr-2" />
                     )}
-                    {t("certificateTemplates.generateDefault")}
+                    {t("certificateTemplates.preview")}
                   </Button>
                 </div>
                 <div className="flex justify-end gap-2 pt-2">
@@ -329,10 +294,10 @@ export const AdminCertificateTemplatesPage = () => {
                     onClick={handleSave}
                     disabled={saving}
                     className="btn-primary"
-                    data-testid="save-template-btn"
+                    data-testid="save-course-certificate-settings-btn"
                   >
                     {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                    {t("certificateTemplates.save")}
+                    {t("certificateTemplates.saveSettings")}
                   </Button>
                 </div>
               </div>
@@ -341,9 +306,9 @@ export const AdminCertificateTemplatesPage = () => {
                 <div className="border border-slate-200 rounded-sm overflow-hidden bg-slate-50 h-[500px]">
                   <iframe
                     title="Certificate preview"
-                    srcDoc={form.html}
+                    srcDoc={previewHtml}
                     className="w-full h-full border-0"
-                    data-testid="template-preview-iframe"
+                    data-testid="course-certificate-preview-iframe"
                   />
                 </div>
               </div>

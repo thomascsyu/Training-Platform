@@ -4,9 +4,18 @@ from fastapi import APIRouter, HTTPException, Request
 
 from auth_utils import require_roles
 from certificate_template import create_certification_template_source
+from certificate_utils import (
+    default_course_certificate_settings,
+    render_course_certificate_preview,
+)
 from database import db
 from db_utils import parse_object_id
-from models import CertificateTemplateCreate, CertificateTemplateRender, CertificateTemplateUpdate
+from models import (
+    CertificateTemplateCreate,
+    CertificateTemplateRender,
+    CertificateTemplateUpdate,
+    CourseCertificateSettingsUpdate,
+)
 
 router = APIRouter(tags=["certificate_templates"])
 
@@ -24,6 +33,20 @@ def _serialize_template(doc: dict) -> dict:
         "is_default": doc.get("is_default", False),
         "created_at": doc.get("created_at"),
         "updated_at": doc.get("updated_at"),
+    }
+
+
+def _serialize_course_settings(course: dict, settings: dict | None = None) -> dict:
+    normalized = default_course_certificate_settings(settings)
+    return {
+        "course_id": str(course["_id"]),
+        "course_title": course.get("title") or "Course",
+        "passing_score": course.get("passing_score", 70),
+        "primary_color": normalized["primary_color"],
+        "secondary_color": normalized["secondary_color"],
+        "background_url": normalized["background_url"],
+        "validity_days": normalized["validity_days"],
+        "updated_at": settings.get("updated_at") if settings else None,
     }
 
 
@@ -50,7 +73,97 @@ async def list_templates(request: Request):
 async def render_default_template(data: CertificateTemplateRender, request: Request):
     await require_roles("admin")(request)
     return {
-        "html": _default_html(data.primary_color, data.secondary_color),
+        "html": create_certification_template_source(
+            data.primary_color,
+            data.secondary_color,
+            data.background_url or "",
+        ),
+    }
+
+
+@router.get("/certificate-templates/course-settings")
+async def list_course_certificate_settings(request: Request):
+    await require_roles("admin")(request)
+    courses = await db.courses.find(
+        {},
+        {"_id": 1, "title": 1, "passing_score": 1},
+    ).sort("title", 1).to_list(500)
+    settings_docs = await db.course_certificate_settings.find().to_list(500)
+    settings_by_course = {doc["course_id"]: doc for doc in settings_docs}
+    return [
+        _serialize_course_settings(course, settings_by_course.get(str(course["_id"])))
+        for course in courses
+    ]
+
+
+@router.get("/certificate-templates/course-settings/{course_id}")
+async def get_course_certificate_settings(course_id: str, request: Request):
+    await require_roles("admin")(request)
+    course = await db.courses.find_one(
+        {"_id": parse_object_id(course_id, "course")},
+        {"_id": 1, "title": 1, "passing_score": 1},
+    )
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    settings = await db.course_certificate_settings.find_one({"course_id": course_id})
+    return _serialize_course_settings(course, settings)
+
+
+@router.put("/certificate-templates/course-settings/{course_id}")
+async def update_course_certificate_settings(
+    course_id: str,
+    data: CourseCertificateSettingsUpdate,
+    request: Request,
+):
+    await require_roles("admin")(request)
+    course = await db.courses.find_one(
+        {"_id": parse_object_id(course_id, "course")},
+        {"_id": 1, "title": 1, "passing_score": 1},
+    )
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+
+    now = datetime.now(timezone.utc).isoformat()
+    update_doc = {
+        "course_id": course_id,
+        "primary_color": data.primary_color,
+        "secondary_color": data.secondary_color,
+        "background_url": data.background_url,
+        "validity_days": data.validity_days,
+        "updated_at": now,
+    }
+    await db.course_certificate_settings.update_one(
+        {"course_id": course_id},
+        {"$set": update_doc, "$setOnInsert": {"created_at": now}},
+        upsert=True,
+    )
+    settings = await db.course_certificate_settings.find_one({"course_id": course_id})
+    return _serialize_course_settings(course, settings)
+
+
+@router.post("/certificate-templates/course-settings/{course_id}/preview")
+async def preview_course_certificate(
+    course_id: str,
+    data: CourseCertificateSettingsUpdate,
+    request: Request,
+):
+    await require_roles("admin")(request)
+    course = await db.courses.find_one(
+        {"_id": parse_object_id(course_id, "course")},
+        {"_id": 1, "title": 1, "passing_score": 1},
+    )
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    return {
+        "html": render_course_certificate_preview(
+            course,
+            {
+                "primary_color": data.primary_color,
+                "secondary_color": data.secondary_color,
+                "background_url": data.background_url,
+                "validity_days": data.validity_days,
+            },
+        )
     }
 
 

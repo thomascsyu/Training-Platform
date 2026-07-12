@@ -17,7 +17,7 @@ export default {
       bulkEnroll: "一括登録",
       groupProgress: "グループ進捗",
       aiSettings: "AI APIキー",
-      certificateTemplates: "修了証テンプレート"
+      certificateTemplates: "コース修了証"
     },
     
     // Landing Page
@@ -208,23 +208,33 @@ export default {
 
     // Certificate Templates
     certificateTemplates: {
-      manageTemplates: "修了証テンプレート",
-      description: "印刷可能な修了証テンプレートを作成・管理します。",
+      manageTemplates: "コース修了証",
+      description: "コースごとに修了証の色、背景アート、有効期限、プレビューを設定します。",
+      course: "コース",
       name: "テンプレート名",
       html: "HTMLテンプレート",
       primaryColor: "プライマリカラー",
       secondaryColor: "セカンダリカラー",
+      backgroundUrl: "背景アートURL",
+      validity: "有効期限",
+      validityDays: "修了証の有効日数",
+      validityHint: "空欄の場合は無期限です。",
+      validForDays: "{days}日",
+      noExpiration: "無期限",
       default: "デフォルト",
       createTemplate: "テンプレート作成",
       editTemplate: "テンプレート編集",
+      editCourseSettings: "コース修了証を編集",
       generateDefault: "デフォルトHTML生成",
       preview: "プレビュー",
-      noTemplates: "修了証テンプレートはまだありません。作成して始めましょう。",
+      noTemplates: "修了証テンプレートはまだありません。",
+      noCourses: "コースがありません。先にコースを作成してください。",
       save: "テンプレート保存",
+      saveSettings: "設定を保存",
       nameRequired: "テンプレート名は必須です。",
       deleteConfirm: "この修了証テンプレートを削除してもよろしいですか？",
       created: "テンプレートを作成しました。",
-      updated: "テンプレートを更新しました。",
+      updated: "修了証設定を更新しました。",
       deleted: "テンプレートを削除しました。",
       generated: "デフォルトHTMLを生成しました。"
     },

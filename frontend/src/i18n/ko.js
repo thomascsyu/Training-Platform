@@ -17,7 +17,7 @@ export default {
       bulkEnroll: "일괄 등록",
       groupProgress: "그룹 진행 상황",
       aiSettings: "AI API 키",
-      certificateTemplates: "수료증 템플릿"
+      certificateTemplates: "코스 수료증"
     },
     
     // Landing Page
@@ -208,23 +208,33 @@ export default {
 
     // Certificate Templates
     certificateTemplates: {
-      manageTemplates: "수료증 템플릿",
-      description: "인쇄 가능한 수료증 템플릿을 생성하고 관리합니다.",
+      manageTemplates: "코스 수료증",
+      description: "코스별 수료증 색상, 배경 아트, 유효기간 및 미리보기를 설정합니다.",
+      course: "코스",
       name: "템플릿 이름",
       html: "HTML 템플릿",
       primaryColor: "기본 색상",
       secondaryColor: "보조 색상",
+      backgroundUrl: "배경 아트 URL",
+      validity: "유효기간",
+      validityDays: "수료증 유효 일수",
+      validityHint: "비워두면 만료되지 않습니다.",
+      validForDays: "{days}일",
+      noExpiration: "만료 없음",
       default: "기본",
       createTemplate: "템플릿 만들기",
       editTemplate: "템플릿 편집",
+      editCourseSettings: "코스 수료증 편집",
       generateDefault: "기본 HTML 생성",
       preview: "미리보기",
-      noTemplates: "수료증 템플릿이 아직 없습니다. 하나를 만들어 시작하세요.",
+      noTemplates: "수료증 템플릿이 아직 없습니다.",
+      noCourses: "아직 코스가 없습니다. 먼저 코스를 생성하세요.",
       save: "템플릿 저장",
+      saveSettings: "설정 저장",
       nameRequired: "템플릿 이름은 필수입니다.",
       deleteConfirm: "이 수료증 템플릿을 삭제하시겠습니까?",
       created: "템플릿이 생성되었습니다.",
-      updated: "템플릿이 업데이트되었습니다.",
+      updated: "수료증 설정이 업데이트되었습니다.",
       deleted: "템플릿이 삭제되었습니다.",
       generated: "기본 HTML이 생성되었습니다."
     },
