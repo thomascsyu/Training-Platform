@@ -197,11 +197,13 @@ class AIProviderConfig(BaseModel):
 
 class AISettingsUpdate(BaseModel):
     default_provider: Optional[str] = None
+    default_prompt: Optional[str] = None
     providers: Optional[Dict[str, AIProviderConfig]] = None
 
 
 class AISettingsResponse(BaseModel):
     default_provider: str
+    default_prompt: str
     providers: Dict[str, Dict[str, Any]]
 
 

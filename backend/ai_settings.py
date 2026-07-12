@@ -12,6 +12,8 @@ from database import db
 
 _ENC_PREFIX = "enc:"
 
+DEFAULT_SYSTEM_PROMPT = "You are a helpful course assistant."
+
 _PROVIDERS = {
     "deepseek": {
         "name": "DeepSeek",
@@ -65,6 +67,7 @@ def _decrypt_value(value: str) -> str:
 def _default_settings() -> dict:
     return {
         "default_provider": "deepseek",
+        "default_prompt": "",
         "providers": {
             key: {
                 "enabled": True,
@@ -107,6 +110,7 @@ async def load_ai_settings() -> dict:
 
     return {
         "default_provider": default_provider,
+        "default_prompt": doc.get("default_prompt") or "",
         "providers": providers,
     }
 
@@ -124,6 +128,7 @@ async def load_ai_settings_masked() -> dict:
     settings = await load_ai_settings()
     return {
         "default_provider": settings["default_provider"],
+        "default_prompt": settings["default_prompt"],
         "providers": {
             key: {
                 **cfg,
@@ -146,6 +151,12 @@ async def get_active_provider() -> str:
     """Return the provider key that should be used for AI features."""
     settings = await load_ai_settings()
     return settings.get("default_provider", "deepseek")
+
+
+async def get_default_prompt() -> str:
+    """Return the admin-configured default system prompt, or the built-in fallback."""
+    settings = await load_ai_settings()
+    return settings.get("default_prompt", "").strip() or DEFAULT_SYSTEM_PROMPT
 
 
 async def get_active_provider_settings() -> Optional[dict]:
@@ -189,6 +200,10 @@ async def save_ai_settings(data: dict, user_id: str) -> dict:
     if default_provider not in _PROVIDERS:
         default_provider = "deepseek"
 
+    default_prompt = data.get("default_prompt")
+    if default_prompt is None:
+        default_prompt = current.get("default_prompt", "")
+
     providers = {}
     for key in _PROVIDERS:
         incoming = data.get("providers", {}).get(key, {}) if isinstance(data.get("providers"), dict) else {}
@@ -212,6 +227,7 @@ async def save_ai_settings(data: dict, user_id: str) -> dict:
     doc = {
         "_id": "ai",
         "default_provider": default_provider,
+        "default_prompt": default_prompt,
         "providers": providers,
         "updated_at": datetime.now(timezone.utc).isoformat(),
         "updated_by": user_id,
