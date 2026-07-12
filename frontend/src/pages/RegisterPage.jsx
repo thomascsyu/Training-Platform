@@ -35,11 +35,11 @@ export const RegisterPage = () => {
 
   return (
     <div className="min-h-screen bg-[#F4F5F7] flex items-center justify-center p-6">
-      <Card className="w-full max-w-md bg-white border border-slate-200 rounded-sm">
+      <Card className="w-full max-w-md card-swiss card-indexed animate-enter">
         <CardHeader className="text-center">
           <Link to="/" className="flex items-center justify-center gap-2 mb-4">
             <GraduationCap className="w-8 h-8 text-[#002FA7]" />
-            <span className="text-xl font-medium text-[#0A0B10]">LearnHub</span>
+            <span className="font-display text-xl text-[#0A0B10]">LearnHub</span>
           </Link>
           <CardTitle className="text-2xl tracking-tight">{t("auth.createAccount")}</CardTitle>
           <CardDescription>{t("auth.joinLearnHub")}</CardDescription>
@@ -84,7 +84,7 @@ export const RegisterPage = () => {
             </div>
             <Button
               type="submit"
-              className="w-full bg-[#002FA7] hover:bg-[#002585] text-white rounded-sm"
+              className="w-full btn-primary"
               disabled={loading}
               data-testid="register-submit-btn"
             >

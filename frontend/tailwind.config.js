@@ -7,14 +7,35 @@ module.exports = {
   ],
   theme: {
   	extend: {
+  		fontFamily: {
+  			display: ['"Clash Display"', '"IBM Plex Sans"', 'sans-serif'],
+  			sans: ['"IBM Plex Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+  			mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace']
+  		},
   		borderRadius: {
   			lg: 'var(--radius)',
   			md: 'calc(var(--radius) - 2px)',
-  			sm: 'calc(var(--radius) - 4px)'
+  			sm: 'calc(var(--radius) - 2px)'
+  		},
+  		boxShadow: {
+  			card: 'var(--shadow-card)',
+  			lift: 'var(--shadow-lift)'
   		},
   		colors: {
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
+  			klein: {
+  				DEFAULT: '#002FA7',
+  				hover: '#002585',
+  				tint: '#F0F4FF',
+  				50: '#EEF3FF',
+  				100: '#D9E3FF',
+  				600: '#002FA7',
+  				700: '#002585',
+  				800: '#001C63'
+  			},
+  			success: 'hsl(var(--success))',
+  			warning: 'hsl(var(--warning))',
   			card: {
   				DEFAULT: 'hsl(var(--card))',
   				foreground: 'hsl(var(--card-foreground))'

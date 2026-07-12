@@ -1,8 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
-import { BookOpen, Globe, Loader2, Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { BookOpen, Globe, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -15,6 +13,8 @@ import { API } from "@/lib/api";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { PublicSiteHeader } from "@/components/PublicSiteHeader";
 import { CourseCard } from "@/components/CourseCard";
+import { SkeletonGrid } from "@/components/enhanced/Skeletons";
+import EmptyState from "@/components/enhanced/EmptyState";
 
 export const CoursesPage = () => {
   const { t } = useLanguage();
@@ -60,7 +60,7 @@ export const CoursesPage = () => {
       <PublicSiteHeader variant="compact" />
 
       <div className="container mx-auto px-6 md:px-12 lg:px-24 py-12" data-testid="courses-page">
-        <h1 className="text-2xl sm:text-3xl tracking-tight font-medium text-[#0A0B10] mb-6">
+        <h1 className="font-display text-2xl sm:text-3xl tracking-tight text-[#0A0B10] mb-6">
           {t("courses.allCourses")}
         </h1>
 
@@ -95,22 +95,15 @@ export const CoursesPage = () => {
         </div>
 
         {loading ? (
-          <div className="flex justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-[#002FA7]" />
-          </div>
+          <SkeletonGrid n={6} />
         ) : filteredCourses.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 stagger">
             {filteredCourses.map((course) => (
               <CourseCard key={course.id} course={course} />
             ))}
           </div>
         ) : (
-          <Card className="bg-white border border-slate-200 rounded-sm">
-            <CardContent className="p-12 text-center">
-              <BookOpen className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-              <p className="text-slate-600">{t("courses.noCourses")}</p>
-            </CardContent>
-          </Card>
+          <EmptyState icon={BookOpen} title={t("courses.noCourses")} testId="courses-page-empty" />
         )}
       </div>
     </div>

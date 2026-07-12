@@ -67,9 +67,10 @@ export const QuizPage = () => {
   return (
     <div className="min-h-screen bg-[#F4F5F7] py-8" data-testid="quiz-page">
       <div className="container mx-auto px-6 md:px-12 lg:px-24 max-w-3xl">
-        <Card className="bg-white border border-slate-200 rounded-sm">
+        <Card className="card-swiss card-indexed animate-enter">
           <CardHeader>
-            <CardTitle className="text-xl tracking-tight">{quiz?.title}</CardTitle>
+            <p className="overline">Quiz</p>
+            <CardTitle className="font-display text-xl">{quiz?.title}</CardTitle>
             <CardDescription>Answer all questions to complete the quiz</CardDescription>
           </CardHeader>
           <CardContent>
@@ -97,7 +98,7 @@ export const QuizPage = () => {
                   {result.passed ? (
                     <Button 
                       onClick={() => navigate("/certificates")}
-                      className="bg-[#002FA7] hover:bg-[#002585] text-white rounded-sm"
+                      className="btn-primary"
                       data-testid="view-certificate-btn"
                     >
                       <Award className="w-4 h-4 mr-2" /> View Certificate
@@ -108,7 +109,7 @@ export const QuizPage = () => {
                         setResult(null);
                         setAnswers(new Array(quiz.questions?.length || 0).fill(-1));
                       }}
-                      className="bg-[#002FA7] hover:bg-[#002585] text-white rounded-sm"
+                      className="btn-primary"
                       data-testid="retry-btn"
                     >
                       Try Again
@@ -163,7 +164,7 @@ export const QuizPage = () => {
                 <Button 
                   onClick={handleSubmit}
                   disabled={submitting}
-                  className="w-full bg-[#002FA7] hover:bg-[#002585] text-white rounded-sm py-6"
+                  className="w-full btn-primary py-6"
                   data-testid="submit-quiz-btn"
                 >
                   {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : t("quiz.submit")}

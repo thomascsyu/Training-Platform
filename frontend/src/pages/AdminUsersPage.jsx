@@ -26,6 +26,8 @@ import { Plus, Trash2, Edit, Loader2, Upload } from "lucide-react";
 import { API, formatError } from "@/lib/api";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { DashboardLayout } from "@/components/DashboardLayout";
+import PageHeader from "@/components/enhanced/PageHeader";
+import { TableSkeleton } from "@/components/enhanced/Skeletons";
 
 const emptyUserForm = {
   name: "",
@@ -254,51 +256,44 @@ export const AdminUsersPage = () => {
   return (
     <DashboardLayout>
       <div className="p-6" data-testid="admin-users-page">
-        <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 mb-8">
-          <h1 className="text-2xl sm:text-3xl tracking-tight font-medium text-[#0A0B10]">
-            {t("users.manageUsers")}
-          </h1>
-          <div className="flex flex-col sm:flex-row gap-3">
-            <Select value={selectedCompany} onValueChange={handleCompanyFilterChange}>
-              <SelectTrigger className="w-full sm:w-56 rounded-sm" data-testid="company-filter-select">
-                <SelectValue placeholder={t("users.filterByCompany")} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t("users.allCompanies")}</SelectItem>
-                {companies.map((company) => (
-                  <SelectItem key={company.id} value={company.id}>
-                    {company.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button
-              variant="outline"
-              className="rounded-sm"
-              onClick={() => {
-                setImportCompanyId(selectedCompany !== "all" ? selectedCompany : importCompanyId);
-                setShowImportDialog(true);
-              }}
-              data-testid="import-users-btn"
-            >
-              <Upload className="w-4 h-4 mr-2" /> {t("users.importUsers")}
-            </Button>
-            <Button
-              className="bg-[#002FA7] hover:bg-[#002585] text-white rounded-sm"
-              onClick={openCreateDialog}
-              data-testid="add-user-btn"
-            >
-              <Plus className="w-4 h-4 mr-2" /> {t("users.addUser")}
-            </Button>
-          </div>
-        </div>
+        <PageHeader overline="Admin" title={t("users.manageUsers")}>
+          <Select value={selectedCompany} onValueChange={handleCompanyFilterChange}>
+            <SelectTrigger className="w-full sm:w-56 rounded-sm" data-testid="company-filter-select">
+              <SelectValue placeholder={t("users.filterByCompany")} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t("users.allCompanies")}</SelectItem>
+              {companies.map((company) => (
+                <SelectItem key={company.id} value={company.id}>
+                  {company.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button
+            variant="outline"
+            className="rounded-sm"
+            onClick={() => {
+              setImportCompanyId(selectedCompany !== "all" ? selectedCompany : importCompanyId);
+              setShowImportDialog(true);
+            }}
+            data-testid="import-users-btn"
+          >
+            <Upload className="w-4 h-4 mr-2" /> {t("users.importUsers")}
+          </Button>
+          <Button
+            className="btn-primary"
+            onClick={openCreateDialog}
+            data-testid="add-user-btn"
+          >
+            <Plus className="w-4 h-4 mr-2" /> {t("users.addUser")}
+          </Button>
+        </PageHeader>
 
         {loading ? (
-          <div className="flex justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-[#002FA7]" />
-          </div>
+          <TableSkeleton rows={6} cols={5} />
         ) : (
-          <Card className="bg-white border border-slate-200 rounded-sm overflow-hidden">
+          <Card className="card-swiss overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-slate-50 border-b border-slate-200">

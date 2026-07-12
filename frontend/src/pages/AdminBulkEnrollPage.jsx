@@ -9,6 +9,8 @@ import { Loader2 } from "lucide-react";
 import { API, formatError } from "@/lib/api";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { DashboardLayout } from "@/components/DashboardLayout";
+import PageHeader from "@/components/enhanced/PageHeader";
+import { SkeletonGrid } from "@/components/enhanced/Skeletons";
 
 export const AdminBulkEnrollPage = () => {
   const { t } = useLanguage();
@@ -62,19 +64,15 @@ export const AdminBulkEnrollPage = () => {
   return (
     <DashboardLayout>
       <div className="p-6" data-testid="admin-bulk-enroll-page">
-        <h1 className="text-2xl sm:text-3xl tracking-tight font-medium text-[#0A0B10] mb-8">
-          {t("dashboard.bulkEnrollTitle")}
-        </h1>
+        <PageHeader overline="Admin" title={t("dashboard.bulkEnrollTitle")} />
 
         {loading ? (
-          <div className="flex justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-[#002FA7]" />
-          </div>
+          <SkeletonGrid n={2} />
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card className="bg-white border border-slate-200 rounded-sm">
+            <Card className="card-swiss">
               <CardHeader>
-                <CardTitle className="text-lg">{t("dashboard.selectCourse")}</CardTitle>
+                <CardTitle className="font-display text-lg">{t("dashboard.selectCourse")}</CardTitle>
               </CardHeader>
               <CardContent>
                 <Select value={selectedCourse} onValueChange={setSelectedCourse}>
@@ -90,9 +88,9 @@ export const AdminBulkEnrollPage = () => {
               </CardContent>
             </Card>
 
-            <Card className="bg-white border border-slate-200 rounded-sm">
+            <Card className="card-swiss">
               <CardHeader>
-                <CardTitle className="text-lg">{t("dashboard.selectStudents")}</CardTitle>
+                <CardTitle className="font-display text-lg">{t("dashboard.selectStudents")}</CardTitle>
                 <CardDescription>
                   {selectedStudents.length} selected
                 </CardDescription>
@@ -132,7 +130,7 @@ export const AdminBulkEnrollPage = () => {
                 <Button 
                   onClick={handleBulkEnroll}
                   disabled={enrolling || !selectedCourse || selectedStudents.length === 0}
-                  className="w-full mt-4 bg-[#002FA7] hover:bg-[#002585] text-white rounded-sm"
+                  className="w-full mt-4 btn-primary"
                   data-testid="bulk-enroll-btn"
                 >
                   {enrolling ? <Loader2 className="w-4 h-4 animate-spin" /> : t("dashboard.enrollCount").replace("{count}", selectedStudents.length)}

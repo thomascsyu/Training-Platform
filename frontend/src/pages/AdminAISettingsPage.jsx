@@ -17,6 +17,8 @@ import { Loader2, Activity, KeyRound } from "lucide-react";
 import { API, formatError } from "@/lib/api";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { DashboardLayout } from "@/components/DashboardLayout";
+import PageHeader from "@/components/enhanced/PageHeader";
+import { SkeletonGrid } from "@/components/enhanced/Skeletons";
 
 const PROVIDERS = ["deepseek", "xai"];
 
@@ -164,24 +166,15 @@ export const AdminAISettingsPage = () => {
   return (
     <DashboardLayout>
       <div className="p-6" data-testid="admin-ai-settings-page">
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
-          <div>
-            <h1 className="text-2xl sm:text-3xl tracking-tight font-medium text-[#0A0B10]">
-              {t("aiSettings.title")}
-            </h1>
-            <p className="text-slate-500 mt-1">{t("aiSettings.description")}</p>
-          </div>
-        </div>
+        <PageHeader overline="Admin" title={t("aiSettings.title")} description={t("aiSettings.description")} />
 
         {loading ? (
-          <div className="flex justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-[#002FA7]" />
-          </div>
+          <SkeletonGrid n={2} />
         ) : (
           <div className="space-y-6 max-w-3xl">
-            <Card className="bg-white border border-slate-200 rounded-sm">
+            <Card className="card-swiss">
               <CardHeader>
-                <CardTitle>{t("aiSettings.defaultProvider")}</CardTitle>
+                <CardTitle className="font-display">{t("aiSettings.defaultProvider")}</CardTitle>
               </CardHeader>
               <CardContent>
                 <Select value={defaultProvider} onValueChange={setDefaultProvider}>
@@ -197,10 +190,10 @@ export const AdminAISettingsPage = () => {
             </Card>
 
             {PROVIDERS.map((provider) => (
-              <Card key={provider} className="bg-white border border-slate-200 rounded-sm">
+              <Card key={provider} className="card-swiss">
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <CardTitle className="flex items-center gap-2">
+                    <CardTitle className="font-display flex items-center gap-2">
                       <KeyRound className="w-5 h-5 text-[#002FA7]" />
                       {t(`aiSettings.${provider}`)}
                     </CardTitle>
@@ -267,7 +260,7 @@ export const AdminAISettingsPage = () => {
               <Button
                 onClick={handleSave}
                 disabled={saving}
-                className="bg-[#002FA7] hover:bg-[#002585] text-white rounded-sm"
+                className="btn-primary"
               >
                 {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                 {saving ? t("aiSettings.saving") : t("aiSettings.save")}

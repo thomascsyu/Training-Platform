@@ -18,6 +18,9 @@ import { DashboardLayout } from "@/components/DashboardLayout";
 import { TranslateDialog } from "@/components/TranslateDialog";
 import { ThumbnailUpload } from "@/components/ThumbnailUpload";
 import { CourseThumbnail } from "@/components/CourseThumbnail";
+import PageHeader from "@/components/enhanced/PageHeader";
+import EmptyState from "@/components/enhanced/EmptyState";
+import { TableSkeleton } from "@/components/enhanced/Skeletons";
 
 export const AdminCoursesPage = () => {
   const navigate = useNavigate();
@@ -118,13 +121,10 @@ export const AdminCoursesPage = () => {
   return (
     <DashboardLayout>
       <div className="p-6" data-testid="admin-courses-page">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-2xl sm:text-3xl tracking-tight font-medium text-[#0A0B10]">
-            {t("dashboard.manageCourses")}
-          </h1>
+        <PageHeader overline="Admin" title={t("dashboard.manageCourses")}>
           <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
             <DialogTrigger asChild>
-              <Button className="bg-[#002FA7] hover:bg-[#002585] text-white rounded-sm" data-testid="create-course-btn">
+              <Button className="btn-primary" data-testid="create-course-btn">
                 <Plus className="w-4 h-4 mr-2" /> {t("courses.createCourse")}
               </Button>
             </DialogTrigger>
@@ -285,16 +285,14 @@ export const AdminCoursesPage = () => {
               </div>
             </DialogContent>
           </Dialog>
-        </div>
+        </PageHeader>
 
         {loading ? (
-          <div className="flex justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-[#002FA7]" />
-          </div>
+          <TableSkeleton rows={5} cols={1} />
         ) : courses.length > 0 ? (
           <div className="space-y-4">
             {courses.map((course) => (
-              <Card key={course.id} className="bg-white border border-slate-200 rounded-sm" data-testid={`admin-course-${course.id}`}>
+              <Card key={course.id} className="card-swiss" data-testid={`admin-course-${course.id}`}>
                 <CardContent className="p-4 flex items-center gap-4">
                   <div className="w-24 h-16 bg-slate-100 rounded-sm overflow-hidden flex-shrink-0">
                     <CourseThumbnail
@@ -353,15 +351,13 @@ export const AdminCoursesPage = () => {
             ))}
           </div>
         ) : (
-          <Card className="bg-white border border-slate-200 rounded-sm">
-            <CardContent className="p-12 text-center">
-              <BookOpen className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-              <p className="text-slate-600 mb-4">No courses created yet</p>
-              <Button onClick={() => setShowCreateDialog(true)} className="bg-[#002FA7] hover:bg-[#002585] text-white rounded-sm">
-                Create Your First Course
-              </Button>
-            </CardContent>
-          </Card>
+          <EmptyState
+            icon={BookOpen}
+            title="No courses created yet"
+            actionLabel="Create Your First Course"
+            onAction={() => setShowCreateDialog(true)}
+            testId="admin-courses-empty"
+          />
         )}
       </div>
     </DashboardLayout>

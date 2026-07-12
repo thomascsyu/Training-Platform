@@ -1,7 +1,4 @@
 import { useNavigate } from "react-router-dom";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { Globe, Lock } from "lucide-react";
 import { getCourseLanguageDisplay } from "@/i18n";
 import { CourseThumbnail } from "@/components/CourseThumbnail";
@@ -10,50 +7,57 @@ export const CourseCard = ({ course, showProgress = false, progress = 0 }) => {
   const navigate = useNavigate();
 
   return (
-    <Card 
-      className="bg-white border border-slate-200 rounded-sm hover:-translate-y-1 hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden"
+    <article
+      className="card-swiss card-indexed group flex flex-col overflow-hidden cursor-pointer"
       onClick={() => navigate(`/courses/${course.id}`)}
+      onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && navigate(`/courses/${course.id}`)}
+      role="button"
+      tabIndex={0}
+      aria-label={course.title}
       data-testid={`course-card-${course.id}`}
     >
-      <div className="aspect-video bg-slate-100 relative overflow-hidden">
+      <div className="relative aspect-video overflow-hidden bg-slate-100 border-b border-slate-200">
         <CourseThumbnail
           src={course.thumbnail_url}
-          alt={course.title}
-          fallbackClassName="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#002FA7]/10 to-[#002FA7]/5"
-          fallbackIconClassName="w-12 h-12 text-[#002FA7]/40"
+          alt=""
+          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+          fallbackClassName="w-full h-full grid place-items-center bg-[linear-gradient(135deg,#002FA7_0%,#001C63_100%)]"
+          fallbackIconClassName="w-10 h-10 text-white/70"
         />
-        <div className="absolute top-2 left-2 flex gap-1">
+        <div className="absolute top-2 left-2 flex gap-1.5">
           {course.language && (
-            <Badge className="bg-[#002FA7] text-white rounded-sm text-xs">
-              <Globe className="w-3 h-3 mr-1" />
+            <span className="chip bg-white/95 text-slate-600 border border-slate-200">
+              <Globe className="w-3 h-3" />
               {getCourseLanguageDisplay(course.language, { short: true })}
-            </Badge>
+            </span>
+          )}
+          {course.is_free ? (
+            <span className="chip chip-free bg-white/95">Free</span>
+          ) : (
+            <span className="chip chip-paid bg-white/95 tabular">${course.price?.toFixed(2)}</span>
           )}
         </div>
         {course.is_private && (
-          <Badge className="absolute top-2 right-2 bg-slate-800 text-white rounded-sm">
-            <Lock className="w-3 h-3 mr-1" /> Private
-          </Badge>
+          <span className="chip chip-private absolute top-2 right-2 bg-white/95">
+            <Lock className="w-3 h-3" /> Private
+          </span>
         )}
       </div>
-      <CardContent className="p-4">
-        <h3 className="text-lg font-medium text-[#0A0B10] mb-2 line-clamp-1">{course.title}</h3>
-        <p className="text-sm text-slate-600 line-clamp-2 mb-3">{course.description}</p>
-        <div className="flex items-center justify-between">
-          {course.is_free ? (
-            <Badge variant="secondary" className="bg-green-100 text-green-700 rounded-sm">Free</Badge>
-          ) : (
-            <span className="font-medium text-[#002FA7]">${course.price?.toFixed(2)}</span>
-          )}
-          {showProgress && (
-            <div className="flex items-center gap-2">
-              <Progress value={progress} className="w-20 h-2" />
-              <span className="text-xs text-slate-500">{progress}%</span>
+      <div className="flex flex-col flex-1 p-4 gap-2">
+        <h3 className="font-display text-lg leading-snug text-slate-900 line-clamp-1 group-hover:text-[#002FA7] transition-colors">
+          {course.title}
+        </h3>
+        <p className="text-sm text-slate-600 leading-relaxed line-clamp-2">{course.description}</p>
+        {showProgress && (
+          <div className="mt-auto pt-2 flex items-center gap-2">
+            <div className="h-1.5 flex-1 bg-slate-100 rounded-none overflow-hidden">
+              <div className="h-full bg-[#002FA7] transition-[width] duration-500" style={{ width: `${Math.min(100, Math.max(0, progress))}%` }} />
             </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+            <span className="text-xs font-semibold text-slate-500 tabular">{progress}%</span>
+          </div>
+        )}
+      </div>
+    </article>
   );
 };
 

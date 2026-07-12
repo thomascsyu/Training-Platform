@@ -415,7 +415,7 @@ export const AdminCourseEditPage = () => {
           <h1 className="text-2xl font-medium text-[#0A0B10]">{t("courses.editCourse")}</h1>
         </div>
 
-        <Card className="bg-white border border-slate-200 rounded-sm mb-6">
+        <Card className="card-swiss mb-6">
           <CardHeader>
             <CardTitle className="text-lg">{formData.title || t("courses.createNew")}</CardTitle>
           </CardHeader>
@@ -632,7 +632,7 @@ export const AdminCourseEditPage = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-white border border-slate-200 rounded-sm mb-6">
+        <Card className="card-swiss mb-6">
           <CardHeader>
             <CardTitle className="text-lg">{t("courses.lessons")}</CardTitle>
           </CardHeader>
@@ -694,7 +694,7 @@ export const AdminCourseEditPage = () => {
                           <Button
                             onClick={handleSaveLesson}
                             disabled={savingLesson || !editingLesson.title.trim()}
-                            className="flex-1 bg-[#002FA7] hover:bg-[#002585] text-white rounded-sm"
+                            className="flex-1 btn-primary"
                           >
                             {savingLesson ? <Loader2 className="w-4 h-4 animate-spin" /> : t("courses.saveLesson")}
                           </Button>
@@ -783,7 +783,7 @@ export const AdminCourseEditPage = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-white border border-slate-200 rounded-sm mb-6">
+        <Card className="card-swiss mb-6">
           <CardHeader>
             <CardTitle className="text-lg">Quiz Builder</CardTitle>
           </CardHeader>
@@ -936,7 +936,7 @@ export const AdminCourseEditPage = () => {
               <Button
                 onClick={handleCreateQuiz}
                 disabled={creatingQuiz || !quizDraftTitle.trim() || quizDraftQuestions.length === 0}
-                className="bg-[#002FA7] hover:bg-[#002585] text-white rounded-sm"
+                className="btn-primary"
               >
                 {creatingQuiz ? <Loader2 className="w-4 h-4 animate-spin" /> : "Create Quiz"}
               </Button>
@@ -947,7 +947,7 @@ export const AdminCourseEditPage = () => {
         <Button
           onClick={handleSave}
           disabled={saving || thumbnailBusy || !formData.title}
-          className="w-full bg-[#002FA7] hover:bg-[#002585] text-white rounded-sm"
+          className="w-full btn-primary"
           data-testid="course-save-changes"
         >
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : t("courses.saveChanges")}

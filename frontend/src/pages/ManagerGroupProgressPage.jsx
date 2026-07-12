@@ -4,11 +4,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { BarChart3, CheckCircle, Clock, Loader2 } from "lucide-react";
+import { BarChart3, CheckCircle, Clock } from "lucide-react";
 import { getCourseLanguageDisplay } from "@/i18n";
 import { API, formatError } from "@/lib/api";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { DashboardLayout } from "@/components/DashboardLayout";
+import PageHeader from "@/components/enhanced/PageHeader";
+import EmptyState from "@/components/enhanced/EmptyState";
+import StatCard from "@/components/enhanced/StatCard";
+import { SkeletonGrid } from "@/components/enhanced/Skeletons";
 
 export const ManagerGroupProgressPage = () => {
   const { t } = useLanguage();
@@ -49,27 +53,22 @@ export const ManagerGroupProgressPage = () => {
   return (
     <DashboardLayout>
       <div className="p-6" data-testid="manager-progress-page">
-        <h1 className="text-2xl sm:text-3xl tracking-tight font-medium text-[#0A0B10] mb-2">
-          Group Training Progress
-        </h1>
-        <p className="text-slate-600 mb-8">{t("manager.monitorProgress")}</p>
+        <PageHeader overline="Manager" title="Group Training Progress" description={t("manager.monitorProgress")} />
 
         {loading ? (
-          <div className="flex justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-[#002FA7]" />
-          </div>
+          <SkeletonGrid n={3} />
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Course List */}
             <div className="lg:col-span-1 space-y-4">
-              <h2 className="font-medium text-slate-700">{t("manager.coursesTitle")}</h2>
+              <p className="overline">{t("manager.coursesTitle")}</p>
               {overview.length > 0 ? overview.map((course) => (
-                <Card 
+                <Card
                   key={course.course_id}
-                  className={`bg-white border rounded-sm cursor-pointer transition-all ${
-                    selectedCourse === course.course_id 
-                      ? "border-[#002FA7] ring-2 ring-[#002FA7]/20" 
-                      : "border-slate-200 hover:border-slate-300"
+                  className={`card-swiss cursor-pointer ${
+                    selectedCourse === course.course_id
+                      ? "border-[#002FA7] ring-2 ring-[#002FA7]/20"
+                      : ""
                   }`}
                   onClick={() => fetchCourseProgress(course.course_id)}
                   data-testid={`course-progress-${course.course_id}`}
@@ -100,54 +99,36 @@ export const ManagerGroupProgressPage = () => {
                   </CardContent>
                 </Card>
               )) : (
-                <Card className="bg-white border border-slate-200 rounded-sm">
-                  <CardContent className="p-8 text-center">
-                    <p className="text-slate-500">{t("manager.noCoursesWithEnrollments")}</p>
-                  </CardContent>
-                </Card>
+                <EmptyState icon={BarChart3} title={t("manager.noCoursesWithEnrollments")} testId="manager-progress-empty-courses" />
               )}
             </div>
 
             {/* Course Details */}
             <div className="lg:col-span-2">
               {loadingDetails ? (
-                <div className="flex justify-center py-12">
-                  <Loader2 className="w-8 h-8 animate-spin text-[#002FA7]" />
-                </div>
+                <SkeletonGrid n={1} />
               ) : courseProgress ? (
                 <div className="space-y-6">
                   {/* Summary Stats */}
-                  <Card className="bg-white border border-slate-200 rounded-sm">
+                  <Card className="card-swiss">
                     <CardHeader>
-                      <CardTitle className="text-lg">{courseProgress.course_title}</CardTitle>
+                      <CardTitle className="font-display text-lg">{courseProgress.course_title}</CardTitle>
                       <CardDescription>Passing Score: {courseProgress.passing_score}%</CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div className="text-center p-4 bg-slate-50 rounded-sm">
-                          <p className="text-2xl font-medium text-[#0A0B10]">{courseProgress.summary.total_enrolled}</p>
-                          <p className="text-xs text-slate-500">{t("manager.totalEnrolled")}</p>
-                        </div>
-                        <div className="text-center p-4 bg-green-50 rounded-sm">
-                          <p className="text-2xl font-medium text-green-600">{courseProgress.summary.completed}</p>
-                          <p className="text-xs text-slate-500">{t("manager.completedLabel")}</p>
-                        </div>
-                        <div className="text-center p-4 bg-yellow-50 rounded-sm">
-                          <p className="text-2xl font-medium text-yellow-600">{courseProgress.summary.in_progress}</p>
-                          <p className="text-xs text-slate-500">{t("manager.inProgressLabel")}</p>
-                        </div>
-                        <div className="text-center p-4 bg-[#002FA7]/5 rounded-sm">
-                          <p className="text-2xl font-medium text-[#002FA7]">{courseProgress.summary.average_score}%</p>
-                          <p className="text-xs text-slate-500">{t("manager.avgScore")}</p>
-                        </div>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 stagger">
+                        <StatCard label={t("manager.totalEnrolled")} value={courseProgress.summary.total_enrolled} testId="stat-group-enrolled" />
+                        <StatCard label={t("manager.completedLabel")} value={courseProgress.summary.completed} testId="stat-group-completed" />
+                        <StatCard label={t("manager.inProgressLabel")} value={courseProgress.summary.in_progress} testId="stat-group-in-progress" />
+                        <StatCard label={t("manager.avgScore")} value={`${courseProgress.summary.average_score}%`} testId="stat-group-avg-score" />
                       </div>
                     </CardContent>
                   </Card>
 
                   {/* Student List */}
-                  <Card className="bg-white border border-slate-200 rounded-sm">
+                  <Card className="card-swiss">
                     <CardHeader>
-                      <CardTitle className="text-lg">Student Progress</CardTitle>
+                      <CardTitle className="font-display text-lg">Student Progress</CardTitle>
                     </CardHeader>
                     <CardContent className="p-0">
                       <div className="overflow-x-auto">
@@ -222,12 +203,7 @@ export const ManagerGroupProgressPage = () => {
                   </Card>
                 </div>
               ) : (
-                <Card className="bg-white border border-slate-200 rounded-sm">
-                  <CardContent className="p-12 text-center">
-                    <BarChart3 className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                    <p className="text-slate-600">{t("manager.selectCoursePrompt")}</p>
-                  </CardContent>
-                </Card>
+                <EmptyState icon={BarChart3} title={t("manager.selectCoursePrompt")} testId="manager-progress-select-prompt" />
               )}
             </div>
           </div>

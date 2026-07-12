@@ -1,33 +1,45 @@
 import "@/App.css";
+import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "sonner";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { DashboardLayout } from "@/components/DashboardLayout";
+import { SkeletonGrid } from "@/components/enhanced/Skeletons";
 
+// Public landing page — small, eager is fine for first paint.
 import { LandingPage } from "@/pages/LandingPage";
-import { LoginPage } from "@/pages/LoginPage";
-import { RegisterPage } from "@/pages/RegisterPage";
-import { ForgotPasswordPage } from "@/pages/ForgotPasswordPage";
-import { ResetPasswordPage } from "@/pages/ResetPasswordPage";
-import { CoursesPage } from "@/pages/CoursesPage";
-import { CourseDetailPage } from "@/pages/CourseDetailPage";
-import { PaymentSuccessPage } from "@/pages/PaymentSuccessPage";
-import { StudentDashboard } from "@/pages/StudentDashboard";
-import { AdminDashboard } from "@/pages/AdminDashboard";
-import { ManagerDashboard } from "@/pages/ManagerDashboard";
-import { AdminAnalyticsPage } from "@/pages/AdminAnalyticsPage";
-import { QuizPage } from "@/pages/QuizPage";
-import { CertificatesPage } from "@/pages/CertificatesPage";
-import { AdminCoursesPage } from "@/pages/AdminCoursesPage";
-import { AdminUsersPage } from "@/pages/AdminUsersPage";
-import { AdminCompaniesPage } from "@/pages/AdminCompaniesPage";
-import { AdminCompanyDashboardPage } from "@/pages/AdminCompanyDashboardPage";
-import { ManagerGroupProgressPage } from "@/pages/ManagerGroupProgressPage";
-import { AdminBulkEnrollPage } from "@/pages/AdminBulkEnrollPage";
-import { AdminCourseEditPage } from "@/pages/AdminCourseEditPage";
-import { AdminAISettingsPage } from "@/pages/AdminAISettingsPage";
+
+// Everything else loads on demand, splitting the bundle per route.
+const LoginPage = lazy(() => import("@/pages/LoginPage").then((m) => ({ default: m.LoginPage })));
+const RegisterPage = lazy(() => import("@/pages/RegisterPage").then((m) => ({ default: m.RegisterPage })));
+const ForgotPasswordPage = lazy(() => import("@/pages/ForgotPasswordPage").then((m) => ({ default: m.ForgotPasswordPage })));
+const ResetPasswordPage = lazy(() => import("@/pages/ResetPasswordPage").then((m) => ({ default: m.ResetPasswordPage })));
+const CoursesPage = lazy(() => import("@/pages/CoursesPage").then((m) => ({ default: m.CoursesPage })));
+const CourseDetailPage = lazy(() => import("@/pages/CourseDetailPage").then((m) => ({ default: m.CourseDetailPage })));
+const PaymentSuccessPage = lazy(() => import("@/pages/PaymentSuccessPage").then((m) => ({ default: m.PaymentSuccessPage })));
+const StudentDashboard = lazy(() => import("@/pages/StudentDashboard").then((m) => ({ default: m.StudentDashboard })));
+const AdminDashboard = lazy(() => import("@/pages/AdminDashboard").then((m) => ({ default: m.AdminDashboard })));
+const ManagerDashboard = lazy(() => import("@/pages/ManagerDashboard").then((m) => ({ default: m.ManagerDashboard })));
+const AdminAnalyticsPage = lazy(() => import("@/pages/AdminAnalyticsPage").then((m) => ({ default: m.AdminAnalyticsPage })));
+const QuizPage = lazy(() => import("@/pages/QuizPage").then((m) => ({ default: m.QuizPage })));
+const CertificatesPage = lazy(() => import("@/pages/CertificatesPage").then((m) => ({ default: m.CertificatesPage })));
+const AdminCoursesPage = lazy(() => import("@/pages/AdminCoursesPage").then((m) => ({ default: m.AdminCoursesPage })));
+const AdminUsersPage = lazy(() => import("@/pages/AdminUsersPage").then((m) => ({ default: m.AdminUsersPage })));
+const AdminCompaniesPage = lazy(() => import("@/pages/AdminCompaniesPage").then((m) => ({ default: m.AdminCompaniesPage })));
+const AdminCompanyDashboardPage = lazy(() => import("@/pages/AdminCompanyDashboardPage").then((m) => ({ default: m.AdminCompanyDashboardPage })));
+const ManagerGroupProgressPage = lazy(() => import("@/pages/ManagerGroupProgressPage").then((m) => ({ default: m.ManagerGroupProgressPage })));
+const AdminBulkEnrollPage = lazy(() => import("@/pages/AdminBulkEnrollPage").then((m) => ({ default: m.AdminBulkEnrollPage })));
+const AdminCourseEditPage = lazy(() => import("@/pages/AdminCourseEditPage").then((m) => ({ default: m.AdminCourseEditPage })));
+const AdminAISettingsPage = lazy(() => import("@/pages/AdminAISettingsPage").then((m) => ({ default: m.AdminAISettingsPage })));
+
+const RouteFallback = () => (
+  // Skeletons beat spinners: layout doesn't jump when the chunk lands.
+  <div className="p-6">
+    <SkeletonGrid n={4} />
+  </div>
+);
 
 const DashboardRouter = () => {
   const { user } = useAuth();
@@ -55,129 +67,131 @@ function App() {
       <AuthProvider>
         <BrowserRouter>
           <Toaster position="top-right" richColors />
-          <Routes>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
-            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-            <Route path="/reset-password" element={<ResetPasswordPage />} />
-            <Route path="/courses" element={<CoursesPage />} />
-            <Route path="/courses/:id" element={<CourseDetailPage />} />
-            <Route path="/payment/success" element={<PaymentSuccessPage />} />
+          <Suspense fallback={<RouteFallback />}>
+            <Routes>
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
+              <Route path="/courses" element={<CoursesPage />} />
+              <Route path="/courses/:id" element={<CourseDetailPage />} />
+              <Route path="/payment/success" element={<PaymentSuccessPage />} />
 
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <DashboardRouter />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/my-courses"
-              element={
-                <ProtectedRoute>
-                  <DashboardLayout>
-                    <StudentDashboard />
-                  </DashboardLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/certificates"
-              element={
-                <ProtectedRoute>
-                  <CertificatesPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/quiz/:id"
-              element={
-                <ProtectedRoute>
-                  <QuizPage />
-                </ProtectedRoute>
-              }
-            />
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <DashboardRouter />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/my-courses"
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout>
+                      <StudentDashboard />
+                    </DashboardLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/certificates"
+                element={
+                  <ProtectedRoute>
+                    <CertificatesPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/quiz/:id"
+                element={
+                  <ProtectedRoute>
+                    <QuizPage />
+                  </ProtectedRoute>
+                }
+              />
 
-            <Route
-              path="/admin/courses"
-              element={
-                <ProtectedRoute roles={["admin"]}>
-                  <AdminCoursesPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/courses/:id/edit"
-              element={
-                <ProtectedRoute roles={["admin"]}>
-                  <AdminCourseEditPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/users"
-              element={
-                <ProtectedRoute roles={["admin"]}>
-                  <AdminUsersPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/companies"
-              element={
-                <ProtectedRoute roles={["admin"]}>
-                  <AdminCompaniesPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/companies/:companyId/dashboard"
-              element={
-                <ProtectedRoute roles={["admin"]}>
-                  <AdminCompanyDashboardPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/analytics"
-              element={
-                <ProtectedRoute roles={["admin"]}>
-                  <DashboardLayout>
-                    <AdminAnalyticsPage />
-                  </DashboardLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/bulk-enroll"
-              element={
-                <ProtectedRoute roles={["admin"]}>
-                  <AdminBulkEnrollPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/ai-settings"
-              element={
-                <ProtectedRoute roles={["admin"]}>
-                  <AdminAISettingsPage />
-                </ProtectedRoute>
-              }
-            />
+              <Route
+                path="/admin/courses"
+                element={
+                  <ProtectedRoute roles={["admin"]}>
+                    <AdminCoursesPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/courses/:id/edit"
+                element={
+                  <ProtectedRoute roles={["admin"]}>
+                    <AdminCourseEditPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/users"
+                element={
+                  <ProtectedRoute roles={["admin"]}>
+                    <AdminUsersPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/companies"
+                element={
+                  <ProtectedRoute roles={["admin"]}>
+                    <AdminCompaniesPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/companies/:companyId/dashboard"
+                element={
+                  <ProtectedRoute roles={["admin"]}>
+                    <AdminCompanyDashboardPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/analytics"
+                element={
+                  <ProtectedRoute roles={["admin"]}>
+                    <DashboardLayout>
+                      <AdminAnalyticsPage />
+                    </DashboardLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/bulk-enroll"
+                element={
+                  <ProtectedRoute roles={["admin"]}>
+                    <AdminBulkEnrollPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/ai-settings"
+                element={
+                  <ProtectedRoute roles={["admin"]}>
+                    <AdminAISettingsPage />
+                  </ProtectedRoute>
+                }
+              />
 
-            <Route
-              path="/manager/progress"
-              element={
-                <ProtectedRoute roles={["admin", "client_manager"]}>
-                  <ManagerGroupProgressPage />
-                </ProtectedRoute>
-              }
-            />
+              <Route
+                path="/manager/progress"
+                element={
+                  <ProtectedRoute roles={["admin", "client_manager"]}>
+                    <ManagerGroupProgressPage />
+                  </ProtectedRoute>
+                }
+              />
 
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </Suspense>
         </BrowserRouter>
       </AuthProvider>
     </LanguageProvider>

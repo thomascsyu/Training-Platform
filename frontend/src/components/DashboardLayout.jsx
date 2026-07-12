@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -11,7 +11,6 @@ import { useAuth } from "@/contexts/AuthContext";
 export const DashboardLayout = ({ children }) => {
   const { user, logout } = useAuth();
   const { t } = useLanguage();
-  const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const navItems = user?.role === "admin" ? [
@@ -43,25 +42,24 @@ export const DashboardLayout = ({ children }) => {
           {sidebarOpen && (
             <Link to="/" className="flex items-center gap-2">
               <GraduationCap className="w-6 h-6 text-[#002FA7]" />
-              <span className="font-medium text-[#0A0B10]">LearnHub</span>
+              <span className="font-display text-[#0A0B10]">LearnHub</span>
             </Link>
           )}
           <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(!sidebarOpen)} className="rounded-sm" data-testid="toggle-sidebar-btn">
             <Menu className="w-5 h-5" />
           </Button>
         </div>
-        <nav className="flex-1 p-4 space-y-2">
+        <nav className="flex-1 p-4 space-y-1">
           {navItems.map((item) => (
-            <Button
+            <NavLink
               key={item.path}
-              variant="ghost"
-              className={`w-full justify-start rounded-sm ${sidebarOpen ? "" : "px-0 justify-center"}`}
-              onClick={() => navigate(item.path)}
+              to={item.path}
+              className={`nav-item ${sidebarOpen ? "" : "justify-center px-0"}`}
               data-testid={`nav-${item.label.toLowerCase().replace(" ", "-")}`}
             >
-              <item.icon className="w-5 h-5" />
-              {sidebarOpen && <span className="ml-3">{item.label}</span>}
-            </Button>
+              <item.icon className="w-5 h-5 shrink-0" />
+              {sidebarOpen && <span>{item.label}</span>}
+            </NavLink>
           ))}
         </nav>
         <div className="p-4 border-t border-slate-200">

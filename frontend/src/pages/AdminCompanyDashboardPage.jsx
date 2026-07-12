@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,9 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { API, formatError } from "@/lib/api";
 import { useLanguage } from "@/contexts/LanguageContext";
+import PageHeader from "@/components/enhanced/PageHeader";
+import StatCard from "@/components/enhanced/StatCard";
+import { TableSkeleton } from "@/components/enhanced/Skeletons";
 
 const formatDate = (value) => {
   if (!value) return "—";
@@ -66,7 +69,7 @@ export const AdminCompanyDashboardPage = () => {
   return (
     <DashboardLayout>
       <div className="p-6" data-testid="admin-company-dashboard-page">
-        <div className="flex flex-col gap-4 mb-8">
+        <div className="mb-4">
           <Button
             variant="outline"
             className="w-fit rounded-sm"
@@ -75,51 +78,32 @@ export const AdminCompanyDashboardPage = () => {
           >
             <ArrowLeft className="w-4 h-4 mr-2" /> {t("companies.manageCompanies")}
           </Button>
-
-          <div className="flex flex-col gap-2">
-            <h1 className="text-2xl sm:text-3xl tracking-tight font-medium text-[#0A0B10]">
-              {dashboard?.company?.name || "Company Dashboard"}
-            </h1>
-            <p className="text-slate-600">
-              {dashboard?.company?.description || "Track users and training progress for this company."}
-            </p>
-          </div>
         </div>
 
+        <PageHeader
+          overline="Admin"
+          title={dashboard?.company?.name || "Company Dashboard"}
+          description={dashboard?.company?.description || "Track users and training progress for this company."}
+        />
+
         {loading ? (
-          <div className="flex justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-[#002FA7]" />
-          </div>
+          <TableSkeleton rows={5} cols={6} />
         ) : !dashboard ? (
-          <Card className="bg-white border border-slate-200 rounded-sm p-8 text-center text-slate-600">
+          <Card className="card-swiss p-8 text-center text-slate-600">
             Unable to load company dashboard.
           </Card>
         ) : (
           <div className="space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-              <Card className="bg-white border border-slate-200 rounded-sm p-4">
-                <p className="text-xs text-slate-500 uppercase tracking-wide">Users</p>
-                <p className="text-2xl font-medium text-[#0A0B10] mt-2">{dashboard.summary.total_users}</p>
-              </Card>
-              <Card className="bg-white border border-slate-200 rounded-sm p-4">
-                <p className="text-xs text-slate-500 uppercase tracking-wide">Assigned Trainings</p>
-                <p className="text-2xl font-medium text-[#0A0B10] mt-2">{dashboard.summary.total_trainings}</p>
-              </Card>
-              <Card className="bg-white border border-slate-200 rounded-sm p-4">
-                <p className="text-xs text-slate-500 uppercase tracking-wide">Completion Rate</p>
-                <p className="text-2xl font-medium text-[#0A0B10] mt-2">{dashboard.summary.completion_rate}%</p>
-              </Card>
-              <Card className="bg-white border border-slate-200 rounded-sm p-4">
-                <p className="text-xs text-slate-500 uppercase tracking-wide">Average Progress</p>
-                <p className="text-2xl font-medium text-[#0A0B10] mt-2">
-                  {dashboard.summary.average_progress_percent}%
-                </p>
-              </Card>
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 stagger">
+              <StatCard label="Users" value={dashboard.summary.total_users} testId="stat-company-users" />
+              <StatCard label="Assigned Trainings" value={dashboard.summary.total_trainings} testId="stat-company-trainings" />
+              <StatCard label="Completion Rate" value={`${dashboard.summary.completion_rate}%`} testId="stat-company-completion" />
+              <StatCard label="Average Progress" value={`${dashboard.summary.average_progress_percent}%`} testId="stat-company-progress" />
             </div>
 
-            <Card className="bg-white border border-slate-200 rounded-sm overflow-hidden">
+            <Card className="card-swiss overflow-hidden">
               <div className="p-4 border-b border-slate-200">
-                <h2 className="font-medium text-[#0A0B10]">Users in this Company</h2>
+                <h2 className="font-display text-slate-900">Users in this Company</h2>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full">
@@ -181,7 +165,7 @@ export const AdminCompanyDashboardPage = () => {
             </Card>
 
             {selectedUser && (
-              <Card className="bg-white border border-slate-200 rounded-sm overflow-hidden">
+              <Card className="card-swiss overflow-hidden">
                 <div className="p-4 border-b border-slate-200">
                   <h2 className="font-medium text-[#0A0B10]">Training Progress for {selectedUser.user_name}</h2>
                   <p className="text-sm text-slate-500 mt-1">
