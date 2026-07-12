@@ -4,21 +4,23 @@ React single-page application for the LearnHub LMS.
 
 ## Stack
 
-- React 19 + React Router
-- Tailwind CSS + Shadcn UI
+- React 19 + React Router 7 (route-level `React.lazy` code splitting)
+- Tailwind CSS + Shadcn UI — Swiss & High-Contrast design system per `design_guidelines.json` (International Klein Blue `#002FA7`, Clash Display / IBM Plex Sans / JetBrains Mono)
 - Axios (cookie-based auth)
-- Custom i18n (English / Traditional Chinese)
+- Custom i18n (English, 繁體中文, 简体中文, 日本語, 한국어)
 
 ## Project Structure
 
 ```
 src/
-├── App.js              # Route definitions and page components
-├── lib/api.js          # Axios client and error formatting
+├── App.js            # Route definitions with React.lazy code splitting
+├── lib/api.js         # Axios client and error formatting
 ├── contexts/           # AuthProvider, LanguageProvider
-├── components/         # Shared layout, guards, language switcher
-├── components/ui/      # Shadcn UI primitives
-└── i18n.js             # UI translation strings
+├── components/          # Shared layout, guards, language switcher, DashboardLayout
+│   ├── enhanced/           # Design-system components: PageHeader, StatCard, EmptyState, Skeletons, CourseCard
+│   └── ui/                  # Shadcn UI primitives
+├── pages/                     # Route pages (dashboards, admin, auth, course player, etc.)
+└── i18n.js                     # UI translation strings
 ```
 
 ## Setup

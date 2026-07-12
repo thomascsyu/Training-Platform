@@ -180,12 +180,14 @@ LearnHub is a full-featured LMS for creating, managing, and delivering courses. 
 
 | Path | Role |
 |------|------|
-| `src/App.js` | Routes and page components (uses `lib/api.js` for auth + token refresh) |
+| `src/App.js` | Route definitions with route-level `React.lazy` code splitting (uses `lib/api.js` for auth + token refresh) |
 | `src/lib/api.js` | Axios client (`withCredentials: true`) |
 | `src/contexts/` | Auth and language providers |
-| `src/components/` | Shared UI (guards, language switcher) |
+| `src/components/` | Shared UI (guards, language switcher, `DashboardLayout`) |
+| `src/components/enhanced/` | Swiss/Klein design-system components (`PageHeader`, `StatCard`, `EmptyState`, `Skeletons`, `CourseCard`) implementing `design_guidelines.json` |
+| `src/components/ui/` | Shadcn UI primitives |
 | `src/i18n.js` | UI strings (EN, 繁中, 简中, 日本語, 한국어) |
-| `src/pages/` | Extracted pages (`DashboardLayout`, `AdminCourseEditPage`) |
+| `src/pages/` | Extracted pages (`DashboardLayout`, `AdminCourseEditPage`, etc.) |
 
 See [frontend/README.md](frontend/README.md) for frontend-specific setup.
 
@@ -195,8 +197,8 @@ See [frontend/README.md](frontend/README.md) for frontend-specific setup.
 
 | Layer | Technology | Notes |
 |-------|------------|-------|
-| Frontend | React 19, React Router 7 | CRA + CRACO; optional `@emergentbase/visual-edits` (proprietary tarball in `package.json`) |
-| Styling | Tailwind CSS 3, Shadcn UI | International Klein Blue `#002FA7` |
+| Frontend | React 19, React Router 7 | CRA + CRACO; optional `@emergentbase/visual-edits` (proprietary tarball in `package.json`); route-level `React.lazy` code splitting |
+| Styling | Tailwind CSS 3, Shadcn UI | Swiss & High-Contrast design system per `design_guidelines.json` — International Klein Blue `#002FA7`, Clash Display / IBM Plex Sans / JetBrains Mono, tokens enforced in `src/index.css` + `tailwind.config.js` |
 | HTTP | Axios | Cookie-based auth |
 | Backend | Python 3.11+, FastAPI | Async via Motor |
 | Database | MongoDB 6+ | Document store |
@@ -571,6 +573,7 @@ Test accounts and role promotion steps: **[memory/test_credentials.md](memory/te
 
 - [x] Full UI translation (5 languages: EN, zh-TW, zh-CN, ja, ko)
 - [x] Split `App.js` into `src/pages/` components
+- [x] Route-level code splitting (`React.lazy`) and enforced Swiss/Klein design-system tokens + component library (`src/components/enhanced/`)
 - [ ] Course categories/tags, ratings, instructor profiles
 - [ ] Mobile app (React Native)
 
