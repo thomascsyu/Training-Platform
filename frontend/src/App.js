@@ -33,6 +33,7 @@ const ManagerGroupProgressPage = lazy(() => import("@/pages/ManagerGroupProgress
 const AdminBulkEnrollPage = lazy(() => import("@/pages/AdminBulkEnrollPage").then((m) => ({ default: m.AdminBulkEnrollPage })));
 const AdminCourseEditPage = lazy(() => import("@/pages/AdminCourseEditPage").then((m) => ({ default: m.AdminCourseEditPage })));
 const AdminAISettingsPage = lazy(() => import("@/pages/AdminAISettingsPage").then((m) => ({ default: m.AdminAISettingsPage })));
+const AdminEmailNotificationsPage = lazy(() => import("@/pages/AdminEmailNotificationsPage").then((m) => ({ default: m.AdminEmailNotificationsPage })));
 const AdminPaymentsPage = lazy(() => import("@/pages/AdminPaymentsPage").then((m) => ({ default: m.AdminPaymentsPage })));
 const AdminCertificatesPage = lazy(() => import("@/pages/AdminCertificatesPage").then((m) => ({ default: m.AdminCertificatesPage })));
 const AdminCertificateTemplatesPage = lazy(() => import("@/pages/AdminCertificateTemplatesPage").then((m) => ({ default: m.AdminCertificateTemplatesPage })));
