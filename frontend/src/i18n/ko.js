@@ -137,6 +137,8 @@ export default {
       passingScore: "합격 점수",
       freeCourse: "무료 코스",
       privateCourse: "비공개 코스",
+      courseType: "코스 유형",
+      paymentRequired: "결제 필요",
       language: "언어",
       category: "카테고리",
       filter: "필터",

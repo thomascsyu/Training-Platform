@@ -136,6 +136,8 @@ export default {
       passingScore: "及格分數",
       freeCourse: "免費課程",
       privateCourse: "私人課程",
+      courseType: "課程類型",
+      paymentRequired: "需付款",
       language: "語言",
       category: "分類",
       filter: "篩選",
