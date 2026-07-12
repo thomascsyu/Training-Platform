@@ -17,6 +17,7 @@ export default {
       bulkEnroll: "Bulk Enroll",
       groupProgress: "Group Progress",
       aiSettings: "AI API Keys",
+      emailNotifications: "Email Notifications",
       payments: "Payments",
       certificates: "Certificates"
     },
@@ -137,6 +138,8 @@ export default {
       passingScore: "Passing Score",
       freeCourse: "Free Course",
       privateCourse: "Private Course",
+      courseType: "Course Type",
+      paymentRequired: "Payment Required",
       language: "Language",
       category: "Category",
       filter: "Filter",

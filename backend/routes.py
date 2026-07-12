@@ -8,6 +8,7 @@ from routers.certificate_templates import router as certificate_templates_router
 from routers.chat import router as chat_router
 from routers.courses import router as courses_router
 from routers.enrollments import router as enrollments_router
+from routers.email_notifications import router as email_notifications_router
 from routers.forums import router as forums_router
 from routers.groups import router as groups_router
 from routers.lessons import router as lessons_router
@@ -33,6 +34,7 @@ api_router.include_router(courses_router)
 api_router.include_router(lessons_router)
 api_router.include_router(quizzes_router)
 api_router.include_router(enrollments_router)
+api_router.include_router(email_notifications_router)
 api_router.include_router(groups_router)
 api_router.include_router(certificates_router)
 api_router.include_router(certificate_templates_router)

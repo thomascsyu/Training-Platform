@@ -296,6 +296,9 @@ async def create_translated_course(course_id: str, target_language: str, request
         "video_type": course.get("video_type"),
         "price": course.get("price", 0),
         "is_free": course.get("is_free", True),
+        "course_type": course.get("course_type") or (
+            "free" if course.get("is_free", True) else "payment_required"
+        ),
         "is_private": course.get("is_private", False),
         "passing_score": course.get("passing_score", 70),
         "materials": course.get("materials", []),

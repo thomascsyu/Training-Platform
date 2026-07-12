@@ -191,6 +191,14 @@ function App() {
                 }
               />
               <Route
+                path="/admin/email-notifications"
+                element={
+                  <ProtectedRoute roles={["admin"]}>
+                    <AdminEmailNotificationsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
                 path="/admin/certificates"
                 element={
                   <ProtectedRoute roles={["admin"]}>

@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 
 from database import db
 from db_utils import parse_object_id
-from email_service import send_enrollment_email
+from email_service import COURSE_ENROLLMENT_PAID, send_enrollment_email
 
 
 async def enroll_user_after_payment(transaction: dict) -> bool:
@@ -32,6 +32,7 @@ async def enroll_user_after_payment(transaction: dict) -> bool:
             enrolled_user.get("name"),
             course.get("title"),
             course_id,
+            event_key=COURSE_ENROLLMENT_PAID,
         )
     return True
 

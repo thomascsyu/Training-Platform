@@ -16,6 +16,7 @@ export default {
       manageGroups: "グループ管理",
       bulkEnroll: "一括登録",
       groupProgress: "グループ進捗",
+      emailNotifications: "Email Notifications",
       aiSettings: "AI APIキー",
       payments: "支払い",
       certificates: "修了証"
@@ -137,6 +138,8 @@ export default {
       passingScore: "合格スコア",
       freeCourse: "無料コース",
       privateCourse: "非公開コース",
+      courseType: "コースタイプ",
+      paymentRequired: "支払い必須",
       language: "言語",
       category: "カテゴリー",
       filter: "フィルター",
