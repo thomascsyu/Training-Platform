@@ -16,7 +16,9 @@ export default {
       manageGroups: "Manage Groups",
       bulkEnroll: "Bulk Enroll",
       groupProgress: "Group Progress",
-      aiSettings: "AI API Keys"
+      aiSettings: "AI API Keys",
+      payments: "Payments",
+      certificates: "Certificates"
     },
     
     // Landing Page
@@ -363,7 +365,66 @@ export default {
       somethingWrong: "Something went wrong",
       contactSupport: "Please contact support if the issue persists."
     },
-    
+
+    // Admin Payments
+    adminPayments: {
+      title: "Payments",
+      description: "Review and manage Stripe payment transactions.",
+      totalRevenue: "Total Revenue",
+      paid: "Paid",
+      pending: "Pending",
+      totalTransactions: "Total Transactions",
+      filterByStatus: "Filter by status",
+      allStatuses: "All statuses",
+      statusPaid: "Paid",
+      statusPending: "Pending",
+      statusFailed: "Failed",
+      sessionId: "Session ID",
+      course: "Course",
+      student: "Student",
+      amount: "Amount",
+      status: "Status",
+      date: "Date",
+      noTransactions: "No transactions yet",
+      noTransactionsHint: "Payments will appear here once students complete checkout."
+    },
+
+    // Admin Certificates
+    adminCertificates: {
+      title: "Certificates",
+      description: "Issue and customize completion certificates for students.",
+      totalCertificates: "Total Certificates",
+      issueCertificate: "Issue Certificate",
+      createCertificate: "Create Certificate",
+      customizeCertificate: "Customize Certificate",
+      createDescription: "Award a certificate to a student for a completed course.",
+      customizeDescription: "Update the visual style for this certificate.",
+      selectCourse: "Course",
+      selectStudent: "Student",
+      score: "Score (0-100)",
+      template: "Template",
+      primaryColor: "Primary Color",
+      secondaryColor: "Secondary Color",
+      applyToCourse: "Apply to all certificates for this course",
+      applyToCourseHint: "When enabled, the style changes will be applied to every certificate for the selected course.",
+      certificateId: "Certificate ID",
+      course: "Course",
+      student: "Student",
+      issuedOn: "Issued",
+      actions: "Actions",
+      customize: "Customize",
+      download: "Download",
+      noCertificates: "No certificates yet",
+      noCertificatesHint: "Issue certificates after students complete their courses.",
+      created: "Certificate issued successfully.",
+      customized: "Certificate style updated.",
+      courseRequired: "Please select a course.",
+      studentRequired: "Please select a student.",
+      scoreRequired: "Please enter a score between 0 and 100.",
+      filterByCourse: "Filter by course",
+      allCourses: "All courses"
+    },
+
     // Common
     common: {
       loading: "Loading...",
@@ -371,6 +432,7 @@ export default {
       cancel: "Cancel",
       delete: "Delete",
       edit: "Edit",
+      refresh: "Refresh",
       completed: "Completed",
       youtube: "YouTube",
       vimeo: "Vimeo"

@@ -16,7 +16,9 @@ export default {
       manageGroups: "グループ管理",
       bulkEnroll: "一括登録",
       groupProgress: "グループ進捗",
-      aiSettings: "AI APIキー"
+      aiSettings: "AI APIキー",
+      payments: "支払い",
+      certificates: "修了証"
     },
     
     // Landing Page
@@ -334,7 +336,66 @@ export default {
       somethingWrong: "問題が発生しました",
       contactSupport: "問題が続く場合はサポートにお問い合わせください。"
     },
-    
+
+    // Admin Payments
+    adminPayments: {
+      title: "支払い",
+      description: "Stripe の支払いトランザクションを確認・管理します。",
+      totalRevenue: "総収入",
+      paid: "支払い済み",
+      pending: "保留中",
+      totalTransactions: "総トランザクション数",
+      filterByStatus: "ステータスで絞り込み",
+      allStatuses: "すべてのステータス",
+      statusPaid: "支払い済み",
+      statusPending: "保留中",
+      statusFailed: "失敗",
+      sessionId: "セッション ID",
+      course: "コース",
+      student: "受講者",
+      amount: "金額",
+      status: "ステータス",
+      date: "日時",
+      noTransactions: "トランザクションはありません",
+      noTransactionsHint: "受講者がチェックアウトを完了すると、ここに表示されます。"
+    },
+
+    // Admin Certificates
+    adminCertificates: {
+      title: "修了証",
+      description: "受講者向けに修了証を発行・カスタマイズします。",
+      totalCertificates: "修了証の総数",
+      issueCertificate: "修了証を発行",
+      createCertificate: "修了証を作成",
+      customizeCertificate: "修了証をカスタマイズ",
+      createDescription: "コースを完了した受講者に修了証を授与します。",
+      customizeDescription: "この修了証のビジュアルスタイルを更新します。",
+      selectCourse: "コース",
+      selectStudent: "受講者",
+      score: "スコア (0-100)",
+      template: "テンプレート",
+      primaryColor: "プライマリカラー",
+      secondaryColor: "セカンダリカラー",
+      applyToCourse: "このコースのすべての修了証に適用",
+      applyToCourseHint: "有効にすると、スタイル変更が選択したコースのすべての修了証に適用されます。",
+      certificateId: "修了証 ID",
+      course: "コース",
+      student: "受講者",
+      issuedOn: "発行日",
+      actions: "操作",
+      customize: "カスタマイズ",
+      download: "ダウンロード",
+      noCertificates: "修了証はまだありません",
+      noCertificatesHint: "受講者がコースを完了したら、修了証を発行できます。",
+      created: "修了証が発行されました。",
+      customized: "修了証のスタイルが更新されました。",
+      courseRequired: "コースを選択してください。",
+      studentRequired: "受講者を選択してください。",
+      scoreRequired: "0 から 100 のスコアを入力してください。",
+      filterByCourse: "コースで絞り込み",
+      allCourses: "すべてのコース"
+    },
+
     // Common
     common: {
       loading: "読み込み中...",
@@ -342,6 +403,7 @@ export default {
       cancel: "キャンセル",
       delete: "削除",
       edit: "編集",
+      refresh: "更新",
       completed: "完了",
       youtube: "YouTube",
       vimeo: "Vimeo"

@@ -16,7 +16,9 @@ export default {
       manageGroups: "群組管理",
       bulkEnroll: "批量报名",
       groupProgress: "群組進度",
-      aiSettings: "AI API 密钥"
+      aiSettings: "AI API 密钥",
+      payments: "付款",
+      certificates: "证书"
     },
     
     // Landing Page
@@ -333,7 +335,66 @@ export default {
       somethingWrong: "出現问题",
       contactSupport: "如果问题持续存在，请联繫客服。"
     },
-    
+
+    // Admin Payments
+    adminPayments: {
+      title: "付款",
+      description: "查看并管理 Stripe 付款交易。",
+      totalRevenue: "总收入",
+      paid: "已付款",
+      pending: "待付款",
+      totalTransactions: "总交易数",
+      filterByStatus: "按状态筛选",
+      allStatuses: "所有状态",
+      statusPaid: "已付款",
+      statusPending: "待付款",
+      statusFailed: "失败",
+      sessionId: "会话 ID",
+      course: "课程",
+      student: "学生",
+      amount: "金额",
+      status: "状态",
+      date: "日期",
+      noTransactions: "暂无交易",
+      noTransactionsHint: "学生完成结账后，付款将显示于此。"
+    },
+
+    // Admin Certificates
+    adminCertificates: {
+      title: "证书",
+      description: "为学生颁发并自定义完成证书。",
+      totalCertificates: "证书总数",
+      issueCertificate: "颁发证书",
+      createCertificate: "创建证书",
+      customizeCertificate: "自定义证书",
+      createDescription: "为完成课程的学生颁发证书。",
+      customizeDescription: "更新此证书的视觉样式。",
+      selectCourse: "课程",
+      selectStudent: "学生",
+      score: "分数 (0-100)",
+      template: "模板",
+      primaryColor: "主色",
+      secondaryColor: "辅色",
+      applyToCourse: "应用至此课程的所有证书",
+      applyToCourseHint: "启用后，样式变更将应用至该课程的每一份证书。",
+      certificateId: "证书 ID",
+      course: "课程",
+      student: "学生",
+      issuedOn: "颁发日期",
+      actions: "操作",
+      customize: "自定义",
+      download: "下载",
+      noCertificates: "暂无证书",
+      noCertificatesHint: "学生完成课程后，即可颁发证书。",
+      created: "证书已成功颁发。",
+      customized: "证书样式已更新。",
+      courseRequired: "请选择课程。",
+      studentRequired: "请选择学生。",
+      scoreRequired: "请输入 0 到 100 之间的分数。",
+      filterByCourse: "按课程筛选",
+      allCourses: "所有课程"
+    },
+
     // Common
     common: {
       loading: "载入中...",
@@ -341,6 +402,7 @@ export default {
       cancel: "取消",
       delete: "删除",
       edit: "辑輯",
+      refresh: "刷新",
       completed: "已完成",
       youtube: "YouTube",
       vimeo: "Vimeo"
