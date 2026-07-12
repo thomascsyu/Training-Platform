@@ -53,6 +53,8 @@ export const CourseThumbnail = ({
       src={resolvedSrc}
       alt={alt}
       className={className}
+      loading="lazy"
+      decoding="async"
       onLoad={() => {
         onLoad?.(activeSrc);
       }}

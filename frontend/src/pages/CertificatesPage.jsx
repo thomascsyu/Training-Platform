@@ -2,9 +2,12 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Award, Download, Loader2 } from "lucide-react";
+import { Award, Download } from "lucide-react";
 import { API, formatError } from "@/lib/api";
 import { DashboardLayout } from "@/components/DashboardLayout";
+import PageHeader from "@/components/enhanced/PageHeader";
+import EmptyState from "@/components/enhanced/EmptyState";
+import { TableSkeleton } from "@/components/enhanced/Skeletons";
 
 export const CertificatesPage = () => {
   const [certificates, setCertificates] = useState([]);
@@ -42,16 +45,12 @@ export const CertificatesPage = () => {
   return (
     <DashboardLayout>
       <div className="p-6" data-testid="certificates-page">
-        <h1 className="text-2xl sm:text-3xl tracking-tight font-medium text-[#0A0B10] mb-8">
-          My Certificates
-        </h1>
-        
+        <PageHeader overline="Achievements" title="My Certificates" />
+
         {loading ? (
-          <div className="flex justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-[#002FA7]" />
-          </div>
+          <TableSkeleton rows={3} cols={2} />
         ) : certificates.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 stagger">
             {certificates.map((cert) => (
               <Card key={cert.id} className="bg-white border border-slate-200 rounded-sm overflow-hidden" data-testid={`certificate-${cert.id}`}>
                 <div 
@@ -90,12 +89,12 @@ export const CertificatesPage = () => {
             ))}
           </div>
         ) : (
-          <Card className="bg-white border border-slate-200 rounded-sm">
-            <CardContent className="p-12 text-center">
-              <Award className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-              <p className="text-slate-600 mb-4">No certificates yet. Complete a course to earn your first certificate!</p>
-            </CardContent>
-          </Card>
+          <EmptyState
+            icon={Award}
+            title="No certificates yet"
+            description="Complete a course to earn your first certificate!"
+            testId="certificates-page-empty"
+          />
         )}
       </div>
     </DashboardLayout>
