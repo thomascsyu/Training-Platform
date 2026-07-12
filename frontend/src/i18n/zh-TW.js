@@ -17,7 +17,8 @@ export default {
       bulkEnroll: "批量報名",
       groupProgress: "群組進度",
       aiSettings: "AI API 金鑰",
-      certificateTemplates: "證書範本"
+      payments: "付款",
+      certificates: "證書"
     },
     
     // Landing Page
@@ -357,7 +358,66 @@ export default {
       somethingWrong: "出現問題",
       contactSupport: "如果問題持續存在，請聯繫客服。"
     },
-    
+
+    // Admin Payments
+    adminPayments: {
+      title: "付款",
+      description: "查看並管理 Stripe 付款交易。",
+      totalRevenue: "總收入",
+      paid: "已付款",
+      pending: "待付款",
+      totalTransactions: "總交易數",
+      filterByStatus: "按狀態篩選",
+      allStatuses: "所有狀態",
+      statusPaid: "已付款",
+      statusPending: "待付款",
+      statusFailed: "失敗",
+      sessionId: "工作階段 ID",
+      course: "課程",
+      student: "學生",
+      amount: "金額",
+      status: "狀態",
+      date: "日期",
+      noTransactions: "尚無交易",
+      noTransactionsHint: "學生完成結帳後，付款將顯示於此。"
+    },
+
+    // Admin Certificates
+    adminCertificates: {
+      title: "證書",
+      description: "為學生頒發並自訂完成證書。",
+      totalCertificates: "證書總數",
+      issueCertificate: "頒發證書",
+      createCertificate: "建立證書",
+      customizeCertificate: "自訂證書",
+      createDescription: "為完成課程的學生頒發證書。",
+      customizeDescription: "更新此證書的視覺樣式。",
+      selectCourse: "課程",
+      selectStudent: "學生",
+      score: "分數 (0-100)",
+      template: "範本",
+      primaryColor: "主色",
+      secondaryColor: "輔色",
+      applyToCourse: "套用至此課程的所有證書",
+      applyToCourseHint: "啟用後，樣式變更將套用至該課程的每一份證書。",
+      certificateId: "證書 ID",
+      course: "課程",
+      student: "學生",
+      issuedOn: "頒發日期",
+      actions: "操作",
+      customize: "自訂",
+      download: "下載",
+      noCertificates: "尚無證書",
+      noCertificatesHint: "學生完成課程後，即可頒發證書。",
+      created: "證書已成功頒發。",
+      customized: "證書樣式已更新。",
+      courseRequired: "請選擇課程。",
+      studentRequired: "請選擇學生。",
+      scoreRequired: "請輸入 0 到 100 之間的分數。",
+      filterByCourse: "依課程篩選",
+      allCourses: "所有課程"
+    },
+
     // Common
     common: {
       loading: "載入中...",
@@ -365,6 +425,7 @@ export default {
       cancel: "取消",
       delete: "刪除",
       edit: "編輯",
+      refresh: "重新整理",
       completed: "已完成",
       youtube: "YouTube",
       vimeo: "Vimeo"

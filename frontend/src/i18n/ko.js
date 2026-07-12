@@ -17,7 +17,8 @@ export default {
       bulkEnroll: "일괄 등록",
       groupProgress: "그룹 진행 상황",
       aiSettings: "AI API 키",
-      certificateTemplates: "수료증 템플릿"
+      payments: "결제",
+      certificates: "수료증"
     },
     
     // Landing Page
@@ -358,7 +359,66 @@ export default {
       somethingWrong: "문제가 발생했습니다",
       contactSupport: "문제가 계속되면 고객 지원에 문의하세요."
     },
-    
+
+    // Admin Payments
+    adminPayments: {
+      title: "결제",
+      description: "Stripe 결제 트랜잭션을 검토하고 관리하세요.",
+      totalRevenue: "총 수익",
+      paid: "결제 완료",
+      pending: "보류 중",
+      totalTransactions: "총 트랜잭션",
+      filterByStatus: "상태로 필터",
+      allStatuses: "모든 상태",
+      statusPaid: "결제 완료",
+      statusPending: "보류 중",
+      statusFailed: "실패",
+      sessionId: "세션 ID",
+      course: "코스",
+      student: "학생",
+      amount: "금액",
+      status: "상태",
+      date: "날짜",
+      noTransactions: "트랜잭션이 없습니다",
+      noTransactionsHint: "학생이 결제를 완료하면 여기에 표시됩니다."
+    },
+
+    // Admin Certificates
+    adminCertificates: {
+      title: "수료증",
+      description: "학생을 위한 수료증을 발급하고 사용자 지정하세요.",
+      totalCertificates: "총 수료증",
+      issueCertificate: "수료증 발급",
+      createCertificate: "수료증 생성",
+      customizeCertificate: "수료증 사용자 지정",
+      createDescription: "코스를 완료한 학생에게 수료증을 수여하세요.",
+      customizeDescription: "이 수료증의 시각적 스타일을 업데이트하세요.",
+      selectCourse: "코스",
+      selectStudent: "학생",
+      score: "점수 (0-100)",
+      template: "템플릿",
+      primaryColor: "기본 색상",
+      secondaryColor: "보조 색상",
+      applyToCourse: "이 코스의 모든 수료증에 적용",
+      applyToCourseHint: "활성화하면 스타일 변경 사항이 선택한 코스의 모든 수료증에 적용됩니다.",
+      certificateId: "수료증 ID",
+      course: "코스",
+      student: "학생",
+      issuedOn: "발급일",
+      actions: "작업",
+      customize: "사용자 지정",
+      download: "다운로드",
+      noCertificates: "수료증이 없습니다",
+      noCertificatesHint: "학생이 코스를 완료하면 수료증을 발급하세요.",
+      created: "수료증이 성공적으로 발급되었습니다.",
+      customized: "수료증 스타일이 업데이트되었습니다.",
+      courseRequired: "코스를 선택하세요.",
+      studentRequired: "학생을 선택하세요.",
+      scoreRequired: "0에서 100 사이의 점수를 입력하세요.",
+      filterByCourse: "코스로 필터",
+      allCourses: "모든 코스"
+    },
+
     // Common
     common: {
       loading: "로딩 중...",
@@ -366,6 +426,7 @@ export default {
       cancel: "취소",
       delete: "삭제",
       edit: "편집",
+      refresh: "새로고침",
       completed: "완료",
       youtube: "YouTube",
       vimeo: "Vimeo"

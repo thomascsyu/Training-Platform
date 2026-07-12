@@ -33,7 +33,8 @@ const ManagerGroupProgressPage = lazy(() => import("@/pages/ManagerGroupProgress
 const AdminBulkEnrollPage = lazy(() => import("@/pages/AdminBulkEnrollPage").then((m) => ({ default: m.AdminBulkEnrollPage })));
 const AdminCourseEditPage = lazy(() => import("@/pages/AdminCourseEditPage").then((m) => ({ default: m.AdminCourseEditPage })));
 const AdminAISettingsPage = lazy(() => import("@/pages/AdminAISettingsPage").then((m) => ({ default: m.AdminAISettingsPage })));
-const AdminCertificateTemplatesPage = lazy(() => import("@/pages/AdminCertificateTemplatesPage").then((m) => ({ default: m.AdminCertificateTemplatesPage })));
+const AdminPaymentsPage = lazy(() => import("@/pages/AdminPaymentsPage").then((m) => ({ default: m.AdminPaymentsPage })));
+const AdminCertificatesPage = lazy(() => import("@/pages/AdminCertificatesPage").then((m) => ({ default: m.AdminCertificatesPage })));
 
 const RouteFallback = () => (
   // Skeletons beat spinners: layout doesn't jump when the chunk lands.
@@ -181,10 +182,18 @@ function App() {
                 }
               />
               <Route
-                path="/admin/certificate-templates"
+                path="/admin/payments"
                 element={
                   <ProtectedRoute roles={["admin"]}>
-                    <AdminCertificateTemplatesPage />
+                    <AdminPaymentsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/certificates"
+                element={
+                  <ProtectedRoute roles={["admin"]}>
+                    <AdminCertificatesPage />
                   </ProtectedRoute>
                 }
               />
