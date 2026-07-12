@@ -16,6 +16,7 @@ export default {
       manageGroups: "グループ管理",
       bulkEnroll: "一括登録",
       groupProgress: "グループ進捗",
+      emailNotifications: "Email Notifications",
       aiSettings: "AI APIキー",
       payments: "支払い",
       certificates: "修了証"

@@ -17,6 +17,7 @@ export default {
       bulkEnroll: "批量報名",
       groupProgress: "群組進度",
       aiSettings: "AI API 金鑰",
+      emailNotifications: "Email Notifications",
       payments: "付款",
       certificates: "證書"
     },

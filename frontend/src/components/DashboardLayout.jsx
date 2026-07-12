@@ -3,7 +3,7 @@ import { Link, NavLink } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
-  Award, BarChart3, BookOpen, CreditCard, GraduationCap, Home, Key, LogOut, Menu, Users
+  Award, BarChart3, BookOpen, CreditCard, GraduationCap, Home, Key, LogOut, Mail, Menu, Users
 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -22,6 +22,7 @@ export const DashboardLayout = ({ children }) => {
     { icon: BarChart3, label: t("nav.groupProgress"), path: "/manager/progress" },
     { icon: BarChart3, label: t("nav.analytics"), path: "/admin/analytics" },
     { icon: Key, label: t("nav.aiSettings"), path: "/admin/ai-settings" },
+    { icon: Mail, label: t("nav.emailNotifications"), path: "/admin/email-notifications" },
     { icon: CreditCard, label: t("nav.payments"), path: "/admin/payments" },
     { icon: Award, label: t("nav.certificates"), path: "/admin/certificates" }
   ] : user?.role === "client_manager" ? [

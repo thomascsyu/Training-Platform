@@ -17,6 +17,7 @@ export default {
       bulkEnroll: "Bulk Enroll",
       groupProgress: "Group Progress",
       aiSettings: "AI API Keys",
+      emailNotifications: "Email Notifications",
       payments: "Payments",
       certificates: "Certificates"
     },

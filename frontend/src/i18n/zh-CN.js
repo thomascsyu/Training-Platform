@@ -16,6 +16,7 @@ export default {
       manageGroups: "群組管理",
       bulkEnroll: "批量报名",
       groupProgress: "群組進度",
+      emailNotifications: "Email Notifications",
       aiSettings: "AI API 密钥",
       payments: "付款",
       certificates: "证书"
