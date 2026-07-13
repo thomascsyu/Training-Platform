@@ -2,6 +2,7 @@ from bson import ObjectId
 from fastapi import APIRouter, HTTPException, Request
 
 from auth_utils import require_admin_or_manager
+from certificate_template import compute_valid_until, is_certificate_expired
 from database import db
 from db_utils import parse_object_id
 from progress_utils import get_bulk_lesson_progress
@@ -293,9 +294,12 @@ async def get_student_progress(user_id: str, request: Request):
         if e.get("completed"):
             cert = cert_map.get(e["course_id"])
             if cert:
+                valid_until = cert.get("valid_until") or compute_valid_until(cert.get("issued_at"))
                 certificate = {
                     "certificate_id": cert.get("certificate_id"),
                     "issued_at": cert.get("issued_at"),
+                    "valid_until": valid_until,
+                    "is_expired": is_certificate_expired(valid_until),
                 }
         courses.append({
             "course_id": e["course_id"],

@@ -70,11 +70,14 @@ async def test_create_certificate_as_admin(monkeypatch):
     assert response["score"] == 92
     assert response["template"] == "default"
     assert len(response["certificate_id"]) == 8
+    assert response["valid_until"] is not None
+    assert response["is_expired"] is False
     send_email.assert_awaited_once()
     inserted_doc = mock_db.certificates.insert_one.await_args.args[0]
     assert inserted_doc["course_title"] == "Security Training"
     assert inserted_doc["user_id"] == STUDENT_A
     assert inserted_doc["template_id"] is None
+    assert inserted_doc["valid_until"] is not None
     assert "<!DOCTYPE html" in inserted_doc["template_html"]
 
 

@@ -1,6 +1,8 @@
 from certificate_template import (
+    compute_valid_until,
     create_certification_template,
     create_certification_template_source,
+    is_certificate_expired,
     render_certification_template,
 )
 
@@ -27,6 +29,8 @@ def test_create_certification_template_returns_styled_html():
     assert "Certificate of Completion" in html
     assert "#002fa7" in html
     assert "#0a0b10" in html
+    assert "June 08, 2027" in html
+    assert 'class="expired-stamp"' not in html
 
 
 def test_create_certification_template_uses_defaults_and_escapes_input():
@@ -55,6 +59,41 @@ def test_create_certification_template_handles_missing_fields():
     assert "0%" in html
     assert "Certificate ID: <strong>—</strong>" in html
     assert "Issued: <strong>—</strong>" in html
+    assert "Valid Until: <strong>—</strong>" in html
+    assert 'class="expired-stamp"' not in html
+
+
+def test_compute_valid_until_adds_one_year():
+    assert compute_valid_until("2026-06-08T12:00:00+00:00") == "2027-06-08T12:00:00+00:00"
+
+
+def test_compute_valid_until_handles_leap_day():
+    assert compute_valid_until("2024-02-29T00:00:00+00:00") == "2025-02-28T00:00:00+00:00"
+
+
+def test_compute_valid_until_handles_missing_input():
+    assert compute_valid_until(None) is None
+    assert compute_valid_until("") is None
+
+
+def test_is_certificate_expired():
+    assert is_certificate_expired("2020-01-01T00:00:00+00:00") is True
+    assert is_certificate_expired("2099-01-01T00:00:00+00:00") is False
+    assert is_certificate_expired(None) is False
+
+
+def test_create_certification_template_shows_expired_badge_past_validity():
+    html = create_certification_template({
+        "course_title": "Advanced Security Training",
+        "user_name": "Jane Doe",
+        "score": 92,
+        "certificate_id": "ABCD1234",
+        "issued_at": "2020-01-01T12:00:00+00:00",
+    })
+
+    assert "Valid Until: <strong>January 01, 2021</strong>" in html
+    assert 'class="expired-stamp"' in html
+    assert ">Expired<" in html
 
 
 def test_create_source_and_render_template():
@@ -78,3 +117,4 @@ def test_create_source_and_render_template():
     assert "Jane Doe" in rendered
     assert "Security Training" in rendered
     assert "92%" in rendered
+    assert "June 08, 2027" in rendered

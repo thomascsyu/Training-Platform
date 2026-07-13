@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -20,7 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Award, Plus, Download, Palette, Loader2 } from "lucide-react";
+import { Award, Download, Palette, Settings, Loader2, Info } from "lucide-react";
 import { API, formatError } from "@/lib/api";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { DashboardLayout } from "@/components/DashboardLayout";
@@ -28,16 +28,6 @@ import PageHeader from "@/components/enhanced/PageHeader";
 import StatCard from "@/components/enhanced/StatCard";
 import EmptyState from "@/components/enhanced/EmptyState";
 import { TableSkeleton } from "@/components/enhanced/Skeletons";
-
-const emptyCreateForm = () => ({
-  course_id: "",
-  user_id: "",
-  score: "",
-  template: "default",
-  primary_color: "#002FA7",
-  secondary_color: "#0A0B10",
-  apply_to_course: false,
-});
 
 const emptyCustomizeForm = () => ({
   certificate_id: "",
@@ -49,31 +39,19 @@ const emptyCustomizeForm = () => ({
 
 export const AdminCertificatesPage = () => {
   const { t } = useLanguage();
+  const navigate = useNavigate();
   const [certificates, setCertificates] = useState([]);
   const [courses, setCourses] = useState([]);
-  const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [courseFilter, setCourseFilter] = useState("all");
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showCustomizeDialog, setShowCustomizeDialog] = useState(false);
-  const [createForm, setCreateForm] = useState(emptyCreateForm());
   const [customizeForm, setCustomizeForm] = useState(emptyCustomizeForm());
   const [saving, setSaving] = useState(false);
-  const [selectedCourseForStudents, setSelectedCourseForStudents] = useState("");
 
   const fetchCourses = useCallback(async () => {
     try {
       const { data } = await API.get("/courses", { params: { include_private: true } });
       setCourses(data);
-    } catch (e) {
-      console.error(e);
-    }
-  }, []);
-
-  const fetchStudents = useCallback(async () => {
-    try {
-      const { data } = await API.get("/users", { params: { role: "student" } });
-      setStudents(data);
     } catch (e) {
       console.error(e);
     }
@@ -94,55 +72,11 @@ export const AdminCertificatesPage = () => {
 
   useEffect(() => {
     fetchCourses();
-    fetchStudents();
-  }, [fetchCourses, fetchStudents]);
+  }, [fetchCourses]);
 
   useEffect(() => {
     fetchCertificates();
   }, [fetchCertificates]);
-
-  const handleCreate = async () => {
-    if (!createForm.course_id) {
-      toast.error(t("adminCertificates.courseRequired"));
-      return;
-    }
-    if (!createForm.user_id) {
-      toast.error(t("adminCertificates.studentRequired"));
-      return;
-    }
-    if (!createForm.score || createForm.score < 0 || createForm.score > 100) {
-      toast.error(t("adminCertificates.scoreRequired"));
-      return;
-    }
-
-    setSaving(true);
-    try {
-      const { data: created } = await API.post("/certificates", {
-        course_id: createForm.course_id,
-        user_id: createForm.user_id,
-        score: Number(createForm.score),
-        template: createForm.template,
-        primary_color: createForm.primary_color,
-        secondary_color: createForm.secondary_color,
-      });
-      if (createForm.apply_to_course && created?.id) {
-        await API.put(`/certificates/${created.id}/customize`, {
-          template: createForm.template,
-          primary_color: createForm.primary_color,
-          secondary_color: createForm.secondary_color,
-          apply_to_course: true,
-        });
-      }
-      toast.success(t("adminCertificates.created"));
-      setShowCreateDialog(false);
-      setCreateForm(emptyCreateForm());
-      fetchCertificates();
-    } catch (e) {
-      toast.error(formatError(e));
-    } finally {
-      setSaving(false);
-    }
-  };
 
   const openCustomize = (cert) => {
     setCustomizeForm({
@@ -189,16 +123,6 @@ export const AdminCertificatesPage = () => {
     }
   };
 
-  const availableStudents = selectedCourseForStudents
-    ? students.filter((s) => {
-        const course = courses.find((c) => c.id === selectedCourseForStudents);
-        if (!course) return true;
-        const companyIds = course.company_ids || [];
-        if (companyIds.length === 0) return true;
-        return companyIds.includes(s.company_id);
-      })
-    : students;
-
   return (
     <DashboardLayout>
       <div className="p-6" data-testid="admin-certificates-page">
@@ -221,16 +145,19 @@ export const AdminCertificatesPage = () => {
             </SelectContent>
           </Select>
           <Button
-            className="btn-primary"
-            onClick={() => {
-              setCreateForm(emptyCreateForm());
-              setShowCreateDialog(true);
-            }}
-            data-testid="issue-certificate-btn"
+            variant="outline"
+            className="rounded-sm"
+            onClick={() => navigate("/admin/courses")}
+            data-testid="manage-auto-issue-btn"
           >
-            <Plus className="w-4 h-4 mr-2" /> {t("adminCertificates.issueCertificate")}
+            <Settings className="w-4 h-4 mr-2" /> {t("adminCertificates.manageAutoIssue")}
           </Button>
         </PageHeader>
+
+        <div className="mb-6 flex items-start gap-3 rounded-sm border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
+          <Info className="w-4 h-4 mt-0.5 shrink-0" />
+          <p>{t("adminCertificates.autoIssueNotice")}</p>
+        </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <StatCard
@@ -242,7 +169,7 @@ export const AdminCertificatesPage = () => {
         </div>
 
         {loading ? (
-          <TableSkeleton rows={6} cols={5} />
+          <TableSkeleton rows={6} cols={6} />
         ) : certificates.length === 0 ? (
           <EmptyState
             icon={Award}
@@ -261,6 +188,7 @@ export const AdminCertificatesPage = () => {
                     <th className="text-left p-4 font-medium text-slate-600">{t("adminCertificates.student")}</th>
                     <th className="text-left p-4 font-medium text-slate-600">{t("adminCertificates.score")}</th>
                     <th className="text-left p-4 font-medium text-slate-600">{t("adminCertificates.issuedOn")}</th>
+                    <th className="text-left p-4 font-medium text-slate-600">{t("adminCertificates.validUntil")}</th>
                     <th className="text-left p-4 font-medium text-slate-600">{t("adminCertificates.actions")}</th>
                   </tr>
                 </thead>
@@ -277,6 +205,16 @@ export const AdminCertificatesPage = () => {
                       </td>
                       <td className="p-4 text-slate-500 text-sm">
                         {cert.issued_at ? new Date(cert.issued_at).toLocaleDateString() : "—"}
+                      </td>
+                      <td className="p-4 text-sm">
+                        {cert.valid_until ? (
+                          <span className={cert.is_expired ? "text-red-600 font-medium" : "text-slate-500"}>
+                            {new Date(cert.valid_until).toLocaleDateString()}
+                            {cert.is_expired ? ` (${t("adminCertificates.expired")})` : ""}
+                          </span>
+                        ) : (
+                          "—"
+                        )}
                       </td>
                       <td className="p-4">
                         <div className="flex items-center gap-2">
@@ -307,115 +245,6 @@ export const AdminCertificatesPage = () => {
             </div>
           </Card>
         )}
-
-        <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle>{t("adminCertificates.issueCertificate")}</DialogTitle>
-              <DialogDescription>{t("adminCertificates.createDescription")}</DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>{t("adminCertificates.selectCourse")}</Label>
-                <Select
-                  value={createForm.course_id}
-                  onValueChange={(value) => {
-                    setCreateForm({ ...createForm, course_id: value, user_id: "" });
-                    setSelectedCourseForStudents(value);
-                  }}
-                >
-                  <SelectTrigger className="rounded-sm" data-testid="create-course-select">
-                    <SelectValue placeholder={t("dashboard.chooseCourse")} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {courses.map((course) => (
-                      <SelectItem key={course.id} value={course.id}>
-                        {course.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>{t("adminCertificates.selectStudent")}</Label>
-                <Select
-                  value={createForm.user_id}
-                  onValueChange={(value) => setCreateForm({ ...createForm, user_id: value })}
-                  disabled={!createForm.course_id}
-                >
-                  <SelectTrigger className="rounded-sm" data-testid="create-student-select">
-                    <SelectValue placeholder={t("dashboard.selectStudents")} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableStudents.map((student) => (
-                      <SelectItem key={student.id} value={student.id}>
-                        {student.name} ({student.email})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>{t("adminCertificates.score")}</Label>
-                <Input
-                  type="number"
-                  min={0}
-                  max={100}
-                  value={createForm.score}
-                  onChange={(e) => setCreateForm({ ...createForm, score: e.target.value })}
-                  className="rounded-sm"
-                  data-testid="create-score-input"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>{t("adminCertificates.primaryColor")}</Label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="color"
-                      value={createForm.primary_color}
-                      onChange={(e) => setCreateForm({ ...createForm, primary_color: e.target.value })}
-                      className="h-10 w-10 rounded-sm border border-slate-200"
-                      data-testid="create-primary-color"
-                    />
-                    <span className="text-sm text-slate-600">{createForm.primary_color}</span>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label>{t("adminCertificates.secondaryColor")}</Label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="color"
-                      value={createForm.secondary_color}
-                      onChange={(e) => setCreateForm({ ...createForm, secondary_color: e.target.value })}
-                      className="h-10 w-10 rounded-sm border border-slate-200"
-                      data-testid="create-secondary-color"
-                    />
-                    <span className="text-sm text-slate-600">{createForm.secondary_color}</span>
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <Switch
-                  id="create-apply-to-course"
-                  checked={createForm.apply_to_course}
-                  onCheckedChange={(checked) => setCreateForm({ ...createForm, apply_to_course: checked })}
-                />
-                <Label htmlFor="create-apply-to-course">{t("adminCertificates.applyToCourse")}</Label>
-              </div>
-              <p className="text-xs text-slate-500">{t("adminCertificates.applyToCourseHint")}</p>
-              <Button
-                onClick={handleCreate}
-                disabled={saving}
-                className="w-full bg-[#002FA7] hover:bg-[#002585] text-white rounded-sm"
-                data-testid="create-certificate-submit"
-              >
-                {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                {saving ? t("common.loading") : t("adminCertificates.issueCertificate")}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
 
         <Dialog open={showCustomizeDialog} onOpenChange={setShowCustomizeDialog}>
           <DialogContent className="max-w-lg">
