@@ -1,6 +1,7 @@
 from fastapi import HTTPException
 
 from certificate_template import (
+    compute_valid_until,
     create_certification_template,
     create_certification_template_source,
     render_certification_template,
@@ -32,6 +33,8 @@ def apply_template_to_certificate(
     fallback_secondary_color: str = DEFAULT_SECONDARY_COLOR,
 ) -> dict:
     """Attach selected template metadata and rendered HTML to a certificate document."""
+    cert_doc.setdefault("valid_until", compute_valid_until(cert_doc.get("issued_at")))
+
     if template:
         primary = template.get("primary_color") or fallback_primary_color
         secondary = template.get("secondary_color") or fallback_secondary_color

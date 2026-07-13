@@ -40,6 +40,37 @@ def _format_date(value: str | None) -> str:
         return html.escape(str(value)[:10])
 
 
+CERTIFICATE_VALIDITY_YEARS = 1
+
+
+def compute_valid_until(issued_at: str | None, years: int = CERTIFICATE_VALIDITY_YEARS) -> str | None:
+    """Return the ISO timestamp a certificate expires, one year after issuance."""
+    if not issued_at:
+        return None
+    try:
+        issued = datetime.fromisoformat(str(issued_at))
+    except (TypeError, ValueError):
+        return None
+    try:
+        expiry = issued.replace(year=issued.year + years)
+    except ValueError:
+        # Issued on Feb 29; the expiry year has no such day.
+        expiry = issued.replace(month=2, day=28, year=issued.year + years)
+    return expiry.isoformat()
+
+
+def is_certificate_expired(valid_until: str | None) -> bool:
+    """Return True if the given expiry timestamp has passed."""
+    if not valid_until:
+        return False
+    try:
+        expiry = datetime.fromisoformat(str(valid_until))
+    except (TypeError, ValueError):
+        return False
+    now = datetime.now(expiry.tzinfo) if expiry.tzinfo else datetime.now()
+    return now > expiry
+
+
 def _base_certificate_html(primary: str, secondary: str) -> str:
     return _CERTIFICATE_HTML.replace("__PRIMARY_COLOR__", primary).replace(
         "__SECONDARY_COLOR__", secondary
@@ -60,17 +91,21 @@ def create_certification_template_source(
         .replace("__SCORE__", "{{score}}")
         .replace("__CERTIFICATE_ID__", "{{certificate_id}}")
         .replace("__ISSUED_AT__", "{{issued_at}}")
+        .replace("__VALID_UNTIL__", "{{valid_until}}")
     )
 
 
 def render_certification_template(template_html: str, cert: dict) -> str:
     """Render certificate data into a reusable HTML certificate template."""
+    valid_until = cert.get("valid_until") or compute_valid_until(cert.get("issued_at"))
+    expired = is_certificate_expired(valid_until)
     values = {
         "user_name": _safe(cert.get("user_name"), "Student"),
         "course_title": _safe(cert.get("course_title", cert.get("course", "Course"))),
         "score": str(_format_score(cert.get("score"))),
         "certificate_id": _safe(cert.get("certificate_id"), "—"),
         "issued_at": _format_date(cert.get("issued_at")),
+        "valid_until": _format_date(valid_until),
     }
     replacements = {
         "__USER_NAME__": values["user_name"],
@@ -78,11 +113,14 @@ def render_certification_template(template_html: str, cert: dict) -> str:
         "__SCORE__": values["score"],
         "__CERTIFICATE_ID__": values["certificate_id"],
         "__ISSUED_AT__": values["issued_at"],
+        "__VALID_UNTIL__": values["valid_until"],
+        "__EXPIRED_BADGE__": _EXPIRED_BADGE_HTML if expired else "",
         "{{user_name}}": values["user_name"],
         "{{course_title}}": values["course_title"],
         "{{score}}": values["score"],
         "{{certificate_id}}": values["certificate_id"],
         "{{issued_at}}": values["issued_at"],
+        "{{valid_until}}": values["valid_until"],
     }
     rendered = template_html
     for token, value in replacements.items():
@@ -265,6 +303,22 @@ _CERTIFICATE_HTML = """<!DOCTYPE html>
       color: __TEXT_PRIMARY__;
       font-weight: 600;
     }
+    .expired-stamp {
+      position: absolute;
+      top: 55%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(-18deg);
+      font-family: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+      font-size: 64px;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      color: #DC2626;
+      border: 6px solid #DC2626;
+      padding: 8px 32px;
+      opacity: 0.35;
+      pointer-events: none;
+      z-index: 10;
+    }
   </style>
 </head>
 <body>
@@ -293,9 +347,13 @@ _CERTIFICATE_HTML = """<!DOCTYPE html>
       <div class="meta">
         <div>Certificate ID: <strong>__CERTIFICATE_ID__</strong></div>
         <div>Issued: <strong>__ISSUED_AT__</strong></div>
+        <div>Valid Until: <strong>__VALID_UNTIL__</strong></div>
       </div>
     </div>
+    __EXPIRED_BADGE__
   </div>
 </body>
 </html>
 """.replace("__BACKGROUND__", _BACKGROUND).replace("__TEXT_PRIMARY__", _TEXT_PRIMARY).replace("__TEXT_MUTED__", _TEXT_MUTED)
+
+_EXPIRED_BADGE_HTML = '<div class="expired-stamp">Expired</div>'

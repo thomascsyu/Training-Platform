@@ -5,6 +5,8 @@ from reportlab.lib.units import inch
 from reportlab.pdfgen import canvas
 from reportlab.lib.colors import HexColor
 
+from certificate_template import compute_valid_until, is_certificate_expired
+
 
 def _hex(color: str, fallback: str = "#002FA7") -> HexColor:
     try:
@@ -61,10 +63,27 @@ def generate_certificate_pdf(cert: dict) -> bytes:
         f"has successfully completed the course with a score of {cert.get('score', 0)}%",
     )
 
-    issued = cert.get("issued_at", "")[:10]
+    issued_at = cert.get("issued_at", "")
+    issued = issued_at[:10]
+    valid_until = cert.get("valid_until") or compute_valid_until(issued_at)
+    valid_until_display = valid_until[:10] if valid_until else "—"
     cert_id = cert.get("certificate_id", "")
     c.setFont("Helvetica", 10)
-    c.drawCentredString(width / 2, margin + 0.6 * inch, f"Certificate ID: {cert_id}  ·  Issued: {issued}")
+    c.drawCentredString(
+        width / 2,
+        margin + 0.6 * inch,
+        f"Certificate ID: {cert_id}  ·  Issued: {issued}  ·  Valid Until: {valid_until_display}",
+    )
+
+    if is_certificate_expired(valid_until):
+        c.saveState()
+        c.setFillColor(HexColor("#DC2626"))
+        c.setFillAlpha(0.35)
+        c.setFont("Helvetica-Bold", 60)
+        c.translate(width / 2, height / 2)
+        c.rotate(25)
+        c.drawCentredString(0, 0, "EXPIRED")
+        c.restoreState()
 
     c.showPage()
     c.save()

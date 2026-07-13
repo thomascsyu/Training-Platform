@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Award, Download, Eye } from "lucide-react";
+import { Award, Download, Eye, AlertTriangle } from "lucide-react";
 import { API, formatError } from "@/lib/api";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import PageHeader from "@/components/enhanced/PageHeader";
@@ -77,6 +77,11 @@ export const CertificatesPage = () => {
                   <p className="text-slate-600">Awarded to</p>
                   <p className="text-lg font-medium" style={{ color: cert.primary_color }}>{cert.user_name}</p>
                   <p className="text-sm text-slate-500 mt-4">Score: {cert.score}%</p>
+                  {cert.is_expired && (
+                    <p className="text-xs font-bold uppercase tracking-wide text-red-600 mt-2 flex items-center gap-1">
+                      <AlertTriangle className="w-3.5 h-3.5" /> Expired
+                    </p>
+                  )}
                 </div>
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
@@ -85,6 +90,11 @@ export const CertificatesPage = () => {
                       <p className="text-xs text-slate-500">
                         Issued: {new Date(cert.issued_at).toLocaleDateString()}
                       </p>
+                      {cert.valid_until && (
+                        <p className={`text-xs ${cert.is_expired ? "text-red-600 font-medium" : "text-slate-500"}`}>
+                          Valid until: {new Date(cert.valid_until).toLocaleDateString()}
+                        </p>
+                      )}
                     </div>
                     <div className="flex flex-wrap gap-2 justify-end">
                       <Button

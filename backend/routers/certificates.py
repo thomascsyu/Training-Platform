@@ -7,6 +7,7 @@ from starlette.responses import Response
 
 from auth_utils import get_current_user, require_admin_or_manager, require_roles
 from certificate_pdf import generate_certificate_pdf
+from certificate_template import compute_valid_until, is_certificate_expired
 from certificate_utils import apply_template_to_certificate, resolve_certificate_template
 from database import db
 from db_utils import parse_object_id
@@ -17,6 +18,7 @@ router = APIRouter(tags=["certificates"])
 
 
 def _serialize_certificate(cert: dict, fallback_course_title: str | None = None) -> dict:
+    valid_until = cert.get("valid_until") or compute_valid_until(cert.get("issued_at"))
     return {
         "id": str(cert["_id"]),
         "certificate_id": cert.get("certificate_id"),
@@ -30,6 +32,8 @@ def _serialize_certificate(cert: dict, fallback_course_title: str | None = None)
         "primary_color": cert.get("primary_color"),
         "secondary_color": cert.get("secondary_color"),
         "issued_at": cert.get("issued_at"),
+        "valid_until": valid_until,
+        "is_expired": is_certificate_expired(valid_until),
     }
 
 

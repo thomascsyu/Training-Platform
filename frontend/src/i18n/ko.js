@@ -408,6 +408,8 @@ export default {
       course: "코스",
       student: "학생",
       issuedOn: "발급일",
+      validUntil: "유효 기간",
+      expired: "만료됨",
       actions: "작업",
       customize: "사용자 지정",
       download: "다운로드",

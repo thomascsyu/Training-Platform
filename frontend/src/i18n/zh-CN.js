@@ -407,6 +407,8 @@ export default {
       course: "课程",
       student: "学生",
       issuedOn: "颁发日期",
+      validUntil: "有效期至",
+      expired: "已过期",
       actions: "操作",
       customize: "自定义",
       download: "下载",

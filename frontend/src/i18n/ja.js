@@ -408,6 +408,8 @@ export default {
       course: "コース",
       student: "受講者",
       issuedOn: "発行日",
+      validUntil: "有効期限",
+      expired: "期限切れ",
       actions: "操作",
       customize: "カスタマイズ",
       download: "ダウンロード",

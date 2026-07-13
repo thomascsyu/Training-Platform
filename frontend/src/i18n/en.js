@@ -437,6 +437,8 @@ export default {
       course: "Course",
       student: "Student",
       issuedOn: "Issued",
+      validUntil: "Valid Until",
+      expired: "Expired",
       actions: "Actions",
       customize: "Customize",
       download: "Download",

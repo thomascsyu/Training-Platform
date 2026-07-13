@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, Request
 
 from auth_utils import get_current_user, require_roles
+from certificate_template import compute_valid_until
 from certificate_utils import apply_template_to_certificate, resolve_certificate_template
 from database import db
 from db_utils import parse_object_id
@@ -140,6 +141,7 @@ async def submit_quiz(quiz_id: str, data: QuizAttemptCreate, request: Request):
             "course_id": quiz["course_id"],
             "user_id": user["id"],
         })
+        issued_at = datetime.now(timezone.utc).isoformat()
         if not existing_cert:
             cert_doc = {
                 "course_id": quiz["course_id"],
@@ -147,7 +149,7 @@ async def submit_quiz(quiz_id: str, data: QuizAttemptCreate, request: Request):
                 "user_name": user["name"],
                 "course_title": course.get("title") if course else "Course",
                 "score": score,
-                "issued_at": datetime.now(timezone.utc).isoformat(),
+                "issued_at": issued_at,
                 "certificate_id": str(uuid.uuid4())[:8].upper(),
             }
             template = await resolve_certificate_template(db)
@@ -166,7 +168,8 @@ async def submit_quiz(quiz_id: str, data: QuizAttemptCreate, request: Request):
                 {
                     "$set": {
                         "score": score,
-                        "issued_at": datetime.now(timezone.utc).isoformat(),
+                        "issued_at": issued_at,
+                        "valid_until": compute_valid_until(issued_at),
                     }
                 },
             )

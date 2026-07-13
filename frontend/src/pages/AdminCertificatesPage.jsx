@@ -242,7 +242,7 @@ export const AdminCertificatesPage = () => {
         </div>
 
         {loading ? (
-          <TableSkeleton rows={6} cols={5} />
+          <TableSkeleton rows={6} cols={6} />
         ) : certificates.length === 0 ? (
           <EmptyState
             icon={Award}
@@ -261,6 +261,7 @@ export const AdminCertificatesPage = () => {
                     <th className="text-left p-4 font-medium text-slate-600">{t("adminCertificates.student")}</th>
                     <th className="text-left p-4 font-medium text-slate-600">{t("adminCertificates.score")}</th>
                     <th className="text-left p-4 font-medium text-slate-600">{t("adminCertificates.issuedOn")}</th>
+                    <th className="text-left p-4 font-medium text-slate-600">{t("adminCertificates.validUntil")}</th>
                     <th className="text-left p-4 font-medium text-slate-600">{t("adminCertificates.actions")}</th>
                   </tr>
                 </thead>
@@ -277,6 +278,16 @@ export const AdminCertificatesPage = () => {
                       </td>
                       <td className="p-4 text-slate-500 text-sm">
                         {cert.issued_at ? new Date(cert.issued_at).toLocaleDateString() : "—"}
+                      </td>
+                      <td className="p-4 text-sm">
+                        {cert.valid_until ? (
+                          <span className={cert.is_expired ? "text-red-600 font-medium" : "text-slate-500"}>
+                            {new Date(cert.valid_until).toLocaleDateString()}
+                            {cert.is_expired ? ` (${t("adminCertificates.expired")})` : ""}
+                          </span>
+                        ) : (
+                          "—"
+                        )}
                       </td>
                       <td className="p-4">
                         <div className="flex items-center gap-2">
