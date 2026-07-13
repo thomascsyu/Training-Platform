@@ -208,12 +208,16 @@ function App() {
                 }
               />
               <Route
-                path="/admin/certificate-templates"
+                path="/admin/certificates/templates"
                 element={
                   <ProtectedRoute roles={["admin"]}>
                     <AdminCertificateTemplatesPage />
                   </ProtectedRoute>
                 }
+              />
+              <Route
+                path="/admin/certificate-templates"
+                element={<Navigate to="/admin/certificates/templates" replace />}
               />
 
               <Route

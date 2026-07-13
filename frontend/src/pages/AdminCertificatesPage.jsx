@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -20,7 +21,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Award, Download, Palette, Settings, Loader2, Info } from "lucide-react";
+import { Award, Download, Palette, Settings, Loader2, Info, FileCheck } from "lucide-react";
 import { API, formatError } from "@/lib/api";
 import { CERTIFICATE_BACKGROUNDS, backgroundLabel } from "@/lib/certificateBackgrounds";
 import { previewCertificateId } from "@/lib/certificateId";
@@ -50,6 +51,7 @@ const emptySettingsForm = () => ({
 
 export const AdminCertificatesPage = () => {
   const { t } = useLanguage();
+  const navigate = useNavigate();
   const [certificates, setCertificates] = useState([]);
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -194,6 +196,14 @@ export const AdminCertificatesPage = () => {
               ))}
             </SelectContent>
           </Select>
+          <Button
+            variant="outline"
+            className="rounded-sm"
+            onClick={() => navigate("/admin/certificates/templates")}
+            data-testid="manage-certificate-templates-btn"
+          >
+            <FileCheck className="w-4 h-4 mr-2" /> {t("certificateTemplates.manageTemplates")}
+          </Button>
           <Button
             variant="outline"
             className="rounded-sm"

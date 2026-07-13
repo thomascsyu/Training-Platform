@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Award, BookOpen, GraduationCap, Palette, Users } from "lucide-react";
+import { Award, BookOpen, GraduationCap, Users } from "lucide-react";
 import { API } from "@/lib/api";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -66,8 +66,8 @@ export const AdminDashboard = () => {
             <Button onClick={() => navigate("/admin/users")} variant="outline" className="w-full justify-start rounded-sm" data-testid="manage-users-btn">
               <Users className="w-4 h-4 mr-2" /> {t("dashboard.manageUsers")}
             </Button>
-            <Button onClick={() => navigate("/admin/certificate-templates")} variant="outline" className="w-full justify-start rounded-sm" data-testid="manage-certificate-templates-btn">
-              <Palette className="w-4 h-4 mr-2" /> {t("certificateTemplates.manageTemplates")}
+            <Button onClick={() => navigate("/admin/certificates")} variant="outline" className="w-full justify-start rounded-sm" data-testid="manage-certificates-btn">
+              <Award className="w-4 h-4 mr-2" /> {t("nav.certificates")}
             </Button>
           </CardContent>
         </Card>

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Edit, Trash2, Loader2, FileCheck, Palette } from "lucide-react";
+import { Plus, Edit, Trash2, Loader2, FileCheck, Palette, ArrowLeft } from "lucide-react";
 import { API, formatError } from "@/lib/api";
 import { CERTIFICATE_BACKGROUNDS, backgroundLabel } from "@/lib/certificateBackgrounds";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -42,6 +43,7 @@ const emptyTemplate = () => ({
 
 export const AdminCertificateTemplatesPage = () => {
   const { t } = useLanguage();
+  const navigate = useNavigate();
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -142,8 +144,16 @@ export const AdminCertificateTemplatesPage = () => {
   return (
     <DashboardLayout>
       <div className="p-6" data-testid="admin-certificate-templates-page">
+        <button
+          type="button"
+          onClick={() => navigate("/admin/certificates")}
+          className="mb-4 inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-900"
+          data-testid="back-to-certificates-btn"
+        >
+          <ArrowLeft className="w-4 h-4" /> {t("certificateTemplates.backToCertificates")}
+        </button>
         <PageHeader
-          overline="Admin"
+          overline={t("adminCertificates.title")}
           title={t("certificateTemplates.manageTemplates")}
           description={t("certificateTemplates.description")}
         >
