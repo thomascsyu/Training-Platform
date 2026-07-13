@@ -38,8 +38,14 @@ async def create_checkout(data: PaymentCreate, request: Request):
     if price <= 0:
         raise HTTPException(status_code=400, detail="Invalid course price")
 
+    existing_enrollment = await db.enrollments.find_one(
+        {"course_id": data.course_id, "user_id": user["id"]}
+    )
+    if existing_enrollment:
+        raise HTTPException(status_code=400, detail="You are already enrolled in this course")
+
     success_url = f"{data.origin_url}/payment/success?session_id={{CHECKOUT_SESSION_ID}}"
-    cancel_url = f"{data.origin_url}/courses/{data.course_id}"
+    cancel_url = f"{data.origin_url}/courses/{data.course_id}?payment=canceled"
 
     try:
         session = stripe.checkout.Session.create(
@@ -102,8 +108,19 @@ async def get_payment_status(session_id: str, request: Request):
     ):
         raise HTTPException(status_code=403, detail="Not authorized to view this payment")
 
+    course = await db.courses.find_one(
+        {"_id": parse_object_id(transaction["course_id"], "course")},
+        {"_id": 1, "title": 1},
+    )
+    receipt = {
+        "course_id": transaction.get("course_id"),
+        "course_title": course.get("title") if course else None,
+        "amount": float(transaction.get("amount", 0)),
+        "currency": transaction.get("currency", "usd"),
+    }
+
     if transaction.get("payment_status") == "paid":
-        return {"status": "complete", "payment_status": "paid"}
+        return {"status": "complete", "payment_status": "paid", **receipt}
 
     try:
         session = stripe.checkout.Session.retrieve(session_id)
@@ -113,7 +130,7 @@ async def get_payment_status(session_id: str, request: Request):
             await mark_transaction_paid(session_id)
             await enroll_user_after_payment(transaction)
 
-        return {"status": session.status, "payment_status": payment_status}
+        return {"status": session.status, "payment_status": payment_status, **receipt}
     except stripe.error.StripeError as e:
         logger.error("Stripe error: %s", e)
         raise HTTPException(status_code=500, detail="Payment service error") from e
