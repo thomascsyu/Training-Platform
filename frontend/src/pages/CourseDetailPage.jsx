@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,8 +12,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Award, Bot, CheckCircle, DollarSign, Download, FileText, Loader2,
-  Lock, MessageSquare, Send, Video, X,
+  Lock, MessageSquare, ShieldCheck, Send, Video, X,
 } from "lucide-react";
 import { API, formatError } from "@/lib/api";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -161,10 +164,12 @@ export const CourseDetailPage = () => {
   const { user } = useAuth();
   const { lang, t } = useLanguage();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [course, setCourse] = useState(null);
   const [enrollment, setEnrollment] = useState(null);
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState(false);
+  const [showCheckoutDialog, setShowCheckoutDialog] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
   const [chatMessages, setChatMessages] = useState([]);
   const [chatInput, setChatInput] = useState("");
@@ -234,14 +239,31 @@ export const CourseDetailPage = () => {
     fetchCourse();
   }, [fetchCourse]);
 
-  const handleEnroll = async () => {
+  useEffect(() => {
+    if (searchParams.get("payment") === "canceled") {
+      toast.info("Payment canceled. You can try again anytime.");
+      const next = new URLSearchParams(searchParams);
+      next.delete("payment");
+      setSearchParams(next, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
+
+  const startEnroll = () => {
     if (!user) {
       navigate("/login");
       return;
     }
-    
+
     if (!course.is_free && course.price > 0) {
-      // Redirect to payment
+      setShowCheckoutDialog(true);
+      return;
+    }
+
+    handleEnroll();
+  };
+
+  const handleEnroll = async () => {
+    if (!course.is_free && course.price > 0) {
       setEnrolling(true);
       try {
         const { data } = await API.post("/payments/checkout", {
@@ -252,10 +274,11 @@ export const CourseDetailPage = () => {
       } catch (e) {
         toast.error(formatError(e));
         setEnrolling(false);
+        setShowCheckoutDialog(false);
       }
       return;
     }
-    
+
     setEnrolling(true);
     try {
       await API.post("/enrollments", { course_id: id });
@@ -464,8 +487,8 @@ export const CourseDetailPage = () => {
                     </Button>
                   </>
                 ) : (
-                  <Button 
-                    onClick={handleEnroll} 
+                  <Button
+                    onClick={startEnroll}
                     className="w-full btn-primary"
                     disabled={enrolling}
                     data-testid="enroll-btn"
@@ -503,6 +526,57 @@ export const CourseDetailPage = () => {
             </Card>
           </div>
         </div>
+
+        <Dialog open={showCheckoutDialog} onOpenChange={(open) => !enrolling && setShowCheckoutDialog(open)}>
+          <DialogContent className="sm:max-w-md" data-testid="checkout-summary-dialog">
+            <DialogHeader>
+              <DialogTitle>Confirm your purchase</DialogTitle>
+              <DialogDescription>Review your order before continuing to Stripe's secure checkout.</DialogDescription>
+            </DialogHeader>
+            <div className="flex items-center gap-4 border border-slate-200 rounded-sm p-4">
+              <div className="w-16 h-16 rounded-sm overflow-hidden bg-slate-100 shrink-0">
+                <CourseThumbnail
+                  src={course.thumbnail_url}
+                  alt=""
+                  className="w-full h-full object-cover"
+                  fallbackClassName="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#002FA7]/10 to-[#002FA7]/5"
+                  fallbackIconClassName="w-6 h-6 text-[#002FA7]/40"
+                />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium truncate">{course.title}</p>
+                <p className="text-sm text-slate-500">Full course access</p>
+              </div>
+              <p className="font-display text-lg tabular-nums">${course.price?.toFixed(2)}</p>
+            </div>
+            <div className="flex items-center gap-2 text-xs text-slate-500">
+              <ShieldCheck className="w-4 h-4 text-green-600 shrink-0" />
+              Payments are processed securely by Stripe. You'll be redirected to complete checkout.
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                className="rounded-sm"
+                onClick={() => setShowCheckoutDialog(false)}
+                disabled={enrolling}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleEnroll}
+                className="btn-primary"
+                disabled={enrolling}
+                data-testid="confirm-checkout-btn"
+              >
+                {enrolling ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <>Pay ${course.price?.toFixed(2)}</>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
