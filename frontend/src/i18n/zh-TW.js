@@ -219,6 +219,7 @@ export default {
       html: "HTML 範本",
       primaryColor: "主色",
       secondaryColor: "輔色",
+      background: "背景圖案",
       default: "預設",
       createTemplate: "建立範本",
       editTemplate: "編輯範本",
@@ -232,6 +233,29 @@ export default {
       updated: "範本已更新。",
       deleted: "範本已刪除。",
       generated: "已產生預設 HTML。"
+    },
+
+    certificateBackgrounds: {
+      plain: "純色",
+      geometric: "幾何",
+      waves: "波紋",
+      guilloche: "扭索紋",
+      corners: "邊角裝飾"
+    },
+
+    certificateSettings: {
+      title: "證書設定",
+      description: "設定證書編號的產生方式以及新證書的預設樣式。",
+      open: "證書設定",
+      idFormat: "證書編號格式",
+      idFormatHint: "可用符記：{seq} 或 {seq:6}（序號）、{year}、{month}、{day}、{random} 或 {random:4}、{course}。大括號以外的文字將原樣使用。",
+      preview: "下一個證書編號",
+      defaultBackground: "預設背景",
+      defaultPrimaryColor: "預設主色",
+      defaultSecondaryColor: "預設輔色",
+      save: "儲存設定",
+      saved: "證書設定已更新。",
+      cancel: "取消"
     },
     
     // Chat
@@ -392,14 +416,15 @@ export default {
       title: "證書",
       description: "學生達到課程的最低分數後將自動頒發證書。",
       totalCertificates: "證書總數",
-      manageAutoIssue: "管理課程設定",
-      autoIssueNotice: "當學生達到課程的及格分數時，證書將自動頒發。可在課程設定中依課程開啟或關閉自動頒發。",
+      manageAutoIssue: "證書設定",
+      autoIssueNotice: "當學生達到課程的及格分數時，證書將自動頒發。可在證書設定中設定證書編號格式與預設樣式。",
       customizeCertificate: "自訂證書",
       customizeDescription: "更新此證書的視覺樣式。",
       score: "分數 (0-100)",
       template: "範本",
       primaryColor: "主色",
       secondaryColor: "輔色",
+      background: "背景圖案",
       applyToCourse: "套用至此課程的所有證書",
       applyToCourseHint: "啟用後，樣式變更將套用至該課程的每一份證書。",
       certificateId: "證書 ID",

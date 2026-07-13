@@ -220,6 +220,7 @@ export default {
       html: "HTML Template",
       primaryColor: "Primary Color",
       secondaryColor: "Secondary Color",
+      background: "Background Artwork",
       default: "Default",
       createTemplate: "Create Template",
       editTemplate: "Edit Template",
@@ -233,6 +234,31 @@ export default {
       updated: "Template updated.",
       deleted: "Template deleted.",
       generated: "Default HTML generated."
+    },
+
+    // Certificate background artworks
+    certificateBackgrounds: {
+      plain: "Plain",
+      geometric: "Geometric",
+      waves: "Waves",
+      guilloche: "Guilloché",
+      corners: "Corner Flourish"
+    },
+
+    // Certificate Settings (ID naming + defaults)
+    certificateSettings: {
+      title: "Certificate Settings",
+      description: "Configure how certificate IDs are generated and the default look for new certificates.",
+      open: "Certificate Settings",
+      idFormat: "Certificate ID Format",
+      idFormatHint: "Available tokens: {seq} or {seq:6} (sequence), {year}, {month}, {day}, {random} or {random:4}, {course}. Text outside braces is used literally.",
+      preview: "Next certificate ID",
+      defaultBackground: "Default Background",
+      defaultPrimaryColor: "Default Primary Color",
+      defaultSecondaryColor: "Default Secondary Color",
+      save: "Save Settings",
+      saved: "Certificate settings updated.",
+      cancel: "Cancel"
     },
     
     // Chat
@@ -422,14 +448,15 @@ export default {
       title: "Certificates",
       description: "Certificates are issued automatically to students who pass a course's minimum score.",
       totalCertificates: "Total Certificates",
-      manageAutoIssue: "Manage Course Settings",
-      autoIssueNotice: "Certificates are issued automatically when a student meets a course's passing score. Turn auto-issue on or off per course from Course Settings.",
+      manageAutoIssue: "Certificate Settings",
+      autoIssueNotice: "Certificates are issued automatically when a student meets a course's passing score. Use Certificate Settings to configure the certificate ID format and default styling.",
       customizeCertificate: "Customize Certificate",
       customizeDescription: "Update the visual style for this certificate.",
       score: "Score (0-100)",
       template: "Template",
       primaryColor: "Primary Color",
       secondaryColor: "Secondary Color",
+      background: "Background Artwork",
       applyToCourse: "Apply to all certificates for this course",
       applyToCourseHint: "When enabled, the style changes will be applied to every certificate for the selected course.",
       certificateId: "Certificate ID",

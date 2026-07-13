@@ -219,6 +219,7 @@ export default {
       html: "HTML 模板",
       primaryColor: "主色",
       secondaryColor: "辅色",
+      background: "背景图案",
       default: "默认",
       createTemplate: "创建模板",
       editTemplate: "编辑模板",
@@ -232,6 +233,29 @@ export default {
       updated: "模板已更新。",
       deleted: "模板已删除。",
       generated: "已生成默认 HTML。"
+    },
+
+    certificateBackgrounds: {
+      plain: "纯色",
+      geometric: "几何",
+      waves: "波纹",
+      guilloche: "扭索纹",
+      corners: "边角装饰"
+    },
+
+    certificateSettings: {
+      title: "证书设置",
+      description: "配置证书编号的生成方式以及新证书的默认样式。",
+      open: "证书设置",
+      idFormat: "证书编号格式",
+      idFormatHint: "可用占位符：{seq} 或 {seq:6}（序号）、{year}、{month}、{day}、{random} 或 {random:4}、{course}。大括号以外的文本将按原样使用。",
+      preview: "下一个证书编号",
+      defaultBackground: "默认背景",
+      defaultPrimaryColor: "默认主色",
+      defaultSecondaryColor: "默认辅色",
+      save: "保存设置",
+      saved: "证书设置已更新。",
+      cancel: "取消"
     },
     
     // Chat
@@ -392,14 +416,15 @@ export default {
       title: "证书",
       description: "学生达到课程的最低分数后将自动颁发证书。",
       totalCertificates: "证书总数",
-      manageAutoIssue: "管理课程设置",
-      autoIssueNotice: "当学生达到课程的及格分数时，证书将自动颁发。可在课程设置中按课程开启或关闭自动颁发。",
+      manageAutoIssue: "证书设置",
+      autoIssueNotice: "当学生达到课程的及格分数时，证书将自动颁发。可在证书设置中配置证书编号格式和默认样式。",
       customizeCertificate: "自定义证书",
       customizeDescription: "更新此证书的视觉样式。",
       score: "分数 (0-100)",
       template: "模板",
       primaryColor: "主色",
       secondaryColor: "辅色",
+      background: "背景图案",
       applyToCourse: "应用至此课程的所有证书",
       applyToCourseHint: "启用后，样式变更将应用至该课程的每一份证书。",
       certificateId: "证书 ID",
