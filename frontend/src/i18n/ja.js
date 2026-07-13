@@ -220,6 +220,7 @@ export default {
       html: "HTMLテンプレート",
       primaryColor: "プライマリカラー",
       secondaryColor: "セカンダリカラー",
+      background: "背景アート",
       default: "デフォルト",
       createTemplate: "テンプレート作成",
       editTemplate: "テンプレート編集",
@@ -233,6 +234,29 @@ export default {
       updated: "テンプレートを更新しました。",
       deleted: "テンプレートを削除しました。",
       generated: "デフォルトHTMLを生成しました。"
+    },
+
+    certificateBackgrounds: {
+      plain: "プレーン",
+      geometric: "幾何学模様",
+      waves: "波模様",
+      guilloche: "ギヨシェ",
+      corners: "コーナー装飾"
+    },
+
+    certificateSettings: {
+      title: "修了証設定",
+      description: "修了証IDの生成方法と、新しい修了証の既定デザインを設定します。",
+      open: "修了証設定",
+      idFormat: "修了証IDフォーマット",
+      idFormatHint: "使用可能なトークン: {seq} または {seq:6}（連番）、{year}、{month}、{day}、{random} または {random:4}、{course}。括弧の外の文字はそのまま使用されます。",
+      preview: "次の修了証ID",
+      defaultBackground: "既定の背景",
+      defaultPrimaryColor: "既定のプライマリカラー",
+      defaultSecondaryColor: "既定のセカンダリカラー",
+      save: "設定を保存",
+      saved: "修了証設定を更新しました。",
+      cancel: "キャンセル"
     },
     
     // Chat
@@ -393,14 +417,15 @@ export default {
       title: "修了証",
       description: "受講者がコースの最低スコアに達すると、修了証が自動的に発行されます。",
       totalCertificates: "修了証の総数",
-      manageAutoIssue: "コース設定を管理",
-      autoIssueNotice: "受講者がコースの合格スコアに達すると、修了証が自動的に発行されます。コース設定でコースごとに自動発行のオン・オフを切り替えられます。",
+      manageAutoIssue: "修了証設定",
+      autoIssueNotice: "受講者がコースの合格スコアに達すると、修了証が自動的に発行されます。修了証設定で修了証IDのフォーマットと既定のデザインを設定できます。",
       customizeCertificate: "修了証をカスタマイズ",
       customizeDescription: "この修了証のビジュアルスタイルを更新します。",
       score: "スコア (0-100)",
       template: "テンプレート",
       primaryColor: "プライマリカラー",
       secondaryColor: "セカンダリカラー",
+      background: "背景アート",
       applyToCourse: "このコースのすべての修了証に適用",
       applyToCourseHint: "有効にすると、スタイル変更が選択したコースのすべての修了証に適用されます。",
       certificateId: "修了証 ID",

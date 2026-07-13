@@ -1,9 +1,9 @@
-import uuid
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, HTTPException, Request
 
 from auth_utils import get_current_user, require_roles
+from certificate_id import generate_certificate_id
 from certificate_template import compute_valid_until
 from certificate_utils import apply_template_to_certificate, resolve_certificate_template
 from database import db
@@ -145,14 +145,17 @@ async def submit_quiz(quiz_id: str, data: QuizAttemptCreate, request: Request):
             })
             issued_at = datetime.now(timezone.utc).isoformat()
             if not existing_cert:
+                course_title = course.get("title") if course else "Course"
                 cert_doc = {
                     "course_id": quiz["course_id"],
                     "user_id": user["id"],
                     "user_name": user["name"],
-                    "course_title": course.get("title") if course else "Course",
+                    "course_title": course_title,
                     "score": score,
                     "issued_at": issued_at,
-                    "certificate_id": str(uuid.uuid4())[:8].upper(),
+                    "certificate_id": await generate_certificate_id(
+                        db, issued_at=issued_at, course_title=course_title
+                    ),
                 }
                 template = await resolve_certificate_template(db)
                 apply_template_to_certificate(cert_doc, template)

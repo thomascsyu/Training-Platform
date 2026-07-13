@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
@@ -22,6 +22,8 @@ import {
 } from "@/components/ui/dialog";
 import { Award, Download, Palette, Settings, Loader2, Info } from "lucide-react";
 import { API, formatError } from "@/lib/api";
+import { CERTIFICATE_BACKGROUNDS, backgroundLabel } from "@/lib/certificateBackgrounds";
+import { previewCertificateId } from "@/lib/certificateId";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import PageHeader from "@/components/enhanced/PageHeader";
@@ -34,12 +36,20 @@ const emptyCustomizeForm = () => ({
   template: "default",
   primary_color: "#002FA7",
   secondary_color: "#0A0B10",
+  background: "plain",
   apply_to_course: false,
+});
+
+const emptySettingsForm = () => ({
+  id_format: "CERT-{year}-{seq:6}",
+  default_background: "plain",
+  default_primary_color: "#002fa7",
+  default_secondary_color: "#0a0b10",
+  next_sequence: 1,
 });
 
 export const AdminCertificatesPage = () => {
   const { t } = useLanguage();
-  const navigate = useNavigate();
   const [certificates, setCertificates] = useState([]);
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -47,6 +57,9 @@ export const AdminCertificatesPage = () => {
   const [showCustomizeDialog, setShowCustomizeDialog] = useState(false);
   const [customizeForm, setCustomizeForm] = useState(emptyCustomizeForm());
   const [saving, setSaving] = useState(false);
+  const [showSettingsDialog, setShowSettingsDialog] = useState(false);
+  const [settingsForm, setSettingsForm] = useState(emptySettingsForm());
+  const [savingSettings, setSavingSettings] = useState(false);
 
   const fetchCourses = useCallback(async () => {
     try {
@@ -84,6 +97,7 @@ export const AdminCertificatesPage = () => {
       template: cert.template || "default",
       primary_color: cert.primary_color || "#002FA7",
       secondary_color: cert.secondary_color || "#0A0B10",
+      background: cert.background || "plain",
       apply_to_course: false,
     });
     setShowCustomizeDialog(true);
@@ -96,6 +110,7 @@ export const AdminCertificatesPage = () => {
         template: customizeForm.template,
         primary_color: customizeForm.primary_color,
         secondary_color: customizeForm.secondary_color,
+        background: customizeForm.background,
         apply_to_course: customizeForm.apply_to_course,
       });
       toast.success(t("adminCertificates.customized"));
@@ -106,6 +121,41 @@ export const AdminCertificatesPage = () => {
       toast.error(formatError(e));
     } finally {
       setSaving(false);
+    }
+  };
+
+  const openSettings = async () => {
+    setShowSettingsDialog(true);
+    try {
+      const { data } = await API.get("/certificate-settings");
+      setSettingsForm({
+        id_format: data.id_format,
+        default_background: data.default_background,
+        default_primary_color: data.default_primary_color,
+        default_secondary_color: data.default_secondary_color,
+        next_sequence: data.next_sequence,
+      });
+    } catch (e) {
+      toast.error(formatError(e));
+    }
+  };
+
+  const handleSaveSettings = async () => {
+    setSavingSettings(true);
+    try {
+      const { data } = await API.put("/certificate-settings", {
+        id_format: settingsForm.id_format,
+        default_background: settingsForm.default_background,
+        default_primary_color: settingsForm.default_primary_color,
+        default_secondary_color: settingsForm.default_secondary_color,
+      });
+      setSettingsForm((prev) => ({ ...prev, next_sequence: data.next_sequence }));
+      toast.success(t("certificateSettings.saved"));
+      setShowSettingsDialog(false);
+    } catch (e) {
+      toast.error(formatError(e));
+    } finally {
+      setSavingSettings(false);
     }
   };
 
@@ -147,8 +197,8 @@ export const AdminCertificatesPage = () => {
           <Button
             variant="outline"
             className="rounded-sm"
-            onClick={() => navigate("/admin/courses")}
-            data-testid="manage-auto-issue-btn"
+            onClick={openSettings}
+            data-testid="certificate-settings-btn"
           >
             <Settings className="w-4 h-4 mr-2" /> {t("adminCertificates.manageAutoIssue")}
           </Button>
@@ -281,6 +331,24 @@ export const AdminCertificatesPage = () => {
                   </div>
                 </div>
               </div>
+              <div className="space-y-2">
+                <Label>{t("adminCertificates.background")}</Label>
+                <Select
+                  value={customizeForm.background}
+                  onValueChange={(value) => setCustomizeForm({ ...customizeForm, background: value })}
+                >
+                  <SelectTrigger className="rounded-sm" data-testid="customize-background-select">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CERTIFICATE_BACKGROUNDS.map((key) => (
+                      <SelectItem key={key} value={key}>
+                        {backgroundLabel(t, key)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="flex items-center gap-3">
                 <Switch
                   id="customize-apply-to-course"
@@ -299,6 +367,99 @@ export const AdminCertificatesPage = () => {
                 {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                 {saving ? t("common.loading") : t("common.save")}
               </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={showSettingsDialog} onOpenChange={setShowSettingsDialog}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>{t("certificateSettings.title")}</DialogTitle>
+              <DialogDescription>{t("certificateSettings.description")}</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>{t("certificateSettings.idFormat")}</Label>
+                <Input
+                  value={settingsForm.id_format}
+                  onChange={(e) => setSettingsForm({ ...settingsForm, id_format: e.target.value })}
+                  className="rounded-sm font-mono text-sm"
+                  data-testid="settings-id-format-input"
+                />
+                <p className="text-xs text-slate-500">{t("certificateSettings.idFormatHint")}</p>
+                <div className="rounded-sm border border-slate-200 bg-slate-50 px-3 py-2 text-sm">
+                  <span className="text-slate-500">{t("certificateSettings.preview")}: </span>
+                  <span className="font-mono text-slate-800" data-testid="settings-id-preview">
+                    {previewCertificateId(settingsForm.id_format, {
+                      sequence: settingsForm.next_sequence,
+                    })}
+                  </span>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>{t("certificateSettings.defaultBackground")}</Label>
+                <Select
+                  value={settingsForm.default_background}
+                  onValueChange={(value) => setSettingsForm({ ...settingsForm, default_background: value })}
+                >
+                  <SelectTrigger className="rounded-sm" data-testid="settings-background-select">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CERTIFICATE_BACKGROUNDS.map((key) => (
+                      <SelectItem key={key} value={key}>
+                        {backgroundLabel(t, key)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>{t("certificateSettings.defaultPrimaryColor")}</Label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={settingsForm.default_primary_color}
+                      onChange={(e) => setSettingsForm({ ...settingsForm, default_primary_color: e.target.value })}
+                      className="h-10 w-10 rounded-sm border border-slate-200"
+                      data-testid="settings-primary-color"
+                    />
+                    <span className="text-sm text-slate-600">{settingsForm.default_primary_color}</span>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>{t("certificateSettings.defaultSecondaryColor")}</Label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={settingsForm.default_secondary_color}
+                      onChange={(e) => setSettingsForm({ ...settingsForm, default_secondary_color: e.target.value })}
+                      className="h-10 w-10 rounded-sm border border-slate-200"
+                      data-testid="settings-secondary-color"
+                    />
+                    <span className="text-sm text-slate-600">{settingsForm.default_secondary_color}</span>
+                  </div>
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  className="rounded-sm"
+                  onClick={() => setShowSettingsDialog(false)}
+                >
+                  {t("certificateSettings.cancel")}
+                </Button>
+                <Button
+                  onClick={handleSaveSettings}
+                  disabled={savingSettings}
+                  className="bg-[#002FA7] hover:bg-[#002585] text-white rounded-sm"
+                  data-testid="save-certificate-settings-btn"
+                >
+                  {savingSettings ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                  {t("certificateSettings.save")}
+                </Button>
+              </div>
             </div>
           </DialogContent>
         </Dialog>

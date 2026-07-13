@@ -14,8 +14,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Plus, Edit, Trash2, Loader2, FileCheck, Palette } from "lucide-react";
 import { API, formatError } from "@/lib/api";
+import { CERTIFICATE_BACKGROUNDS, backgroundLabel } from "@/lib/certificateBackgrounds";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import PageHeader from "@/components/enhanced/PageHeader";
@@ -28,6 +36,7 @@ const emptyTemplate = () => ({
   html: "",
   primary_color: "#002fa7",
   secondary_color: "#0a0b10",
+  background: "plain",
   is_default: false,
 });
 
@@ -75,6 +84,7 @@ export const AdminCertificateTemplatesPage = () => {
       const { data } = await API.post("/certificate-templates/render-default", {
         primary_color: form.primary_color,
         secondary_color: form.secondary_color,
+        background: form.background,
       });
       setForm((prev) => ({ ...prev, html: data.html }));
       toast.success(t("certificateTemplates.generated"));
@@ -97,6 +107,7 @@ export const AdminCertificateTemplatesPage = () => {
         html: form.html,
         primary_color: form.primary_color,
         secondary_color: form.secondary_color,
+        background: form.background,
         is_default: form.is_default,
       };
       if (editing) {
@@ -281,6 +292,24 @@ export const AdminCertificateTemplatesPage = () => {
                       data-testid="template-secondary-color-input"
                     />
                   </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>{t("certificateTemplates.background")}</Label>
+                  <Select
+                    value={form.background}
+                    onValueChange={(value) => setForm({ ...form, background: value })}
+                  >
+                    <SelectTrigger className="rounded-sm" data-testid="template-background-select">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CERTIFICATE_BACKGROUNDS.map((key) => (
+                        <SelectItem key={key} value={key}>
+                          {backgroundLabel(t, key)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="flex items-center gap-3">
                   <Switch

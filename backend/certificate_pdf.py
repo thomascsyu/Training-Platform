@@ -15,6 +15,86 @@ def _hex(color: str, fallback: str = "#002FA7") -> HexColor:
         return HexColor(fallback)
 
 
+def _draw_artwork(c, width, height, background: str, primary, secondary) -> None:
+    """Draw a subtle background artwork behind the certificate frame."""
+    if background not in {"geometric", "waves", "guilloche", "corners"}:
+        return
+
+    c.saveState()
+    if background == "geometric":
+        c.setStrokeColor(primary)
+        c.setStrokeAlpha(0.06)
+        c.setLineWidth(0.6)
+        step = 0.55 * inch
+        x = -height
+        while x < width:
+            c.line(x, 0, x + height, height)
+            x += step
+        c.setFillColor(primary)
+        c.setFillAlpha(0.05)
+        c.setStrokeAlpha(0)
+        p = c.beginPath()
+        p.moveTo(0, height)
+        p.lineTo(2.6 * inch, height)
+        p.lineTo(0, height - 2.6 * inch)
+        p.close()
+        c.drawPath(p, fill=1, stroke=0)
+        p2 = c.beginPath()
+        p2.moveTo(width, 0)
+        p2.lineTo(width - 2.6 * inch, 0)
+        p2.lineTo(width, 2.6 * inch)
+        p2.close()
+        c.drawPath(p2, fill=1, stroke=0)
+    elif background == "waves":
+        c.setStrokeColor(primary)
+        c.setStrokeAlpha(0.08)
+        c.setLineWidth(1.4)
+        amp = 0.35 * inch
+        for i in range(3):
+            base = height - (1.1 + i * 0.35) * inch
+            c.bezier(
+                0, base,
+                width / 3, base + amp,
+                2 * width / 3, base - amp,
+                width, base,
+            )
+        for i in range(3):
+            base = (1.1 + i * 0.35) * inch
+            c.bezier(
+                0, base,
+                width / 3, base + amp,
+                2 * width / 3, base - amp,
+                width, base,
+            )
+    elif background == "guilloche":
+        c.setStrokeColor(primary)
+        c.setStrokeAlpha(0.07)
+        c.setLineWidth(0.6)
+        cx, cy = width / 2, height / 2
+        for r in range(1, 6):
+            c.circle(cx, cy, r * 0.55 * inch, stroke=1, fill=0)
+        c.setStrokeColor(secondary)
+        c.setStrokeAlpha(0.06)
+        c.ellipse(cx - 3.2 * inch, cy - 1.4 * inch, cx + 3.2 * inch, cy + 1.4 * inch, stroke=1, fill=0)
+        c.ellipse(cx - 1.4 * inch, cy - 3.2 * inch, cx + 1.4 * inch, cy + 3.2 * inch, stroke=1, fill=0)
+    elif background == "corners":
+        c.setStrokeColor(primary)
+        c.setStrokeAlpha(0.16)
+        c.setLineWidth(2.4)
+        off = 0.9 * inch
+        length = 0.7 * inch
+        corners = [
+            (off, height - off, 1, -1),
+            (width - off, height - off, -1, -1),
+            (off, off, 1, 1),
+            (width - off, off, -1, 1),
+        ]
+        for x, y, sx, sy in corners:
+            c.line(x, y, x + sx * length, y)
+            c.line(x, y, x, y + sy * length)
+    c.restoreState()
+
+
 def generate_certificate_pdf(cert: dict) -> bytes:
     """Render a certificate PDF from a certificate document."""
     buffer = io.BytesIO()
@@ -26,6 +106,8 @@ def generate_certificate_pdf(cert: dict) -> bytes:
 
     c.setFillColor(HexColor("#FFFFFF"))
     c.rect(0, 0, width, height, fill=1, stroke=0)
+
+    _draw_artwork(c, width, height, cert.get("background", "plain"), primary, secondary)
 
     margin = 0.75 * inch
     c.setStrokeColor(primary)

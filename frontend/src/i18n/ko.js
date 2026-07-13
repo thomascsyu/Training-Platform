@@ -220,6 +220,7 @@ export default {
       html: "HTML 템플릿",
       primaryColor: "기본 색상",
       secondaryColor: "보조 색상",
+      background: "배경 아트워크",
       default: "기본",
       createTemplate: "템플릿 만들기",
       editTemplate: "템플릿 편집",
@@ -233,6 +234,29 @@ export default {
       updated: "템플릿이 업데이트되었습니다.",
       deleted: "템플릿이 삭제되었습니다.",
       generated: "기본 HTML이 생성되었습니다."
+    },
+
+    certificateBackgrounds: {
+      plain: "플레인",
+      geometric: "기하학",
+      waves: "물결",
+      guilloche: "기요셰",
+      corners: "모서리 장식"
+    },
+
+    certificateSettings: {
+      title: "수료증 설정",
+      description: "수료증 ID 생성 방식과 새 수료증의 기본 디자인을 설정합니다.",
+      open: "수료증 설정",
+      idFormat: "수료증 ID 형식",
+      idFormatHint: "사용 가능한 토큰: {seq} 또는 {seq:6}(순번), {year}, {month}, {day}, {random} 또는 {random:4}, {course}. 중괄호 밖의 텍스트는 그대로 사용됩니다.",
+      preview: "다음 수료증 ID",
+      defaultBackground: "기본 배경",
+      defaultPrimaryColor: "기본 기본 색상",
+      defaultSecondaryColor: "기본 보조 색상",
+      save: "설정 저장",
+      saved: "수료증 설정이 업데이트되었습니다.",
+      cancel: "취소"
     },
     
     // Chat
@@ -393,14 +417,15 @@ export default {
       title: "수료증",
       description: "학생이 코스의 최저 점수를 통과하면 수료증이 자동으로 발급됩니다.",
       totalCertificates: "총 수료증",
-      manageAutoIssue: "코스 설정 관리",
-      autoIssueNotice: "학생이 코스의 합격 점수를 충족하면 수료증이 자동으로 발급됩니다. 코스 설정에서 코스별로 자동 발급을 켜거나 끌 수 있습니다.",
+      manageAutoIssue: "수료증 설정",
+      autoIssueNotice: "학생이 코스의 합격 점수를 충족하면 수료증이 자동으로 발급됩니다. 수료증 설정에서 수료증 ID 형식과 기본 디자인을 구성할 수 있습니다.",
       customizeCertificate: "수료증 사용자 지정",
       customizeDescription: "이 수료증의 시각적 스타일을 업데이트하세요.",
       score: "점수 (0-100)",
       template: "템플릿",
       primaryColor: "기본 색상",
       secondaryColor: "보조 색상",
+      background: "배경 아트워크",
       applyToCourse: "이 코스의 모든 수료증에 적용",
       applyToCourseHint: "활성화하면 스타일 변경 사항이 선택한 코스의 모든 수료증에 적용됩니다.",
       certificateId: "수료증 ID",
