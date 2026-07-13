@@ -75,6 +75,7 @@ class CourseCreate(BaseModel):
     is_free: bool = True
     is_private: bool = False
     passing_score: int = 70
+    auto_issue_certificate: bool = True
     materials: List[Dict[str, str]] = []
     ai_assistant_enabled: bool = True
     ai_assistant_prompt: Optional[str] = None
@@ -103,6 +104,7 @@ class CourseUpdate(BaseModel):
     is_free: Optional[bool] = None
     is_private: Optional[bool] = None
     passing_score: Optional[int] = None
+    auto_issue_certificate: Optional[bool] = None
     materials: Optional[List[Dict[str, str]]] = None
     ai_assistant_enabled: Optional[bool] = None
     ai_assistant_prompt: Optional[str] = None

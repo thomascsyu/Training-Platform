@@ -104,6 +104,7 @@ async def create_course(data: CourseCreate, request: Request):
         "course_type": course_type,
         "is_private": data.is_private,
         "passing_score": data.passing_score,
+        "auto_issue_certificate": data.auto_issue_certificate,
         "materials": data.materials,
         "ai_assistant_enabled": data.ai_assistant_enabled,
         "ai_assistant_prompt": data.ai_assistant_prompt,

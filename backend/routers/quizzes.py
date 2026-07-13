@@ -137,42 +137,44 @@ async def submit_quiz(quiz_id: str, data: QuizAttemptCreate, request: Request):
             },
         )
 
-        existing_cert = await db.certificates.find_one({
-            "course_id": quiz["course_id"],
-            "user_id": user["id"],
-        })
-        issued_at = datetime.now(timezone.utc).isoformat()
-        if not existing_cert:
-            cert_doc = {
+        auto_issue_certificate = course.get("auto_issue_certificate", True) if course else True
+        if auto_issue_certificate:
+            existing_cert = await db.certificates.find_one({
                 "course_id": quiz["course_id"],
                 "user_id": user["id"],
-                "user_name": user["name"],
-                "course_title": course.get("title") if course else "Course",
-                "score": score,
-                "issued_at": issued_at,
-                "certificate_id": str(uuid.uuid4())[:8].upper(),
-            }
-            template = await resolve_certificate_template(db)
-            apply_template_to_certificate(cert_doc, template)
-            await db.certificates.insert_one(cert_doc)
-            await send_certificate_email(
-                user["email"],
-                user["name"],
-                course.get("title") if course else "Course",
-                cert_doc["certificate_id"],
-                score,
-            )
-        else:
-            await db.certificates.update_one(
-                {"_id": existing_cert["_id"]},
-                {
-                    "$set": {
-                        "score": score,
-                        "issued_at": issued_at,
-                        "valid_until": compute_valid_until(issued_at),
-                    }
-                },
-            )
+            })
+            issued_at = datetime.now(timezone.utc).isoformat()
+            if not existing_cert:
+                cert_doc = {
+                    "course_id": quiz["course_id"],
+                    "user_id": user["id"],
+                    "user_name": user["name"],
+                    "course_title": course.get("title") if course else "Course",
+                    "score": score,
+                    "issued_at": issued_at,
+                    "certificate_id": str(uuid.uuid4())[:8].upper(),
+                }
+                template = await resolve_certificate_template(db)
+                apply_template_to_certificate(cert_doc, template)
+                await db.certificates.insert_one(cert_doc)
+                await send_certificate_email(
+                    user["email"],
+                    user["name"],
+                    course.get("title") if course else "Course",
+                    cert_doc["certificate_id"],
+                    score,
+                )
+            else:
+                await db.certificates.update_one(
+                    {"_id": existing_cert["_id"]},
+                    {
+                        "$set": {
+                            "score": score,
+                            "issued_at": issued_at,
+                            "valid_until": compute_valid_until(issued_at),
+                        }
+                    },
+                )
     else:
         course_title = course.get("title") if course else "Course"
         await send_progress_email(

@@ -41,6 +41,7 @@ export const AdminCoursesPage = () => {
     course_type: "free",
     is_private: false,
     passing_score: 70,
+    auto_issue_certificate: true,
     language: "en",
     category: "",
     company_ids: []
@@ -83,6 +84,7 @@ export const AdminCoursesPage = () => {
         course_type: "free",
         is_private: false,
         passing_score: 70,
+        auto_issue_certificate: true,
         language: "en",
         category: "",
         company_ids: []
@@ -225,6 +227,17 @@ export const AdminCoursesPage = () => {
                       data-testid="course-passing-score-input"
                     />
                   </div>
+                </div>
+                <div className="space-y-2 border border-slate-200 rounded-sm p-4">
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      checked={formData.auto_issue_certificate}
+                      onCheckedChange={(v) => setFormData({ ...formData, auto_issue_certificate: v })}
+                      data-testid="course-auto-issue-certificate-switch"
+                    />
+                    <Label>{t("courses.autoIssueCertificate")}</Label>
+                  </div>
+                  <p className="text-xs text-slate-500">{t("courses.autoIssueCertificateHint")}</p>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
