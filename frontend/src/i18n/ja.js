@@ -215,7 +215,6 @@ export default {
     // Certificate Templates
     certificateTemplates: {
       manageTemplates: "修了証テンプレート",
-      backToCertificates: "修了証に戻る",
       description: "印刷可能な修了証テンプレートを作成・管理します。",
       name: "テンプレート名",
       html: "HTMLテンプレート",

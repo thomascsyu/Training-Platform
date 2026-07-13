@@ -215,7 +215,6 @@ export default {
     // Certificate Templates
     certificateTemplates: {
       manageTemplates: "Certificate Templates",
-      backToCertificates: "Back to Certificates",
       description: "Create and manage printable certificate templates for your platform.",
       name: "Template Name",
       html: "HTML Template",

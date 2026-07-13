@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -21,16 +21,21 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Award, Download, Palette, Settings, Loader2, Info, FileCheck } from "lucide-react";
 import { API, formatError } from "@/lib/api";
 import { CERTIFICATE_BACKGROUNDS, backgroundLabel } from "@/lib/certificateBackgrounds";
 import { previewCertificateId } from "@/lib/certificateId";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { DashboardLayout } from "@/components/DashboardLayout";
+import { CertificateTemplatesPanel } from "@/components/CertificateTemplatesPanel";
 import PageHeader from "@/components/enhanced/PageHeader";
 import StatCard from "@/components/enhanced/StatCard";
 import EmptyState from "@/components/enhanced/EmptyState";
 import { TableSkeleton } from "@/components/enhanced/Skeletons";
+
+const TEMPLATES_PATH = "/admin/certificates/templates";
+const CERTIFICATES_PATH = "/admin/certificates";
 
 const emptyCustomizeForm = () => ({
   certificate_id: "",
@@ -52,6 +57,10 @@ const emptySettingsForm = () => ({
 export const AdminCertificatesPage = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const location = useLocation();
+  const activeTab = location.pathname.startsWith(TEMPLATES_PATH) ? "templates" : "issued";
+  const handleTabChange = (value) =>
+    navigate(value === "templates" ? TEMPLATES_PATH : CERTIFICATES_PATH);
   const [certificates, setCertificates] = useState([]);
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -183,6 +192,32 @@ export const AdminCertificatesPage = () => {
           title={t("adminCertificates.title")}
           description={t("adminCertificates.description")}
         >
+          <Button
+            variant="outline"
+            className="rounded-sm"
+            onClick={openSettings}
+            data-testid="certificate-settings-btn"
+          >
+            <Settings className="w-4 h-4 mr-2" /> {t("adminCertificates.manageAutoIssue")}
+          </Button>
+        </PageHeader>
+
+        <Tabs value={activeTab} onValueChange={handleTabChange}>
+          <TabsList className="card-swiss mb-6">
+            <TabsTrigger value="issued" className="rounded-sm" data-testid="tab-certificates">
+              <Award className="w-4 h-4 mr-2" /> {t("adminCertificates.title")}
+            </TabsTrigger>
+            <TabsTrigger value="templates" className="rounded-sm" data-testid="tab-templates">
+              <FileCheck className="w-4 h-4 mr-2" /> {t("certificateTemplates.manageTemplates")}
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="issued">
+        <div className="mb-6 flex flex-col sm:flex-row sm:items-start gap-3">
+          <div className="flex items-start gap-3 rounded-sm border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900 flex-1">
+            <Info className="w-4 h-4 mt-0.5 shrink-0" />
+            <p>{t("adminCertificates.autoIssueNotice")}</p>
+          </div>
           <Select value={courseFilter} onValueChange={setCourseFilter}>
             <SelectTrigger className="w-full sm:w-56 rounded-sm" data-testid="course-filter-select">
               <SelectValue placeholder={t("adminCertificates.filterByCourse")} />
@@ -196,27 +231,6 @@ export const AdminCertificatesPage = () => {
               ))}
             </SelectContent>
           </Select>
-          <Button
-            variant="outline"
-            className="rounded-sm"
-            onClick={() => navigate("/admin/certificates/templates")}
-            data-testid="manage-certificate-templates-btn"
-          >
-            <FileCheck className="w-4 h-4 mr-2" /> {t("certificateTemplates.manageTemplates")}
-          </Button>
-          <Button
-            variant="outline"
-            className="rounded-sm"
-            onClick={openSettings}
-            data-testid="certificate-settings-btn"
-          >
-            <Settings className="w-4 h-4 mr-2" /> {t("adminCertificates.manageAutoIssue")}
-          </Button>
-        </PageHeader>
-
-        <div className="mb-6 flex items-start gap-3 rounded-sm border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
-          <Info className="w-4 h-4 mt-0.5 shrink-0" />
-          <p>{t("adminCertificates.autoIssueNotice")}</p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -305,6 +319,12 @@ export const AdminCertificatesPage = () => {
             </div>
           </Card>
         )}
+          </TabsContent>
+
+          <TabsContent value="templates">
+            <CertificateTemplatesPanel />
+          </TabsContent>
+        </Tabs>
 
         <Dialog open={showCustomizeDialog} onOpenChange={setShowCustomizeDialog}>
           <DialogContent className="max-w-lg">

@@ -36,7 +36,6 @@ const AdminAISettingsPage = lazy(() => import("@/pages/AdminAISettingsPage").the
 const AdminEmailNotificationsPage = lazy(() => import("@/pages/AdminEmailNotificationsPage").then((m) => ({ default: m.AdminEmailNotificationsPage })));
 const AdminPaymentsPage = lazy(() => import("@/pages/AdminPaymentsPage").then((m) => ({ default: m.AdminPaymentsPage })));
 const AdminCertificatesPage = lazy(() => import("@/pages/AdminCertificatesPage").then((m) => ({ default: m.AdminCertificatesPage })));
-const AdminCertificateTemplatesPage = lazy(() => import("@/pages/AdminCertificateTemplatesPage").then((m) => ({ default: m.AdminCertificateTemplatesPage })));
 
 const RouteFallback = () => (
   // Skeletons beat spinners: layout doesn't jump when the chunk lands.
@@ -211,7 +210,7 @@ function App() {
                 path="/admin/certificates/templates"
                 element={
                   <ProtectedRoute roles={["admin"]}>
-                    <AdminCertificateTemplatesPage />
+                    <AdminCertificatesPage />
                   </ProtectedRoute>
                 }
               />

@@ -215,7 +215,6 @@ export default {
     // Certificate Templates
     certificateTemplates: {
       manageTemplates: "수료증 템플릿",
-      backToCertificates: "수료증으로 돌아가기",
       description: "인쇄 가능한 수료증 템플릿을 생성하고 관리합니다.",
       name: "템플릿 이름",
       html: "HTML 템플릿",

@@ -214,7 +214,6 @@ export default {
     // Certificate Templates
     certificateTemplates: {
       manageTemplates: "证书模板",
-      backToCertificates: "返回证书",
       description: "创建和管理可打印的证书模板。",
       name: "模板名称",
       html: "HTML 模板",
