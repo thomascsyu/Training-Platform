@@ -12,6 +12,7 @@ router = APIRouter(tags=["certificate_templates"])
 
 _PRIMARY_DEFAULT = "#002FA7"
 _SECONDARY_DEFAULT = "#0A0B10"
+_BACKGROUND_DEFAULT = "plain"
 
 
 def _serialize_template(doc: dict) -> dict:
@@ -21,14 +22,15 @@ def _serialize_template(doc: dict) -> dict:
         "html": doc["html"],
         "primary_color": doc.get("primary_color", _PRIMARY_DEFAULT),
         "secondary_color": doc.get("secondary_color", _SECONDARY_DEFAULT),
+        "background": doc.get("background", _BACKGROUND_DEFAULT),
         "is_default": doc.get("is_default", False),
         "created_at": doc.get("created_at"),
         "updated_at": doc.get("updated_at"),
     }
 
 
-def _default_html(primary: str, secondary: str) -> str:
-    return create_certification_template_source(primary, secondary)
+def _default_html(primary: str, secondary: str, background: str = _BACKGROUND_DEFAULT) -> str:
+    return create_certification_template_source(primary, secondary, background)
 
 
 async def _ensure_single_default(exclude_id: str | None = None) -> None:
@@ -50,7 +52,7 @@ async def list_templates(request: Request):
 async def render_default_template(data: CertificateTemplateRender, request: Request):
     await require_roles("admin")(request)
     return {
-        "html": _default_html(data.primary_color, data.secondary_color),
+        "html": _default_html(data.primary_color, data.secondary_color, data.background),
     }
 
 
@@ -64,7 +66,8 @@ async def create_template(data: CertificateTemplateCreate, request: Request):
 
     primary = data.primary_color
     secondary = data.secondary_color
-    html = data.html if data.html is not None else _default_html(primary, secondary)
+    background = data.background
+    html = data.html if data.html is not None else _default_html(primary, secondary, background)
 
     now = datetime.now(timezone.utc).isoformat()
     doc = {
@@ -72,6 +75,7 @@ async def create_template(data: CertificateTemplateCreate, request: Request):
         "html": html,
         "primary_color": primary,
         "secondary_color": secondary,
+        "background": background,
         "is_default": data.is_default,
         "created_at": now,
         "updated_at": now,
@@ -120,6 +124,8 @@ async def update_template(template_id: str, data: CertificateTemplateUpdate, req
         update_fields["primary_color"] = data.primary_color
     if data.secondary_color is not None:
         update_fields["secondary_color"] = data.secondary_color
+    if data.background is not None:
+        update_fields["background"] = data.background
     if data.is_default is not None:
         update_fields["is_default"] = data.is_default
 

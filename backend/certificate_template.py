@@ -10,6 +10,36 @@ _BACKGROUND = "#F4F5F7"
 
 _COLOR_RE = re.compile(r"^#[0-9A-Fa-f]{6}$")
 
+# Selectable background artworks for certificates. The first entry ("plain") is
+# the default and keeps the original clean look; the remaining four add a
+# decorative pattern rendered behind the certificate content.
+CERTIFICATE_BACKGROUNDS = [
+    {"key": "plain", "label": "Plain"},
+    {"key": "geometric", "label": "Geometric"},
+    {"key": "waves", "label": "Waves"},
+    {"key": "guilloche", "label": "Guilloché"},
+    {"key": "corners", "label": "Corner Flourish"},
+]
+_BACKGROUND_KEYS = {bg["key"] for bg in CERTIFICATE_BACKGROUNDS}
+DEFAULT_BACKGROUND = "plain"
+
+
+def normalize_background(value: str | None) -> str:
+    """Return a valid background artwork key, falling back to the default."""
+    if isinstance(value, str) and value.strip() in _BACKGROUND_KEYS:
+        return value.strip()
+    return DEFAULT_BACKGROUND
+
+
+def _render_artwork(background: str, primary: str, secondary: str) -> str:
+    """Return an SVG artwork layer (with colors already inlined) for a background."""
+    key = normalize_background(background)
+    svg = _ARTWORK_SVGS.get(key, "")
+    if not svg:
+        return ""
+    svg = svg.replace("__PRIMARY__", primary).replace("__SECONDARY__", secondary)
+    return f'<div class="artwork" aria-hidden="true">{svg}</div>'
+
 
 def _validate_color(value: str, fallback: str) -> str:
     if isinstance(value, str) and _COLOR_RE.match(value.strip()):
@@ -71,21 +101,29 @@ def is_certificate_expired(valid_until: str | None) -> bool:
     return now > expiry
 
 
-def _base_certificate_html(primary: str, secondary: str) -> str:
-    return _CERTIFICATE_HTML.replace("__PRIMARY_COLOR__", primary).replace(
-        "__SECONDARY_COLOR__", secondary
+def _base_certificate_html(
+    primary: str, secondary: str, background: str = DEFAULT_BACKGROUND
+) -> str:
+    # Insert the artwork (with real colors already inlined) before running the
+    # placeholder colour substitution so the artwork colours are untouched.
+    artwork = _render_artwork(background, primary, secondary)
+    return (
+        _CERTIFICATE_HTML.replace("__ARTWORK__", artwork)
+        .replace("__PRIMARY_COLOR__", primary)
+        .replace("__SECONDARY_COLOR__", secondary)
     )
 
 
 def create_certification_template_source(
     primary_color: str = _PRIMARY_DEFAULT,
     secondary_color: str = _SECONDARY_DEFAULT,
+    background: str = DEFAULT_BACKGROUND,
 ) -> str:
     """Return reusable certificate template HTML with user-data placeholders."""
     primary = _validate_color(primary_color, _PRIMARY_DEFAULT)
     secondary = _validate_color(secondary_color, _SECONDARY_DEFAULT)
     return (
-        _base_certificate_html(primary, secondary)
+        _base_certificate_html(primary, secondary, background)
         .replace("__USER_NAME__", "{{user_name}}")
         .replace("__COURSE_TITLE__", "{{course_title}}")
         .replace("__SCORE__", "{{score}}")
@@ -137,8 +175,9 @@ def create_certification_template(cert: dict) -> str:
     """
     primary = _validate_color(cert.get("primary_color"), _PRIMARY_DEFAULT)
     secondary = _validate_color(cert.get("secondary_color"), _SECONDARY_DEFAULT)
+    background = normalize_background(cert.get("background"))
     return render_certification_template(
-        _base_certificate_html(primary, secondary),
+        _base_certificate_html(primary, secondary, background),
         cert,
     )
 
@@ -178,6 +217,17 @@ _CERTIFICATE_HTML = """<!DOCTYPE html>
       position: relative;
       overflow: hidden;
       box-shadow: 0 20px 60px rgba(10, 11, 16, 0.12);
+    }
+    .artwork {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+    }
+    .artwork svg {
+      width: 100%;
+      height: 100%;
+      display: block;
     }
     .accent-bar {
       position: absolute;
@@ -323,6 +373,7 @@ _CERTIFICATE_HTML = """<!DOCTYPE html>
 </head>
 <body>
   <div class="certificate">
+    __ARTWORK__
     <div class="accent-bar"></div>
     <div class="frame-outer"></div>
     <div class="frame-inner"></div>
@@ -357,3 +408,69 @@ _CERTIFICATE_HTML = """<!DOCTYPE html>
 """.replace("__BACKGROUND__", _BACKGROUND).replace("__TEXT_PRIMARY__", _TEXT_PRIMARY).replace("__TEXT_MUTED__", _TEXT_MUTED)
 
 _EXPIRED_BADGE_HTML = '<div class="expired-stamp">Expired</div>'
+
+# Decorative background artworks. Each SVG uses __PRIMARY__ / __SECONDARY__
+# placeholders that are replaced with the certificate colours before rendering.
+# Opacity is kept low so the artwork never competes with the certificate text.
+_ARTWORK_SVGS = {
+    "geometric": """
+<svg viewBox="0 0 1100 850" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <pattern id="geo" width="70" height="70" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect width="70" height="70" fill="none"/>
+      <path d="M0 35 H70 M35 0 V70" stroke="__PRIMARY__" stroke-width="1" opacity="0.06"/>
+      <circle cx="35" cy="35" r="3" fill="__SECONDARY__" opacity="0.05"/>
+    </pattern>
+  </defs>
+  <rect width="1100" height="850" fill="url(#geo)"/>
+  <polygon points="0,0 300,0 0,300" fill="__PRIMARY__" opacity="0.05"/>
+  <polygon points="1100,850 800,850 1100,550" fill="__SECONDARY__" opacity="0.05"/>
+</svg>
+""",
+    "waves": """
+<svg viewBox="0 0 1100 850" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+  <g fill="none" stroke-width="2" opacity="0.08">
+    <path d="M0 120 Q 275 40 550 120 T 1100 120" stroke="__PRIMARY__"/>
+    <path d="M0 180 Q 275 100 550 180 T 1100 180" stroke="__PRIMARY__"/>
+    <path d="M0 240 Q 275 160 550 240 T 1100 240" stroke="__SECONDARY__"/>
+  </g>
+  <g fill="none" stroke-width="2" opacity="0.08">
+    <path d="M0 730 Q 275 650 550 730 T 1100 730" stroke="__SECONDARY__"/>
+    <path d="M0 670 Q 275 590 550 670 T 1100 670" stroke="__PRIMARY__"/>
+    <path d="M0 610 Q 275 530 550 610 T 1100 610" stroke="__PRIMARY__"/>
+  </g>
+</svg>
+""",
+    "guilloche": """
+<svg viewBox="0 0 1100 850" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+  <g fill="none" stroke="__PRIMARY__" stroke-width="0.8" opacity="0.07">
+    <circle cx="550" cy="425" r="120"/>
+    <circle cx="550" cy="425" r="170"/>
+    <circle cx="550" cy="425" r="220"/>
+    <circle cx="550" cy="425" r="270"/>
+    <circle cx="550" cy="425" r="320"/>
+  </g>
+  <g fill="none" stroke="__SECONDARY__" stroke-width="0.8" opacity="0.06">
+    <ellipse cx="550" cy="425" rx="360" ry="150"/>
+    <ellipse cx="550" cy="425" rx="150" ry="360"/>
+  </g>
+</svg>
+""",
+    "corners": """
+<svg viewBox="0 0 1100 850" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+  <g fill="none" stroke="__PRIMARY__" stroke-width="3" opacity="0.14">
+    <path d="M60 160 Q60 60 160 60"/>
+    <path d="M1040 160 Q1040 60 940 60"/>
+    <path d="M60 690 Q60 790 160 790"/>
+    <path d="M1040 690 Q1040 790 940 790"/>
+  </g>
+  <g fill="__SECONDARY__" opacity="0.10">
+    <circle cx="60" cy="60" r="6"/>
+    <circle cx="1040" cy="60" r="6"/>
+    <circle cx="60" cy="790" r="6"/>
+    <circle cx="1040" cy="790" r="6"/>
+  </g>
+</svg>
+""",
+}
+

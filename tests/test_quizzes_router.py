@@ -31,6 +31,10 @@ def _build_mock_db():
     mock_db.certificates.insert_one = AsyncMock(return_value=MagicMock(inserted_id=ObjectId()))
     mock_db.certificates.update_one = AsyncMock()
     mock_db.certificate_templates.find_one = AsyncMock(return_value=None)
+    mock_db.platform_settings = MagicMock()
+    mock_db.platform_settings.find_one_and_update = AsyncMock(
+        return_value={"_id": "certificate", "id_format": "CERT-{year}-{seq:6}", "sequence": 1}
+    )
     return mock_db
 
 

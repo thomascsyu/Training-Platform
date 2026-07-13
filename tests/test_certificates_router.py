@@ -34,6 +34,10 @@ def _build_mock_db():
     mock_db.certificates.find_one = AsyncMock()
     mock_db.certificates.insert_one = AsyncMock()
     mock_db.certificate_templates.find_one = AsyncMock(return_value=None)
+    mock_db.platform_settings = MagicMock()
+    mock_db.platform_settings.find_one_and_update = AsyncMock(
+        return_value={"_id": "certificate", "id_format": "CERT-{year}-{seq:6}", "sequence": 7}
+    )
     return mock_db
 
 
@@ -69,7 +73,7 @@ async def test_create_certificate_as_admin(monkeypatch):
     assert response["user_name"] == "Student A"
     assert response["score"] == 92
     assert response["template"] == "default"
-    assert len(response["certificate_id"]) == 8
+    assert response["certificate_id"] == "CERT-2026-000007"
     assert response["valid_until"] is not None
     assert response["is_expired"] is False
     send_email.assert_awaited_once()
