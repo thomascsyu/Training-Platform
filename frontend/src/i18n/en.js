@@ -447,6 +447,9 @@ export default {
     adminCertificates: {
       title: "Certificates",
       description: "Certificates are issued automatically to students who pass a course's minimum score.",
+      tabIssued: "Issued",
+      tabTemplates: "Templates",
+      templatesNotice: "Templates define the default printable design used when certificates are issued. Set one as Default to apply it platform-wide.",
       totalCertificates: "Total Certificates",
       manageAutoIssue: "Certificate Settings",
       autoIssueNotice: "Certificates are issued automatically when a student meets a course's passing score. Use Certificate Settings to configure the certificate ID format and default styling.",

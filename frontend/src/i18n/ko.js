@@ -416,6 +416,9 @@ export default {
     adminCertificates: {
       title: "수료증",
       description: "학생이 코스의 최저 점수를 통과하면 수료증이 자동으로 발급됩니다.",
+      tabIssued: "발급됨",
+      tabTemplates: "템플릿",
+      templatesNotice: "템플릿은 수료증 발급 시 사용되는 기본 인쇄 디자인을 정의합니다. 하나를 기본값으로 설정하면 플랫폼 전체에 적용됩니다.",
       totalCertificates: "총 수료증",
       manageAutoIssue: "수료증 설정",
       autoIssueNotice: "학생이 코스의 합격 점수를 충족하면 수료증이 자동으로 발급됩니다. 수료증 설정에서 수료증 ID 형식과 기본 디자인을 구성할 수 있습니다.",

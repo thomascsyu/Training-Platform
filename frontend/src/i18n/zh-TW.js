@@ -415,6 +415,9 @@ export default {
     adminCertificates: {
       title: "證書",
       description: "學生達到課程的最低分數後將自動頒發證書。",
+      tabIssued: "已頒發",
+      tabTemplates: "範本",
+      templatesNotice: "範本定義頒發證書時使用的預設列印設計。將其中一個設為預設即可套用至整個平台。",
       totalCertificates: "證書總數",
       manageAutoIssue: "證書設定",
       autoIssueNotice: "當學生達到課程的及格分數時，證書將自動頒發。可在證書設定中設定證書編號格式與預設樣式。",

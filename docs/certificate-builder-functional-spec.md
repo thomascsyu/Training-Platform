@@ -6,7 +6,7 @@
 | Audience | Product, design, engineering |
 | Status | Draft for implementation |
 | Actors | Admin only |
-| Related surfaces | `/admin/certificate-templates`, `/admin/certificates`, `certificate_templates` collection, `/certificates/preview` |
+| Related surfaces | `/admin/certificates` (Issued + Templates tabs), `certificate_templates` collection, `/certificates/preview` |
 
 ---
 
@@ -14,7 +14,7 @@
 
 Give admins a guided flow to **review and create a certificate configuration for a specific course**: choose or name a template, set visual layout and wording, preview the result in real time, then save the configuration so issued certificates for that course use it.
 
-This feature extends the existing global certificate template system (`certificate_templates`, Admin Certificate Templates page) with **course association**, **custom background upload**, **orientation**, **admin-authored body text with placeholders**, and an explicit **Configure → Review → Save** builder flow.
+This feature extends the existing global certificate template system (`certificate_templates`, Admin Certificates → Templates tab) with **course association**, **custom background upload**, **orientation**, **admin-authored body text with placeholders**, and an explicit **Configure → Review → Save** builder flow.
 
 ---
 
@@ -91,7 +91,7 @@ Admin opens Certificate Builder (from course detail or Admin → Certificates / 
 ### Entry points
 
 1. **From a course** — “Certificate” / “Certificate Builder” on admin course management → course pre-selected.
-2. **From Admin Certificate Templates** — “Create with Builder” → course required before save.
+2. **From Admin Certificates → Templates** — “Create with Builder” → course required before save.
 3. **Edit existing** — open an existing course-linked template → same flow in edit mode.
 
 ### Exit / cancel
@@ -261,7 +261,7 @@ Renderer must accept both builder aliases and legacy tokens:
 ### 9.1 Page / route
 
 - Suggested route: `/admin/certificate-builder` with query `?course_id=` and optional `?template_id=`.
-- Also accessible as a step/dialog from Admin Certificate Templates (“Create with Builder”).
+- Also accessible as a step/dialog from Admin Certificates → Templates (“Create with Builder”).
 
 ### 9.2 Configure panel (left / top on mobile)
 
@@ -304,7 +304,7 @@ Renderer must accept both builder aliases and legacy tokens:
 ## 11. Acceptance Criteria
 
 - [ ] Admin can open builder, select a course, name a unique template, set landscape/portrait, upload a background via drag-and-drop, enter body text with placeholders, see live preview, open Review, and Save successfully.
-- [ ] Saved template appears in Admin Certificate Templates and is linked to the course.
+- [ ] Saved template appears in Admin Certificates → Templates and is linked to the course.
 - [ ] Passing a quiz for that course issues a certificate using the saved configuration (correct orientation, background, substituted text).
 - [ ] Preview does not insert DB certificate rows or increment ID sequence.
 - [ ] Duplicate template names are rejected with a clear error.
@@ -327,7 +327,7 @@ Renderer must accept both builder aliases and legacy tokens:
 
 ## 13. Implementation Notes (for engineering)
 
-1. **Prefer extending** `certificate_templates` + `AdminCertificateTemplatesPage` / new builder page over a parallel collection.
+1. **Prefer extending** `certificate_templates` + Admin Certificates Templates tab / new builder page over a parallel collection.
 2. **Generate `html` on save** from builder fields so existing `render_certification_template` / PDF pipeline keeps working.
 3. **Reuse** `ThumbnailUpload` patterns for drag-and-drop UX (add DnD if not present) and `upload_utils` for validation.
 4. **Extend** `resolve_certificate_template` to accept `course_id` and prefer course-linked templates.
