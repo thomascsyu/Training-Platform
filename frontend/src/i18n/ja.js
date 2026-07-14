@@ -426,6 +426,8 @@ export default {
       primaryColor: "プライマリカラー",
       secondaryColor: "セカンダリカラー",
       background: "背景アート",
+      language: "証明書の言語",
+      languageHint: "既定値はコースの言語です。証明書の文言・日付・PDFはこの言語で表示されます。",
       applyToCourse: "このコースのすべての修了証に適用",
       applyToCourseHint: "有効にすると、スタイル変更が選択したコースのすべての修了証に適用されます。",
       certificateId: "修了証 ID",

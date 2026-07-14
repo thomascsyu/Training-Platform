@@ -5,6 +5,7 @@ from fastapi import APIRouter, HTTPException, Request
 from starlette.responses import Response
 
 from auth_utils import get_current_user, require_admin_or_manager, require_roles
+from certificate_i18n import normalize_certificate_language
 from certificate_id import generate_certificate_id
 from certificate_pdf import generate_certificate_pdf
 from certificate_template import (
@@ -30,6 +31,7 @@ def _serialize_certificate(cert: dict, fallback_course_title: str | None = None)
         "course_title": cert.get("course_title") or fallback_course_title,
         "user_name": cert.get("user_name"),
         "score": cert.get("score"),
+        "language": cert.get("language", "en"),
         "template": cert.get("template"),
         "template_id": cert.get("template_id"),
         "template_name": cert.get("template_name"),
@@ -123,7 +125,7 @@ async def create_certificate(data: CertificateCreate, request: Request):
 
     course = await db.courses.find_one(
         {"_id": parse_object_id(data.course_id, "course")},
-        {"_id": 1, "title": 1, "company_ids": 1},
+        {"_id": 1, "title": 1, "company_ids": 1, "language": 1},
     )
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
@@ -174,6 +176,8 @@ async def create_certificate(data: CertificateCreate, request: Request):
         "score": data.score,
         "issued_at": issued_at,
     }
+    if data.language:
+        cert_doc["language"] = data.language
     apply_template_to_certificate(
         cert_doc,
         template,
@@ -181,6 +185,7 @@ async def create_certificate(data: CertificateCreate, request: Request):
         fallback_primary_color=data.primary_color,
         fallback_secondary_color=data.secondary_color,
         fallback_background=data.background,
+        fallback_language=course.get("language"),
     )
     result = await db.certificates.insert_one(cert_doc)
     cert_doc["_id"] = result.inserted_id
@@ -275,6 +280,9 @@ async def customize_certificate(
         target["primary_color"] = data.primary_color
         target["secondary_color"] = data.secondary_color
         target["background"] = data.background or target.get("background") or "plain"
+        target["language"] = normalize_certificate_language(
+            data.language or target.get("language")
+        )
         # Re-render the stored HTML so downloads/previews reflect the new style.
         rendered = create_certification_template(target)
         await db.certificates.update_one(
@@ -285,6 +293,7 @@ async def customize_certificate(
                     "primary_color": target["primary_color"],
                     "secondary_color": target["secondary_color"],
                     "background": target["background"],
+                    "language": target["language"],
                     "template_html": rendered,
                 }
             },

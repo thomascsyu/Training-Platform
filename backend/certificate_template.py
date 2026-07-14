@@ -2,6 +2,12 @@ import html
 import re
 from datetime import datetime
 
+from certificate_i18n import (
+    format_certificate_date,
+    get_certificate_strings,
+    normalize_certificate_language,
+)
+
 _PRIMARY_DEFAULT = "#002FA7"
 _SECONDARY_DEFAULT = "#0A0B10"
 _TEXT_MUTED = "#64748B"
@@ -60,14 +66,9 @@ def _format_score(value: int | float | str | None) -> int:
         return 0
 
 
-def _format_date(value: str | None) -> str:
-    if not value:
-        return "—"
-    try:
-        dt = datetime.fromisoformat(str(value))
-        return dt.strftime("%B %d, %Y")
-    except Exception:
-        return html.escape(str(value)[:10])
+def _expired_badge_html(language: str | None) -> str:
+    strings = get_certificate_strings(language)
+    return f'<div class="expired-stamp">{html.escape(strings["expired"])}</div>'
 
 
 CERTIFICATE_VALIDITY_YEARS = 1
@@ -102,15 +103,30 @@ def is_certificate_expired(valid_until: str | None) -> bool:
 
 
 def _base_certificate_html(
-    primary: str, secondary: str, background: str = DEFAULT_BACKGROUND
+    primary: str,
+    secondary: str,
+    background: str = DEFAULT_BACKGROUND,
+    language: str | None = None,
 ) -> str:
     # Insert the artwork (with real colors already inlined) before running the
     # placeholder colour substitution so the artwork colours are untouched.
     artwork = _render_artwork(background, primary, secondary)
+    strings = get_certificate_strings(language)
+    score_prefix = strings["score_line"].split("{score}")[0]
     return (
         _CERTIFICATE_HTML.replace("__ARTWORK__", artwork)
         .replace("__PRIMARY_COLOR__", primary)
         .replace("__SECONDARY_COLOR__", secondary)
+        .replace("__HTML_LANG__", strings["html_lang"])
+        .replace("__OVERLINE__", strings["overline"])
+        .replace("__CERT_TITLE__", strings["title"])
+        .replace("__INTRO__", strings["intro"])
+        .replace("__COMPLETED_TEXT__", strings["completed"])
+        .replace("__SCORE_PREFIX__", score_prefix)
+        .replace("__CERT_ID_LABEL__", strings["cert_id_label"])
+        .replace("__ISSUED_LABEL__", strings["issued_label"])
+        .replace("__VALID_UNTIL_LABEL__", strings["valid_until_label"])
+        .replace("__SIGNATURE_LABEL__", strings["signature_label"])
     )
 
 
@@ -118,12 +134,13 @@ def create_certification_template_source(
     primary_color: str = _PRIMARY_DEFAULT,
     secondary_color: str = _SECONDARY_DEFAULT,
     background: str = DEFAULT_BACKGROUND,
+    language: str | None = None,
 ) -> str:
     """Return reusable certificate template HTML with user-data placeholders."""
     primary = _validate_color(primary_color, _PRIMARY_DEFAULT)
     secondary = _validate_color(secondary_color, _SECONDARY_DEFAULT)
     return (
-        _base_certificate_html(primary, secondary, background)
+        _base_certificate_html(primary, secondary, background, language)
         .replace("__USER_NAME__", "{{user_name}}")
         .replace("__COURSE_TITLE__", "{{course_title}}")
         .replace("__SCORE__", "{{score}}")
@@ -135,6 +152,7 @@ def create_certification_template_source(
 
 def render_certification_template(template_html: str, cert: dict) -> str:
     """Render certificate data into a reusable HTML certificate template."""
+    language = cert.get("language")
     valid_until = cert.get("valid_until") or compute_valid_until(cert.get("issued_at"))
     expired = is_certificate_expired(valid_until)
     values = {
@@ -142,8 +160,8 @@ def render_certification_template(template_html: str, cert: dict) -> str:
         "course_title": _safe(cert.get("course_title", cert.get("course", "Course"))),
         "score": str(_format_score(cert.get("score"))),
         "certificate_id": _safe(cert.get("certificate_id"), "—"),
-        "issued_at": _format_date(cert.get("issued_at")),
-        "valid_until": _format_date(valid_until),
+        "issued_at": format_certificate_date(cert.get("issued_at"), language),
+        "valid_until": format_certificate_date(valid_until, language),
     }
     replacements = {
         "__USER_NAME__": values["user_name"],
@@ -152,7 +170,7 @@ def render_certification_template(template_html: str, cert: dict) -> str:
         "__CERTIFICATE_ID__": values["certificate_id"],
         "__ISSUED_AT__": values["issued_at"],
         "__VALID_UNTIL__": values["valid_until"],
-        "__EXPIRED_BADGE__": _EXPIRED_BADGE_HTML if expired else "",
+        "__EXPIRED_BADGE__": _expired_badge_html(language) if expired else "",
         "{{user_name}}": values["user_name"],
         "{{course_title}}": values["course_title"],
         "{{score}}": values["score"],
@@ -172,22 +190,25 @@ def create_certification_template(cert: dict) -> str:
     Design reference: https://claude.ai/design/p/5f15a85e-9833-48c2-8e02-b82b726e130d
     The template follows the LearnHub design system (International Klein Blue, high
     contrast, sharp edges) and is safe to render with untrusted certificate fields.
+    Renders in the certificate's ``language`` (course language at issuance time),
+    falling back to English.
     """
+    language = normalize_certificate_language(cert.get("language"))
     primary = _validate_color(cert.get("primary_color"), _PRIMARY_DEFAULT)
     secondary = _validate_color(cert.get("secondary_color"), _SECONDARY_DEFAULT)
     background = normalize_background(cert.get("background"))
     return render_certification_template(
-        _base_certificate_html(primary, secondary, background),
+        _base_certificate_html(primary, secondary, background, language),
         cert,
     )
 
 
 _CERTIFICATE_HTML = """<!DOCTYPE html>
-<html lang="en">
+<html lang="__HTML_LANG__">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Training Certificate - __COURSE_TITLE__</title>
+  <title>__OVERLINE__ - __COURSE_TITLE__</title>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
   <style>
     @page {
@@ -382,23 +403,23 @@ _CERTIFICATE_HTML = """<!DOCTYPE html>
         <circle cx="12" cy="8" r="6"></circle>
         <path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"></path>
       </svg>
-      <div class="overline">Training Certificate</div>
-      <h1>Certificate of Completion</h1>
-      <div class="presented">This certifies that</div>
+      <div class="overline">__OVERLINE__</div>
+      <h1>__CERT_TITLE__</h1>
+      <div class="presented">__INTRO__</div>
       <div class="recipient">__USER_NAME__</div>
-      <div class="presented">has successfully completed</div>
+      <div class="presented">__COMPLETED_TEXT__</div>
       <div class="course">__COURSE_TITLE__</div>
-      <div class="score">with a score of <strong>__SCORE__%</strong></div>
+      <div class="score">__SCORE_PREFIX__<strong>__SCORE__%</strong></div>
     </div>
     <div class="footer">
       <div class="signature">
         <div class="signature-line"></div>
-        <div class="signature-label">LearnHub</div>
+        <div class="signature-label">__SIGNATURE_LABEL__</div>
       </div>
       <div class="meta">
-        <div>Certificate ID: <strong>__CERTIFICATE_ID__</strong></div>
-        <div>Issued: <strong>__ISSUED_AT__</strong></div>
-        <div>Valid Until: <strong>__VALID_UNTIL__</strong></div>
+        <div>__CERT_ID_LABEL__: <strong>__CERTIFICATE_ID__</strong></div>
+        <div>__ISSUED_LABEL__: <strong>__ISSUED_AT__</strong></div>
+        <div>__VALID_UNTIL_LABEL__: <strong>__VALID_UNTIL__</strong></div>
       </div>
     </div>
     __EXPIRED_BADGE__
@@ -406,8 +427,6 @@ _CERTIFICATE_HTML = """<!DOCTYPE html>
 </body>
 </html>
 """.replace("__BACKGROUND__", _BACKGROUND).replace("__TEXT_PRIMARY__", _TEXT_PRIMARY).replace("__TEXT_MUTED__", _TEXT_MUTED)
-
-_EXPIRED_BADGE_HTML = '<div class="expired-stamp">Expired</div>'
 
 # Decorative background artworks. Each SVG uses __PRIMARY__ / __SECONDARY__
 # placeholders that are replaced with the certificate colours before rendering.

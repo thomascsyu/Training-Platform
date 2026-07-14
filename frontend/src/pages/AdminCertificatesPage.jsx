@@ -24,6 +24,7 @@ import { Award, Download, Palette, Settings, Loader2, Info } from "lucide-react"
 import { API, formatError } from "@/lib/api";
 import { CERTIFICATE_BACKGROUNDS, backgroundLabel } from "@/lib/certificateBackgrounds";
 import { previewCertificateId } from "@/lib/certificateId";
+import { courseLanguages, courseLanguageShortNames } from "@/i18n";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import PageHeader from "@/components/enhanced/PageHeader";
@@ -37,6 +38,7 @@ const emptyCustomizeForm = () => ({
   primary_color: "#002FA7",
   secondary_color: "#0A0B10",
   background: "plain",
+  language: "en",
   apply_to_course: false,
 });
 
@@ -98,6 +100,7 @@ export const AdminCertificatesPage = () => {
       primary_color: cert.primary_color || "#002FA7",
       secondary_color: cert.secondary_color || "#0A0B10",
       background: cert.background || "plain",
+      language: cert.language || "en",
       apply_to_course: false,
     });
     setShowCustomizeDialog(true);
@@ -111,6 +114,7 @@ export const AdminCertificatesPage = () => {
         primary_color: customizeForm.primary_color,
         secondary_color: customizeForm.secondary_color,
         background: customizeForm.background,
+        language: customizeForm.language,
         apply_to_course: customizeForm.apply_to_course,
       });
       toast.success(t("adminCertificates.customized"));
@@ -219,7 +223,7 @@ export const AdminCertificatesPage = () => {
         </div>
 
         {loading ? (
-          <TableSkeleton rows={6} cols={6} />
+          <TableSkeleton rows={6} cols={7} />
         ) : certificates.length === 0 ? (
           <EmptyState
             icon={Award}
@@ -237,6 +241,7 @@ export const AdminCertificatesPage = () => {
                     <th className="text-left p-4 font-medium text-slate-600">{t("adminCertificates.course")}</th>
                     <th className="text-left p-4 font-medium text-slate-600">{t("adminCertificates.student")}</th>
                     <th className="text-left p-4 font-medium text-slate-600">{t("adminCertificates.score")}</th>
+                    <th className="text-left p-4 font-medium text-slate-600">{t("adminCertificates.language")}</th>
                     <th className="text-left p-4 font-medium text-slate-600">{t("adminCertificates.issuedOn")}</th>
                     <th className="text-left p-4 font-medium text-slate-600">{t("adminCertificates.validUntil")}</th>
                     <th className="text-left p-4 font-medium text-slate-600">{t("adminCertificates.actions")}</th>
@@ -252,6 +257,9 @@ export const AdminCertificatesPage = () => {
                         <Badge variant="secondary" className="rounded-sm">
                           {cert.score}%
                         </Badge>
+                      </td>
+                      <td className="p-4 text-slate-500 text-sm">
+                        {courseLanguageShortNames[cert.language] || cert.language || "EN"}
                       </td>
                       <td className="p-4 text-slate-500 text-sm">
                         {cert.issued_at ? new Date(cert.issued_at).toLocaleDateString() : "—"}
@@ -348,6 +356,25 @@ export const AdminCertificatesPage = () => {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>{t("adminCertificates.language")}</Label>
+                <Select
+                  value={customizeForm.language}
+                  onValueChange={(value) => setCustomizeForm({ ...customizeForm, language: value })}
+                >
+                  <SelectTrigger className="rounded-sm" data-testid="customize-language-select">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {courseLanguages.map(({ value, label }) => (
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-slate-500">{t("adminCertificates.languageHint")}</p>
               </div>
               <div className="flex items-center gap-3">
                 <Switch

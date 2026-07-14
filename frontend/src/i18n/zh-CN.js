@@ -425,6 +425,8 @@ export default {
       primaryColor: "主色",
       secondaryColor: "辅色",
       background: "背景图案",
+      language: "证书语言",
+      languageHint: "默认为课程所使用的语言。证书文本、日期和 PDF 均以此语言呈现。",
       applyToCourse: "应用至此课程的所有证书",
       applyToCourseHint: "启用后，样式变更将应用至该课程的每一份证书。",
       certificateId: "证书 ID",

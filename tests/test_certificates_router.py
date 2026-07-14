@@ -4,7 +4,7 @@ import pytest
 from bson import ObjectId
 from fastapi import HTTPException
 
-from models import CertificateCreate
+from models import CertificateCreate, CertificateCustomize
 from routers import certificates as certificates_router
 
 COURSE_A = "507f1f77bcf86cd7994390c0"
@@ -83,6 +83,101 @@ async def test_create_certificate_as_admin(monkeypatch):
     assert inserted_doc["template_id"] is None
     assert inserted_doc["valid_until"] is not None
     assert "<!DOCTYPE html" in inserted_doc["template_html"]
+
+
+@pytest.mark.asyncio
+async def test_create_certificate_uses_course_language(monkeypatch):
+    mock_db = _build_mock_db()
+    mock_db.courses.find_one.return_value = {
+        "_id": ObjectId(COURSE_A),
+        "title": "Security Training",
+        "company_ids": [COMPANY_A],
+        "language": "ja",
+    }
+    mock_db.users.find_one.return_value = {
+        "_id": ObjectId(STUDENT_A),
+        "name": "Student A",
+        "email": "student.a@example.com",
+        "role": "student",
+        "company_id": COMPANY_A,
+    }
+    mock_db.certificates.find_one.return_value = None
+    mock_db.certificates.insert_one.return_value = MagicMock(inserted_id=ObjectId())
+
+    monkeypatch.setattr(certificates_router, "db", mock_db)
+    monkeypatch.setattr(certificates_router, "require_admin_or_manager", _fake_admin)
+    monkeypatch.setattr(certificates_router, "send_certificate_email", AsyncMock())
+
+    response = await certificates_router.create_certificate(
+        CertificateCreate(course_id=COURSE_A, user_id=STUDENT_A, score=92),
+        request=object(),
+    )
+
+    assert response["language"] == "ja"
+    inserted_doc = mock_db.certificates.insert_one.await_args.args[0]
+    assert inserted_doc["language"] == "ja"
+    assert "修了証明書" in inserted_doc["template_html"]
+
+
+@pytest.mark.asyncio
+async def test_create_certificate_language_override_takes_precedence(monkeypatch):
+    mock_db = _build_mock_db()
+    mock_db.courses.find_one.return_value = {
+        "_id": ObjectId(COURSE_A),
+        "title": "Security Training",
+        "company_ids": [COMPANY_A],
+        "language": "ja",
+    }
+    mock_db.users.find_one.return_value = {
+        "_id": ObjectId(STUDENT_A),
+        "name": "Student A",
+        "email": "student.a@example.com",
+        "role": "student",
+        "company_id": COMPANY_A,
+    }
+    mock_db.certificates.find_one.return_value = None
+    mock_db.certificates.insert_one.return_value = MagicMock(inserted_id=ObjectId())
+
+    monkeypatch.setattr(certificates_router, "db", mock_db)
+    monkeypatch.setattr(certificates_router, "require_admin_or_manager", _fake_admin)
+    monkeypatch.setattr(certificates_router, "send_certificate_email", AsyncMock())
+
+    response = await certificates_router.create_certificate(
+        CertificateCreate(course_id=COURSE_A, user_id=STUDENT_A, score=92, language="ko"),
+        request=object(),
+    )
+
+    assert response["language"] == "ko"
+
+
+@pytest.mark.asyncio
+async def test_create_certificate_defaults_language_to_english_when_course_has_none(monkeypatch):
+    mock_db = _build_mock_db()
+    mock_db.courses.find_one.return_value = {
+        "_id": ObjectId(COURSE_A),
+        "title": "Security Training",
+        "company_ids": [COMPANY_A],
+    }
+    mock_db.users.find_one.return_value = {
+        "_id": ObjectId(STUDENT_A),
+        "name": "Student A",
+        "email": "student.a@example.com",
+        "role": "student",
+        "company_id": COMPANY_A,
+    }
+    mock_db.certificates.find_one.return_value = None
+    mock_db.certificates.insert_one.return_value = MagicMock(inserted_id=ObjectId())
+
+    monkeypatch.setattr(certificates_router, "db", mock_db)
+    monkeypatch.setattr(certificates_router, "require_admin_or_manager", _fake_admin)
+    monkeypatch.setattr(certificates_router, "send_certificate_email", AsyncMock())
+
+    response = await certificates_router.create_certificate(
+        CertificateCreate(course_id=COURSE_A, user_id=STUDENT_A, score=92),
+        request=object(),
+    )
+
+    assert response["language"] == "en"
 
 
 @pytest.mark.asyncio
@@ -295,6 +390,47 @@ async def test_list_certificates_scoped_to_manager_company(monkeypatch):
     mock_db.certificates.find.assert_called_once()
     query = mock_db.certificates.find.call_args.args[0]
     assert query["user_id"]["$in"] == [STUDENT_A]
+
+
+def _fake_admin_require_roles(*_roles):
+    async def _inner(_request):
+        return {"id": "admin-id", "role": "admin", "company_id": None}
+
+    return _inner
+
+
+@pytest.mark.asyncio
+async def test_customize_certificate_updates_language(monkeypatch):
+    mock_db = _build_mock_db()
+    existing_cert = {
+        "_id": ObjectId(),
+        "course_id": COURSE_A,
+        "certificate_id": "ABC12345",
+        "user_name": "Student A",
+        "course_title": "Security Training",
+        "score": 92,
+        "language": "en",
+        "template": "default",
+        "primary_color": "#002FA7",
+        "secondary_color": "#0A0B10",
+        "background": "plain",
+    }
+    mock_db.certificates.find_one.return_value = existing_cert
+    mock_db.certificates.update_one = AsyncMock()
+
+    monkeypatch.setattr(certificates_router, "db", mock_db)
+    monkeypatch.setattr(certificates_router, "require_roles", _fake_admin_require_roles)
+
+    result = await certificates_router.customize_certificate(
+        str(existing_cert["_id"]),
+        CertificateCustomize(language="ja"),
+        request=object(),
+    )
+
+    assert result["message"] == "Updated 1 certificate(s)"
+    update_call = mock_db.certificates.update_one.await_args.args[1]
+    assert update_call["$set"]["language"] == "ja"
+    assert "修了証明書" in update_call["$set"]["template_html"]
 
 
 def _cursor_mock(items):

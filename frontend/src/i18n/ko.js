@@ -426,6 +426,8 @@ export default {
       primaryColor: "기본 색상",
       secondaryColor: "보조 색상",
       background: "배경 아트워크",
+      language: "수료증 언어",
+      languageHint: "기본값은 코스의 언어입니다. 수료증 텍스트, 날짜 및 PDF가 이 언어로 표시됩니다.",
       applyToCourse: "이 코스의 모든 수료증에 적용",
       applyToCourseHint: "활성화하면 스타일 변경 사항이 선택한 코스의 모든 수료증에 적용됩니다.",
       certificateId: "수료증 ID",

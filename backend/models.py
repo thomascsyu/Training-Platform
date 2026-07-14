@@ -183,6 +183,7 @@ class CertificateCreate(BaseModel):
     primary_color: str = "#002FA7"
     secondary_color: str = "#0A0B10"
     background: str = "plain"
+    language: Optional[str] = None
 
 
 class CertificateCustomize(BaseModel):
@@ -190,6 +191,7 @@ class CertificateCustomize(BaseModel):
     primary_color: str = "#002FA7"
     secondary_color: str = "#0A0B10"
     background: Optional[str] = None
+    language: Optional[str] = None
     apply_to_course: bool = False
 
 
