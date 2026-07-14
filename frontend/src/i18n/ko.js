@@ -421,6 +421,19 @@ export default {
       autoIssueNotice: "학생이 코스의 합격 점수를 충족하면 수료증이 자동으로 발급됩니다. 수료증 설정에서 수료증 ID 형식과 기본 디자인을 구성할 수 있습니다.",
       customizeCertificate: "수료증 사용자 지정",
       customizeDescription: "이 수료증의 시각적 스타일을 업데이트하세요.",
+      previewCertificate: "수료증 미리보기",
+      previewDescription: "발급하지 않고 완성된 수료증을 렌더링합니다. 실제 코스와 학생, 또는 샘플 값을 사용할 수 있습니다.",
+      preview: "미리보기",
+      previewGenerate: "미리보기 생성",
+      previewDownloadPdf: "PDF 미리보기 다운로드",
+      previewHint: "이 미리보기는 저장되지 않으며 수료증 ID 일련번호를 소비하지 않습니다.",
+      sampleCourse: "샘플 코스 (실제 코스 없음)",
+      sampleCourseTitle: "샘플 코스 제목",
+      sampleStudent: "샘플 학생 이름 사용",
+      sampleStudentName: "샘플 학생 이름",
+      selectCourse: "코스 선택",
+      selectStudent: "학생 선택",
+      scoreLabel: "점수",
       score: "점수 (0-100)",
       template: "템플릿",
       primaryColor: "기본 색상",
@@ -443,7 +456,9 @@ export default {
       noCertificatesHint: "학생이 코스의 최저 점수를 통과하면 여기에 표시됩니다.",
       customized: "수료증 스타일이 업데이트되었습니다.",
       filterByCourse: "코스로 필터",
-      allCourses: "모든 코스"
+      allCourses: "모든 코스",
+      previewCourseRequired: "코스를 선택하거나 샘플 코스 제목을 입력하세요.",
+      previewStudentRequired: "학생을 선택하거나 샘플 학생 이름을 입력하세요."
     },
 
     // Common

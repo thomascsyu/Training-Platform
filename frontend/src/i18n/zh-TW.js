@@ -420,6 +420,19 @@ export default {
       autoIssueNotice: "當學生達到課程的及格分數時，證書將自動頒發。可在證書設定中設定證書編號格式與預設樣式。",
       customizeCertificate: "自訂證書",
       customizeDescription: "更新此證書的視覺樣式。",
+      previewCertificate: "預覽證書",
+      previewDescription: "在未頒發的情況下渲染完整證書。可使用真實課程與學生，或範例資料。",
+      preview: "預覽",
+      previewGenerate: "產生預覽",
+      previewDownloadPdf: "下載 PDF 預覽",
+      previewHint: "此預覽不會儲存，也不會消耗證書序號。",
+      sampleCourse: "範例課程（非真實課程）",
+      sampleCourseTitle: "範例課程名稱",
+      sampleStudent: "使用範例學生姓名",
+      sampleStudentName: "範例學生姓名",
+      selectCourse: "選擇課程",
+      selectStudent: "選擇學生",
+      scoreLabel: "分數",
       score: "分數 (0-100)",
       template: "範本",
       primaryColor: "主色",
@@ -442,7 +455,9 @@ export default {
       noCertificatesHint: "學生達到課程的最低分數後，證書將顯示於此。",
       customized: "證書樣式已更新。",
       filterByCourse: "依課程篩選",
-      allCourses: "所有課程"
+      allCourses: "所有課程",
+      previewCourseRequired: "請選擇課程或輸入範例課程名稱。",
+      previewStudentRequired: "請選擇學生或輸入範例學生姓名。"
     },
 
     // Common

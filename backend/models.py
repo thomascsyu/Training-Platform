@@ -1,7 +1,7 @@
 import re
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
 
 
 class UserCreate(BaseModel):
@@ -193,6 +193,59 @@ class CertificateCustomize(BaseModel):
     background: Optional[str] = None
     language: Optional[str] = None
     apply_to_course: bool = False
+
+
+class CertificatePreview(BaseModel):
+    """Render a fully filled certificate without issuing or persisting it.
+
+    Provide either a real ``course_id`` or a free-form ``course_title``, and
+    either a real ``user_id`` or a free-form ``user_name``. Style fields and
+    language default to the selected course / template when omitted.
+    """
+
+    course_id: Optional[str] = None
+    course_title: Optional[str] = Field(default=None, min_length=1, max_length=200)
+    user_id: Optional[str] = None
+    user_name: Optional[str] = Field(default=None, min_length=1, max_length=120)
+    score: int = Field(default=92, ge=0, le=100)
+    template: str = "default"
+    template_id: Optional[str] = None
+    primary_color: str = "#002FA7"
+    secondary_color: str = "#0A0B10"
+    background: str = "plain"
+    language: Optional[str] = None
+    format: str = "html"
+    certificate_id: Optional[str] = Field(default=None, min_length=1, max_length=120)
+
+    @field_validator("format")
+    @classmethod
+    def _validate_format(cls, value: str) -> str:
+        key = str(value or "").strip().lower()
+        if key not in {"html", "pdf"}:
+            raise ValueError("format must be 'html' or 'pdf'")
+        return key
+
+    @field_validator("background")
+    @classmethod
+    def _check_background(cls, value: str) -> str:
+        return _validate_background(value)
+
+    @field_validator("primary_color", "secondary_color")
+    @classmethod
+    def _validate_hex(cls, value: str) -> str:
+        if not re.match(r"^#[0-9A-Fa-f]{6}$", value):
+            raise ValueError("Color must be a valid 6-digit hex code")
+        return value.lower()
+
+    @model_validator(mode="after")
+    def _require_course_and_recipient(self) -> "CertificatePreview":
+        has_course = bool(self.course_id) or bool(self.course_title)
+        has_recipient = bool(self.user_id) or bool(self.user_name)
+        if not has_course:
+            raise ValueError("Provide course_id or course_title")
+        if not has_recipient:
+            raise ValueError("Provide user_id or user_name")
+        return self
 
 
 class PaymentCreate(BaseModel):

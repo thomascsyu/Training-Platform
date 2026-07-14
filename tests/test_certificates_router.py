@@ -4,7 +4,7 @@ import pytest
 from bson import ObjectId
 from fastapi import HTTPException
 
-from models import CertificateCreate, CertificateCustomize
+from models import CertificateCreate, CertificateCustomize, CertificatePreview
 from routers import certificates as certificates_router
 
 COURSE_A = "507f1f77bcf86cd7994390c0"
@@ -35,6 +35,9 @@ def _build_mock_db():
     mock_db.certificates.insert_one = AsyncMock()
     mock_db.certificate_templates.find_one = AsyncMock(return_value=None)
     mock_db.platform_settings = MagicMock()
+    mock_db.platform_settings.find_one = AsyncMock(
+        return_value={"_id": "certificate", "id_format": "CERT-{year}-{seq:6}", "sequence": 6}
+    )
     mock_db.platform_settings.find_one_and_update = AsyncMock(
         return_value={"_id": "certificate", "id_format": "CERT-{year}-{seq:6}", "sequence": 7}
     )
@@ -431,6 +434,112 @@ async def test_customize_certificate_updates_language(monkeypatch):
     update_call = mock_db.certificates.update_one.await_args.args[1]
     assert update_call["$set"]["language"] == "ja"
     assert "修了証明書" in update_call["$set"]["template_html"]
+
+
+@pytest.mark.asyncio
+async def test_preview_certificate_with_sample_data_returns_html(monkeypatch):
+    mock_db = _build_mock_db()
+    monkeypatch.setattr(certificates_router, "db", mock_db)
+    monkeypatch.setattr(certificates_router, "require_admin_or_manager", _fake_admin)
+
+    response = await certificates_router.preview_certificate(
+        CertificatePreview(
+            course_title="Security Training",
+            user_name="Jane Doe",
+            score=95,
+            language="ja",
+            format="html",
+        ),
+        request=object(),
+    )
+
+    assert response.media_type == "text/html"
+    html = response.body.decode("utf-8")
+    assert "Jane Doe" in html
+    assert "Security Training" in html
+    assert "95%" in html
+    assert "修了証明書" in html
+    assert "CERT-2026-000007" in html
+    mock_db.certificates.insert_one.assert_not_awaited()
+    mock_db.platform_settings.find_one_and_update.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_preview_certificate_with_real_course_and_student(monkeypatch):
+    mock_db = _build_mock_db()
+    mock_db.courses.find_one.return_value = {
+        "_id": ObjectId(COURSE_A),
+        "title": "Advanced Security Training",
+        "company_ids": [COMPANY_A],
+        "language": "ko",
+    }
+    mock_db.users.find_one.return_value = {
+        "_id": ObjectId(STUDENT_A),
+        "name": "Student A",
+        "role": "student",
+        "company_id": COMPANY_A,
+    }
+    monkeypatch.setattr(certificates_router, "db", mock_db)
+    monkeypatch.setattr(certificates_router, "require_admin_or_manager", _fake_admin)
+
+    response = await certificates_router.preview_certificate(
+        CertificatePreview(course_id=COURSE_A, user_id=STUDENT_A, score=88),
+        request=object(),
+    )
+
+    html = response.body.decode("utf-8")
+    assert "Student A" in html
+    assert "Advanced Security Training" in html
+    assert "수료증" in html
+    assert "88%" in html
+    mock_db.certificates.insert_one.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_preview_certificate_pdf_format(monkeypatch):
+    mock_db = _build_mock_db()
+    monkeypatch.setattr(certificates_router, "db", mock_db)
+    monkeypatch.setattr(certificates_router, "require_admin_or_manager", _fake_admin)
+
+    response = await certificates_router.preview_certificate(
+        CertificatePreview(
+            course_title="Security Training",
+            user_name="Jane Doe",
+            format="pdf",
+        ),
+        request=object(),
+    )
+
+    assert response.media_type == "application/pdf"
+    assert response.body[:4] == b"%PDF"
+    mock_db.certificates.insert_one.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_preview_certificate_manager_cannot_preview_other_company(monkeypatch):
+    mock_db = _build_mock_db()
+    mock_db.courses.find_one.return_value = {
+        "_id": ObjectId(COURSE_A),
+        "title": "Security Training",
+        "company_ids": [COMPANY_A],
+        "language": "en",
+    }
+    mock_db.users.find_one.return_value = {
+        "_id": ObjectId(STUDENT_B),
+        "name": "Student B",
+        "role": "student",
+        "company_id": COMPANY_B,
+    }
+    monkeypatch.setattr(certificates_router, "db", mock_db)
+    monkeypatch.setattr(certificates_router, "require_admin_or_manager", _fake_manager_a)
+
+    with pytest.raises(HTTPException) as exc_info:
+        await certificates_router.preview_certificate(
+            CertificatePreview(course_id=COURSE_A, user_id=STUDENT_B, score=90),
+            request=object(),
+        )
+
+    assert exc_info.value.status_code == 403
 
 
 def _cursor_mock(items):
