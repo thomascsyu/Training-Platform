@@ -2,7 +2,6 @@ import pytest
 from pydantic import ValidationError
 
 from models import (
-    CertificateCreate,
     CompanyCreate,
     CompanyUpdate,
     CourseCreate,
@@ -26,6 +25,7 @@ def test_course_create_defaults_to_no_assigned_companies():
     assert course.company_ids == []
     assert course.ai_assistant_enabled is True
     assert course.ai_assistant_prompt is None
+    assert course.auto_issue_certificate is True
 
 
 def test_course_create_accepts_assigned_companies():
@@ -58,17 +58,6 @@ def test_company_update_accepts_training_assignments():
     assert update.training_ids == ["507f1f77bcf86cd799439011"]
 
 
-def test_certificate_create_score_bounds():
-    with pytest.raises(ValidationError):
-        CertificateCreate(
-            course_id="507f1f77bcf86cd799439011",
-            user_id="507f1f77bcf86cd799439012",
-            score=101,
-        )
-
-    cert = CertificateCreate(
-        course_id="507f1f77bcf86cd799439011",
-        user_id="507f1f77bcf86cd799439012",
-        score=95,
-    )
-    assert cert.score == 95
+def test_course_update_accepts_auto_issue_certificate():
+    update = CourseUpdate(auto_issue_certificate=False)
+    assert update.auto_issue_certificate is False
