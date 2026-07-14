@@ -14,7 +14,7 @@
 
 Give admins a guided flow to **review and create a certificate configuration for a specific course**: choose or name a template, set visual layout and wording, preview the result in real time, then save the configuration so issued certificates for that course use it.
 
-This feature extends the existing global certificate template system (`certificate_templates`, Admin Certificate Templates page) with **course association**, **custom background upload**, **orientation**, **admin-authored body text with placeholders**, and an explicit **Configure → Review → Save** builder flow.
+This feature extends the existing global certificate template system (`certificate_templates`, Admin Certificates → Templates tab) with **course association**, **custom background upload**, **orientation**, **admin-authored body text with placeholders**, and an explicit **Configure → Review → Save** builder flow.
 
 ---
 
@@ -261,7 +261,7 @@ Renderer must accept both builder aliases and legacy tokens:
 ### 9.1 Page / route
 
 - Suggested route: `/admin/certificate-builder` with query `?course_id=` and optional `?template_id=`.
-- Also accessible as a step/dialog from Admin Certificate Templates (“Create with Builder”).
+- Also accessible as a step/dialog from Admin Certificates → Templates (“Create with Builder”).
 
 ### 9.2 Configure panel (left / top on mobile)
 
@@ -304,7 +304,7 @@ Renderer must accept both builder aliases and legacy tokens:
 ## 11. Acceptance Criteria
 
 - [ ] Admin can open builder, select a course, name a unique template, set landscape/portrait, upload a background via drag-and-drop, enter body text with placeholders, see live preview, open Review, and Save successfully.
-- [ ] Saved template appears in Admin Certificate Templates and is linked to the course.
+- [ ] Saved template appears in Admin Certificates → Templates and is linked to the course.
 - [ ] Passing a quiz for that course issues a certificate using the saved configuration (correct orientation, background, substituted text).
 - [ ] Preview does not insert DB certificate rows or increment ID sequence.
 - [ ] Duplicate template names are rejected with a clear error.
