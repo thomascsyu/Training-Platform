@@ -158,7 +158,11 @@ async def submit_quiz(quiz_id: str, data: QuizAttemptCreate, request: Request):
                     ),
                 }
                 template = await resolve_certificate_template(db)
-                apply_template_to_certificate(cert_doc, template)
+                apply_template_to_certificate(
+                    cert_doc,
+                    template,
+                    fallback_language=course.get("language") if course else None,
+                )
                 await db.certificates.insert_one(cert_doc)
                 await send_certificate_email(
                     user["email"],

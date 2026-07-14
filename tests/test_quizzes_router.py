@@ -71,6 +71,33 @@ async def test_submit_quiz_auto_issues_certificate_by_default(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_submit_quiz_auto_issues_certificate_in_course_language(monkeypatch):
+    mock_db = _build_mock_db()
+    mock_db.courses.find_one = AsyncMock(return_value={
+        "_id": ObjectId(COURSE_A),
+        "title": "Security Training",
+        "passing_score": 70,
+        "language": "ja",
+    })
+
+    send_certificate_email = AsyncMock()
+    monkeypatch.setattr(quizzes_router, "db", mock_db)
+    monkeypatch.setattr(quizzes_router, "get_current_user", _fake_user)
+    monkeypatch.setattr(quizzes_router, "require_enrollment", AsyncMock(return_value={"course_id": COURSE_A}))
+    monkeypatch.setattr(quizzes_router, "send_certificate_email", send_certificate_email)
+    monkeypatch.setattr(quizzes_router, "send_progress_email", AsyncMock())
+
+    result = await quizzes_router.submit_quiz(
+        QUIZ_A, QuizAttemptCreate(quiz_id=QUIZ_A, answers=[0, 1]), request=object()
+    )
+
+    assert result["passed"] is True
+    inserted_doc = mock_db.certificates.insert_one.await_args.args[0]
+    assert inserted_doc["language"] == "ja"
+    assert "修了証明書" in inserted_doc["template_html"]
+
+
+@pytest.mark.asyncio
 async def test_submit_quiz_skips_certificate_when_auto_issue_disabled(monkeypatch):
     mock_db = _build_mock_db()
     mock_db.courses.find_one = AsyncMock(return_value={
