@@ -20,7 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Award, Download, Palette, Settings, Loader2, Info } from "lucide-react";
+import { Award, Download, Palette, Settings, Loader2, Info, Eye } from "lucide-react";
 import { API, formatError } from "@/lib/api";
 import { CERTIFICATE_BACKGROUNDS, backgroundLabel } from "@/lib/certificateBackgrounds";
 import { previewCertificateId } from "@/lib/certificateId";
@@ -50,10 +50,25 @@ const emptySettingsForm = () => ({
   next_sequence: 1,
 });
 
+const emptyPreviewForm = () => ({
+  course_id: "",
+  use_sample_course: false,
+  course_title: "Sample Course",
+  user_id: "",
+  use_sample_student: true,
+  user_name: "Jane Doe",
+  score: 92,
+  primary_color: "#002FA7",
+  secondary_color: "#0A0B10",
+  background: "plain",
+  language: "en",
+});
+
 export const AdminCertificatesPage = () => {
   const { t } = useLanguage();
   const [certificates, setCertificates] = useState([]);
   const [courses, setCourses] = useState([]);
+  const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [courseFilter, setCourseFilter] = useState("all");
   const [showCustomizeDialog, setShowCustomizeDialog] = useState(false);
@@ -62,11 +77,25 @@ export const AdminCertificatesPage = () => {
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [settingsForm, setSettingsForm] = useState(emptySettingsForm());
   const [savingSettings, setSavingSettings] = useState(false);
+  const [showPreviewDialog, setShowPreviewDialog] = useState(false);
+  const [previewForm, setPreviewForm] = useState(emptyPreviewForm());
+  const [previewHtml, setPreviewHtml] = useState("");
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewPdfLoading, setPreviewPdfLoading] = useState(false);
 
   const fetchCourses = useCallback(async () => {
     try {
       const { data } = await API.get("/courses", { params: { include_private: true } });
       setCourses(data);
+    } catch (e) {
+      console.error(e);
+    }
+  }, []);
+
+  const fetchStudents = useCallback(async () => {
+    try {
+      const { data } = await API.get("/users", { params: { role: "student" } });
+      setStudents(data);
     } catch (e) {
       console.error(e);
     }
@@ -87,7 +116,8 @@ export const AdminCertificatesPage = () => {
 
   useEffect(() => {
     fetchCourses();
-  }, [fetchCourses]);
+    fetchStudents();
+  }, [fetchCourses, fetchStudents]);
 
   useEffect(() => {
     fetchCertificates();
@@ -177,6 +207,110 @@ export const AdminCertificatesPage = () => {
     }
   };
 
+  const buildPreviewPayload = () => {
+    const payload = {
+      score: Number(previewForm.score) || 0,
+      primary_color: previewForm.primary_color,
+      secondary_color: previewForm.secondary_color,
+      background: previewForm.background,
+      language: previewForm.language,
+    };
+
+    if (previewForm.use_sample_course) {
+      if (!previewForm.course_title.trim()) {
+        toast.error(t("adminCertificates.previewCourseRequired"));
+        return null;
+      }
+      payload.course_title = previewForm.course_title.trim();
+    } else {
+      if (!previewForm.course_id) {
+        toast.error(t("adminCertificates.previewCourseRequired"));
+        return null;
+      }
+      payload.course_id = previewForm.course_id;
+    }
+
+    if (previewForm.use_sample_student) {
+      if (!previewForm.user_name.trim()) {
+        toast.error(t("adminCertificates.previewStudentRequired"));
+        return null;
+      }
+      payload.user_name = previewForm.user_name.trim();
+    } else {
+      if (!previewForm.user_id) {
+        toast.error(t("adminCertificates.previewStudentRequired"));
+        return null;
+      }
+      payload.user_id = previewForm.user_id;
+    }
+
+    return payload;
+  };
+
+  const openPreview = () => {
+    const selected =
+      courseFilter !== "all" ? courses.find((course) => course.id === courseFilter) : null;
+    setPreviewForm({
+      ...emptyPreviewForm(),
+      course_id: selected?.id || "",
+      language: selected?.language || "en",
+      use_sample_course: !selected,
+    });
+    setPreviewHtml("");
+    setShowPreviewDialog(true);
+  };
+
+  const handleCourseSelectForPreview = (courseId) => {
+    const course = courses.find((item) => item.id === courseId);
+    setPreviewForm((prev) => ({
+      ...prev,
+      course_id: courseId,
+      use_sample_course: false,
+      language: course?.language || prev.language,
+    }));
+  };
+
+  const generatePreviewHtml = async () => {
+    const payload = buildPreviewPayload();
+    if (!payload) return;
+    setPreviewLoading(true);
+    try {
+      const response = await API.post(
+        "/certificates/preview",
+        { ...payload, format: "html" },
+        { responseType: "text" }
+      );
+      setPreviewHtml(typeof response.data === "string" ? response.data : String(response.data));
+    } catch (e) {
+      toast.error(formatError(e));
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
+  const downloadPreviewPdf = async () => {
+    const payload = buildPreviewPayload();
+    if (!payload) return;
+    setPreviewPdfLoading(true);
+    try {
+      const response = await API.post(
+        "/certificates/preview",
+        { ...payload, format: "pdf" },
+        { responseType: "blob" }
+      );
+      const url = window.URL.createObjectURL(new Blob([response.data], { type: "application/pdf" }));
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "certificate-preview.pdf";
+      link.click();
+      window.URL.revokeObjectURL(url);
+    } catch (e) {
+      toast.error(formatError(e));
+    } finally {
+      setPreviewPdfLoading(false);
+    }
+  };
+
   return (
     <DashboardLayout>
       <div className="p-6" data-testid="admin-certificates-page">
@@ -198,6 +332,14 @@ export const AdminCertificatesPage = () => {
               ))}
             </SelectContent>
           </Select>
+          <Button
+            variant="outline"
+            className="rounded-sm"
+            onClick={openPreview}
+            data-testid="certificate-preview-btn"
+          >
+            <Eye className="w-4 h-4 mr-2" /> {t("adminCertificates.preview")}
+          </Button>
           <Button
             variant="outline"
             className="rounded-sm"
@@ -486,6 +628,231 @@ export const AdminCertificatesPage = () => {
                   {savingSettings ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                   {t("certificateSettings.save")}
                 </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog
+          open={showPreviewDialog}
+          onOpenChange={(open) => {
+            setShowPreviewDialog(open);
+            if (!open) setPreviewHtml("");
+          }}
+        >
+          <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{t("adminCertificates.previewCertificate")}</DialogTitle>
+              <DialogDescription>{t("adminCertificates.previewDescription")}</DialogDescription>
+            </DialogHeader>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <Switch
+                    id="preview-sample-course"
+                    checked={previewForm.use_sample_course}
+                    onCheckedChange={(checked) =>
+                      setPreviewForm({ ...previewForm, use_sample_course: checked })
+                    }
+                    data-testid="preview-sample-course-switch"
+                  />
+                  <Label htmlFor="preview-sample-course">{t("adminCertificates.sampleCourse")}</Label>
+                </div>
+                {previewForm.use_sample_course ? (
+                  <div className="space-y-2">
+                    <Label>{t("adminCertificates.sampleCourseTitle")}</Label>
+                    <Input
+                      value={previewForm.course_title}
+                      onChange={(e) => setPreviewForm({ ...previewForm, course_title: e.target.value })}
+                      className="rounded-sm"
+                      data-testid="preview-course-title-input"
+                    />
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Label>{t("adminCertificates.course")}</Label>
+                    <Select value={previewForm.course_id || undefined} onValueChange={handleCourseSelectForPreview}>
+                      <SelectTrigger className="rounded-sm" data-testid="preview-course-select">
+                        <SelectValue placeholder={t("adminCertificates.selectCourse")} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {courses.map((course) => (
+                          <SelectItem key={course.id} value={course.id}>
+                            {course.title}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-3">
+                  <Switch
+                    id="preview-sample-student"
+                    checked={previewForm.use_sample_student}
+                    onCheckedChange={(checked) =>
+                      setPreviewForm({ ...previewForm, use_sample_student: checked })
+                    }
+                    data-testid="preview-sample-student-switch"
+                  />
+                  <Label htmlFor="preview-sample-student">{t("adminCertificates.sampleStudent")}</Label>
+                </div>
+                {previewForm.use_sample_student ? (
+                  <div className="space-y-2">
+                    <Label>{t("adminCertificates.sampleStudentName")}</Label>
+                    <Input
+                      value={previewForm.user_name}
+                      onChange={(e) => setPreviewForm({ ...previewForm, user_name: e.target.value })}
+                      className="rounded-sm"
+                      data-testid="preview-student-name-input"
+                    />
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Label>{t("adminCertificates.student")}</Label>
+                    <Select
+                      value={previewForm.user_id || undefined}
+                      onValueChange={(value) => setPreviewForm({ ...previewForm, user_id: value })}
+                    >
+                      <SelectTrigger className="rounded-sm" data-testid="preview-student-select">
+                        <SelectValue placeholder={t("adminCertificates.selectStudent")} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {students.map((student) => (
+                          <SelectItem key={student.id} value={student.id}>
+                            {student.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <Label>{t("adminCertificates.scoreLabel")}</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={previewForm.score}
+                    onChange={(e) => setPreviewForm({ ...previewForm, score: e.target.value })}
+                    className="rounded-sm"
+                    data-testid="preview-score-input"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>{t("adminCertificates.language")}</Label>
+                  <Select
+                    value={previewForm.language}
+                    onValueChange={(value) => setPreviewForm({ ...previewForm, language: value })}
+                  >
+                    <SelectTrigger className="rounded-sm" data-testid="preview-language-select">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {courseLanguages.map(({ value, label }) => (
+                        <SelectItem key={value} value={value}>
+                          {label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>{t("adminCertificates.primaryColor")}</Label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={previewForm.primary_color}
+                        onChange={(e) => setPreviewForm({ ...previewForm, primary_color: e.target.value })}
+                        className="h-10 w-10 rounded-sm border border-slate-200"
+                        data-testid="preview-primary-color"
+                      />
+                      <span className="text-sm text-slate-600">{previewForm.primary_color}</span>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>{t("adminCertificates.secondaryColor")}</Label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={previewForm.secondary_color}
+                        onChange={(e) => setPreviewForm({ ...previewForm, secondary_color: e.target.value })}
+                        className="h-10 w-10 rounded-sm border border-slate-200"
+                        data-testid="preview-secondary-color"
+                      />
+                      <span className="text-sm text-slate-600">{previewForm.secondary_color}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>{t("adminCertificates.background")}</Label>
+                  <Select
+                    value={previewForm.background}
+                    onValueChange={(value) => setPreviewForm({ ...previewForm, background: value })}
+                  >
+                    <SelectTrigger className="rounded-sm" data-testid="preview-background-select">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CERTIFICATE_BACKGROUNDS.map((key) => (
+                        <SelectItem key={key} value={key}>
+                          {backgroundLabel(t, key)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <p className="text-xs text-slate-500">{t("adminCertificates.previewHint")}</p>
+
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    onClick={generatePreviewHtml}
+                    disabled={previewLoading}
+                    className="bg-[#002FA7] hover:bg-[#002585] text-white rounded-sm"
+                    data-testid="generate-certificate-preview-btn"
+                  >
+                    {previewLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
+                    {t("adminCertificates.previewGenerate")}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={downloadPreviewPdf}
+                    disabled={previewPdfLoading}
+                    className="rounded-sm"
+                    data-testid="download-certificate-preview-pdf-btn"
+                  >
+                    {previewPdfLoading ? (
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    ) : (
+                      <Download className="w-4 h-4 mr-2" />
+                    )}
+                    {t("adminCertificates.previewDownloadPdf")}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>{t("adminCertificates.preview")}</Label>
+                <div className="border border-slate-200 rounded-sm overflow-hidden bg-slate-50 h-[520px]">
+                  {previewHtml ? (
+                    <iframe
+                      title="Certificate preview"
+                      srcDoc={previewHtml}
+                      className="w-full h-full border-0"
+                      data-testid="certificate-preview-iframe"
+                    />
+                  ) : (
+                    <div className="h-full flex items-center justify-center text-sm text-slate-500 p-6 text-center">
+                      {t("adminCertificates.previewDescription")}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </DialogContent>

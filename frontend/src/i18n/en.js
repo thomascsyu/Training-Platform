@@ -452,6 +452,19 @@ export default {
       autoIssueNotice: "Certificates are issued automatically when a student meets a course's passing score. Use Certificate Settings to configure the certificate ID format and default styling.",
       customizeCertificate: "Customize Certificate",
       customizeDescription: "Update the visual style for this certificate.",
+      previewCertificate: "Preview Certificate",
+      previewDescription: "Render a fully filled certificate without issuing it. Use a real course and student, or sample values.",
+      preview: "Preview",
+      previewGenerate: "Generate Preview",
+      previewDownloadPdf: "Download PDF Preview",
+      previewHint: "This preview is not saved and does not consume a certificate ID from the sequence.",
+      sampleCourse: "Sample course (no real course)",
+      sampleCourseTitle: "Sample Course Title",
+      sampleStudent: "Use sample student name",
+      sampleStudentName: "Sample Student Name",
+      selectCourse: "Select a course",
+      selectStudent: "Select a student",
+      scoreLabel: "Score",
       score: "Score (0-100)",
       template: "Template",
       primaryColor: "Primary Color",
@@ -474,7 +487,9 @@ export default {
       noCertificatesHint: "Certificates appear here once students pass a course's minimum score.",
       customized: "Certificate style updated.",
       filterByCourse: "Filter by course",
-      allCourses: "All courses"
+      allCourses: "All courses",
+      previewCourseRequired: "Select a course or enter a sample course title.",
+      previewStudentRequired: "Select a student or enter a sample student name."
     },
 
     // Common

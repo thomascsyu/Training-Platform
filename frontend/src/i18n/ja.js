@@ -421,6 +421,19 @@ export default {
       autoIssueNotice: "受講者がコースの合格スコアに達すると、修了証が自動的に発行されます。修了証設定で修了証IDのフォーマットと既定のデザインを設定できます。",
       customizeCertificate: "修了証をカスタマイズ",
       customizeDescription: "この修了証のビジュアルスタイルを更新します。",
+      previewCertificate: "修了証をプレビュー",
+      previewDescription: "発行せずに完成した修了証を表示します。実コース・受講者、またはサンプル値を使用できます。",
+      preview: "プレビュー",
+      previewGenerate: "プレビューを生成",
+      previewDownloadPdf: "PDFプレビューをダウンロード",
+      previewHint: "このプレビューは保存されず、修了証IDの連番も消費しません。",
+      sampleCourse: "サンプルコース（実コースなし）",
+      sampleCourseTitle: "サンプルコース名",
+      sampleStudent: "サンプル受講者名を使用",
+      sampleStudentName: "サンプル受講者名",
+      selectCourse: "コースを選択",
+      selectStudent: "受講者を選択",
+      scoreLabel: "スコア",
       score: "スコア (0-100)",
       template: "テンプレート",
       primaryColor: "プライマリカラー",
@@ -443,7 +456,9 @@ export default {
       noCertificatesHint: "受講者がコースの最低スコアに達すると、ここに表示されます。",
       customized: "修了証のスタイルが更新されました。",
       filterByCourse: "コースで絞り込み",
-      allCourses: "すべてのコース"
+      allCourses: "すべてのコース",
+      previewCourseRequired: "コースを選択するか、サンプルコース名を入力してください。",
+      previewStudentRequired: "受講者を選択するか、サンプル受講者名を入力してください。"
     },
 
     // Common

@@ -3,6 +3,7 @@ from pydantic import ValidationError
 
 from models import (
     CertificateCreate,
+    CertificatePreview,
     CompanyCreate,
     CompanyUpdate,
     CourseCreate,
@@ -72,3 +73,34 @@ def test_certificate_create_score_bounds():
         score=95,
     )
     assert cert.score == 95
+
+
+def test_certificate_preview_accepts_sample_or_real_identifiers():
+    sample = CertificatePreview(course_title="Security Training", user_name="Jane Doe")
+    assert sample.format == "html"
+    assert sample.score == 92
+
+    real = CertificatePreview(
+        course_id="507f1f77bcf86cd799439011",
+        user_id="507f1f77bcf86cd799439012",
+        format="pdf",
+        language="ja",
+    )
+    assert real.format == "pdf"
+    assert real.language == "ja"
+
+
+def test_certificate_preview_requires_course_and_recipient():
+    with pytest.raises(ValidationError):
+        CertificatePreview(user_name="Jane Doe")
+    with pytest.raises(ValidationError):
+        CertificatePreview(course_title="Security Training")
+
+
+def test_certificate_preview_rejects_invalid_format():
+    with pytest.raises(ValidationError):
+        CertificatePreview(
+            course_title="Security Training",
+            user_name="Jane Doe",
+            format="docx",
+        )
