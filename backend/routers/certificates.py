@@ -5,7 +5,7 @@ from starlette.responses import Response
 
 from auth_utils import get_current_user, require_admin_or_manager, require_roles
 from certificate_pdf import generate_certificate_pdf
-from certificate_template import compute_valid_until, is_certificate_expired
+from certificate_template import DEFAULT_BACKGROUND, compute_valid_until, is_certificate_expired
 from certificate_utils import apply_template_to_certificate
 from database import db
 from db_utils import parse_object_id
@@ -28,6 +28,7 @@ def _serialize_certificate(cert: dict, fallback_course_title: str | None = None)
         "template_name": cert.get("template_name"),
         "primary_color": cert.get("primary_color"),
         "secondary_color": cert.get("secondary_color"),
+        "background": cert.get("background", DEFAULT_BACKGROUND),
         "issued_at": cert.get("issued_at"),
         "valid_until": valid_until,
         "is_expired": is_certificate_expired(valid_until),
@@ -182,6 +183,7 @@ async def customize_certificate(
         "template": data.template,
         "primary_color": data.primary_color,
         "secondary_color": data.secondary_color,
+        "background": data.background,
     }
     if data.apply_to_course:
         result = await db.certificates.update_many(

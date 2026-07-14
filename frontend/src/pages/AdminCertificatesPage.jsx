@@ -24,6 +24,8 @@ import { Award, Download, Palette, Settings, Loader2, Info } from "lucide-react"
 import { API, formatError } from "@/lib/api";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { DashboardLayout } from "@/components/DashboardLayout";
+import { CertificateBackgroundPicker } from "@/components/CertificateBackgroundPicker";
+import { DEFAULT_CERTIFICATE_BACKGROUND } from "@/lib/certificateBackgrounds";
 import PageHeader from "@/components/enhanced/PageHeader";
 import StatCard from "@/components/enhanced/StatCard";
 import EmptyState from "@/components/enhanced/EmptyState";
@@ -34,6 +36,7 @@ const emptyCustomizeForm = () => ({
   template: "default",
   primary_color: "#002FA7",
   secondary_color: "#0A0B10",
+  background: DEFAULT_CERTIFICATE_BACKGROUND,
   apply_to_course: false,
 });
 
@@ -84,6 +87,7 @@ export const AdminCertificatesPage = () => {
       template: cert.template || "default",
       primary_color: cert.primary_color || "#002FA7",
       secondary_color: cert.secondary_color || "#0A0B10",
+      background: cert.background || DEFAULT_CERTIFICATE_BACKGROUND,
       apply_to_course: false,
     });
     setShowCustomizeDialog(true);
@@ -96,6 +100,7 @@ export const AdminCertificatesPage = () => {
         template: customizeForm.template,
         primary_color: customizeForm.primary_color,
         secondary_color: customizeForm.secondary_color,
+        background: customizeForm.background,
         apply_to_course: customizeForm.apply_to_course,
       });
       toast.success(t("adminCertificates.customized"));
@@ -280,6 +285,16 @@ export const AdminCertificatesPage = () => {
                     <span className="text-sm text-slate-600">{customizeForm.secondary_color}</span>
                   </div>
                 </div>
+              </div>
+              <div className="space-y-2">
+                <Label>{t("adminCertificates.background")}</Label>
+                <CertificateBackgroundPicker
+                  value={customizeForm.background}
+                  onChange={(background) => setCustomizeForm({ ...customizeForm, background })}
+                  primaryColor={customizeForm.primary_color}
+                  secondaryColor={customizeForm.secondary_color}
+                  testIdPrefix="customize-background"
+                />
               </div>
               <div className="flex items-center gap-3">
                 <Switch

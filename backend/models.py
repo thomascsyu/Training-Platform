@@ -3,6 +3,16 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
+from certificate_template import CERTIFICATE_BACKGROUNDS, DEFAULT_BACKGROUND
+
+
+def _validate_background_choice(value: Optional[str]) -> Optional[str]:
+    if value is None:
+        return value
+    if value not in CERTIFICATE_BACKGROUNDS:
+        raise ValueError(f"background must be one of {', '.join(CERTIFICATE_BACKGROUNDS)}")
+    return value
+
 
 class UserCreate(BaseModel):
     email: EmailStr
@@ -178,7 +188,13 @@ class CertificateCustomize(BaseModel):
     template: str = "default"
     primary_color: str = "#002FA7"
     secondary_color: str = "#0A0B10"
+    background: str = DEFAULT_BACKGROUND
     apply_to_course: bool = False
+
+    @field_validator("background")
+    @classmethod
+    def _validate_background(cls, value: str) -> str:
+        return _validate_background_choice(value)
 
 
 class PaymentCreate(BaseModel):
@@ -245,6 +261,7 @@ class CertificateTemplateCreate(BaseModel):
     html: Optional[str] = None
     primary_color: str = "#002fa7"
     secondary_color: str = "#0a0b10"
+    background: str = DEFAULT_BACKGROUND
     is_default: bool = False
 
     @field_validator("primary_color", "secondary_color")
@@ -254,12 +271,18 @@ class CertificateTemplateCreate(BaseModel):
             raise ValueError("Color must be a valid 6-digit hex code")
         return value.lower()
 
+    @field_validator("background")
+    @classmethod
+    def _validate_background(cls, value: str) -> str:
+        return _validate_background_choice(value)
+
 
 class CertificateTemplateUpdate(BaseModel):
     name: Optional[str] = Field(default=None, min_length=1, max_length=120)
     html: Optional[str] = None
     primary_color: Optional[str] = None
     secondary_color: Optional[str] = None
+    background: Optional[str] = None
     is_default: Optional[bool] = None
 
     @field_validator("primary_color", "secondary_color")
@@ -271,10 +294,16 @@ class CertificateTemplateUpdate(BaseModel):
             raise ValueError("Color must be a valid 6-digit hex code")
         return value.lower()
 
+    @field_validator("background")
+    @classmethod
+    def _validate_background(cls, value: Optional[str]) -> Optional[str]:
+        return _validate_background_choice(value)
+
 
 class CertificateTemplateRender(BaseModel):
     primary_color: str = "#002fa7"
     secondary_color: str = "#0a0b10"
+    background: str = DEFAULT_BACKGROUND
 
     @field_validator("primary_color", "secondary_color")
     @classmethod
@@ -282,6 +311,11 @@ class CertificateTemplateRender(BaseModel):
         if not re.match(r"^#[0-9A-Fa-f]{6}$", value):
             raise ValueError("Color must be a valid 6-digit hex code")
         return value.lower()
+
+    @field_validator("background")
+    @classmethod
+    def _validate_background(cls, value: str) -> str:
+        return _validate_background_choice(value)
 
 
 class EmailNotificationEventUpdate(BaseModel):

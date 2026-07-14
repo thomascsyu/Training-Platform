@@ -18,6 +18,8 @@ import { Plus, Edit, Trash2, Loader2, FileCheck, Palette } from "lucide-react";
 import { API, formatError } from "@/lib/api";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { DashboardLayout } from "@/components/DashboardLayout";
+import { CertificateBackgroundPicker } from "@/components/CertificateBackgroundPicker";
+import { CERTIFICATE_BACKGROUNDS, DEFAULT_CERTIFICATE_BACKGROUND } from "@/lib/certificateBackgrounds";
 import PageHeader from "@/components/enhanced/PageHeader";
 import EmptyState from "@/components/enhanced/EmptyState";
 import { TableSkeleton } from "@/components/enhanced/Skeletons";
@@ -28,6 +30,7 @@ const emptyTemplate = () => ({
   html: "",
   primary_color: "#002fa7",
   secondary_color: "#0a0b10",
+  background: DEFAULT_CERTIFICATE_BACKGROUND,
   is_default: false,
 });
 
@@ -75,6 +78,7 @@ export const AdminCertificateTemplatesPage = () => {
       const { data } = await API.post("/certificate-templates/render-default", {
         primary_color: form.primary_color,
         secondary_color: form.secondary_color,
+        background: form.background,
       });
       setForm((prev) => ({ ...prev, html: data.html }));
       toast.success(t("certificateTemplates.generated"));
@@ -97,6 +101,7 @@ export const AdminCertificateTemplatesPage = () => {
         html: form.html,
         primary_color: form.primary_color,
         secondary_color: form.secondary_color,
+        background: form.background,
         is_default: form.is_default,
       };
       if (editing) {
@@ -146,7 +151,7 @@ export const AdminCertificateTemplatesPage = () => {
         </PageHeader>
 
         {loading ? (
-          <TableSkeleton rows={5} cols={5} />
+          <TableSkeleton rows={5} cols={6} />
         ) : templates.length === 0 ? (
           <EmptyState
             icon={FileCheck}
@@ -167,6 +172,9 @@ export const AdminCertificateTemplatesPage = () => {
                     </th>
                     <th className="text-left p-4 font-medium text-slate-600">
                       {t("certificateTemplates.secondaryColor")}
+                    </th>
+                    <th className="text-left p-4 font-medium text-slate-600">
+                      {t("certificateTemplates.background")}
                     </th>
                     <th className="text-left p-4 font-medium text-slate-600">
                       {t("certificateTemplates.default")}
@@ -201,6 +209,10 @@ export const AdminCertificateTemplatesPage = () => {
                           />
                           <span className="text-sm text-slate-600">{template.secondary_color}</span>
                         </div>
+                      </td>
+                      <td className="p-4 text-sm text-slate-600">
+                        {CERTIFICATE_BACKGROUNDS.find((bg) => bg.id === template.background)?.label
+                          || template.background}
                       </td>
                       <td className="p-4">
                         {template.is_default ? (
@@ -281,6 +293,16 @@ export const AdminCertificateTemplatesPage = () => {
                       data-testid="template-secondary-color-input"
                     />
                   </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>{t("certificateTemplates.background")}</Label>
+                  <CertificateBackgroundPicker
+                    value={form.background}
+                    onChange={(background) => setForm({ ...form, background })}
+                    primaryColor={form.primary_color}
+                    secondaryColor={form.secondary_color}
+                    testIdPrefix="template-background"
+                  />
                 </div>
                 <div className="flex items-center gap-3">
                   <Switch
