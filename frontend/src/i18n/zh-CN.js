@@ -415,6 +415,9 @@ export default {
     adminCertificates: {
       title: "证书",
       description: "学生达到课程的最低分数后将自动颁发证书。",
+      tabIssued: "已颁发",
+      tabTemplates: "模板",
+      templatesNotice: "模板定义颁发证书时使用的默认打印设计。将其中一个设为默认即可应用到整个平台。",
       totalCertificates: "证书总数",
       manageAutoIssue: "证书设置",
       autoIssueNotice: "当学生达到课程的及格分数时，证书将自动颁发。可在证书设置中配置证书编号格式和默认样式。",

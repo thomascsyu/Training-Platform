@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -20,6 +21,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Award, Download, Palette, Settings, Loader2, Info, Eye } from "lucide-react";
 import { API, formatError } from "@/lib/api";
 import { CERTIFICATE_BACKGROUNDS, backgroundLabel } from "@/lib/certificateBackgrounds";
@@ -27,10 +29,13 @@ import { previewCertificateId } from "@/lib/certificateId";
 import { courseLanguages, courseLanguageShortNames } from "@/i18n";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { DashboardLayout } from "@/components/DashboardLayout";
+import { CertificateTemplatesPanel } from "@/components/certificates/CertificateTemplatesPanel";
 import PageHeader from "@/components/enhanced/PageHeader";
 import StatCard from "@/components/enhanced/StatCard";
 import EmptyState from "@/components/enhanced/EmptyState";
 import { TableSkeleton } from "@/components/enhanced/Skeletons";
+
+const CERTIFICATE_TABS = new Set(["issued", "templates"]);
 
 const emptyCustomizeForm = () => ({
   certificate_id: "",
@@ -66,6 +71,9 @@ const emptyPreviewForm = () => ({
 
 export const AdminCertificatesPage = () => {
   const { t } = useLanguage();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get("tab");
+  const activeTab = CERTIFICATE_TABS.has(tabParam) ? tabParam : "issued";
   const [certificates, setCertificates] = useState([]);
   const [courses, setCourses] = useState([]);
   const [students, setStudents] = useState([]);
@@ -82,6 +90,16 @@ export const AdminCertificatesPage = () => {
   const [previewHtml, setPreviewHtml] = useState("");
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewPdfLoading, setPreviewPdfLoading] = useState(false);
+
+  const setActiveTab = (tab) => {
+    const next = new URLSearchParams(searchParams);
+    if (tab === "issued") {
+      next.delete("tab");
+    } else {
+      next.set("tab", tab);
+    }
+    setSearchParams(next, { replace: true });
+  };
 
   const fetchCourses = useCallback(async () => {
     try {
@@ -317,21 +335,27 @@ export const AdminCertificatesPage = () => {
         <PageHeader
           overline="Admin"
           title={t("adminCertificates.title")}
-          description={t("adminCertificates.description")}
+          description={
+            activeTab === "templates"
+              ? t("certificateTemplates.description")
+              : t("adminCertificates.description")
+          }
         >
-          <Select value={courseFilter} onValueChange={setCourseFilter}>
-            <SelectTrigger className="w-full sm:w-56 rounded-sm" data-testid="course-filter-select">
-              <SelectValue placeholder={t("adminCertificates.filterByCourse")} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t("adminCertificates.allCourses")}</SelectItem>
-              {courses.map((course) => (
-                <SelectItem key={course.id} value={course.id}>
-                  {course.title}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {activeTab === "issued" && (
+            <Select value={courseFilter} onValueChange={setCourseFilter}>
+              <SelectTrigger className="w-full sm:w-56 rounded-sm" data-testid="course-filter-select">
+                <SelectValue placeholder={t("adminCertificates.filterByCourse")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t("adminCertificates.allCourses")}</SelectItem>
+                {courses.map((course) => (
+                  <SelectItem key={course.id} value={course.id}>
+                    {course.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
           <Button
             variant="outline"
             className="rounded-sm"
@@ -350,101 +374,122 @@ export const AdminCertificatesPage = () => {
           </Button>
         </PageHeader>
 
-        <div className="mb-6 flex items-start gap-3 rounded-sm border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
-          <Info className="w-4 h-4 mt-0.5 shrink-0" />
-          <p>{t("adminCertificates.autoIssueNotice")}</p>
-        </div>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
+          <TabsList className="card-swiss" data-testid="certificates-tabs">
+            <TabsTrigger value="issued" className="rounded-sm" data-testid="certificates-tab-issued">
+              {t("adminCertificates.tabIssued")}
+            </TabsTrigger>
+            <TabsTrigger value="templates" className="rounded-sm" data-testid="certificates-tab-templates">
+              {t("adminCertificates.tabTemplates")}
+            </TabsTrigger>
+          </TabsList>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <StatCard
-            label={t("adminCertificates.totalCertificates")}
-            value={certificates.length}
-            icon={Award}
-            testId="certificates-total-stat"
-          />
-        </div>
-
-        {loading ? (
-          <TableSkeleton rows={6} cols={7} />
-        ) : certificates.length === 0 ? (
-          <EmptyState
-            icon={Award}
-            title={t("adminCertificates.noCertificates")}
-            description={t("adminCertificates.noCertificatesHint")}
-            testId="certificates-empty"
-          />
-        ) : (
-          <Card className="card-swiss overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-slate-50 border-b border-slate-200">
-                  <tr>
-                    <th className="text-left p-4 font-medium text-slate-600">{t("adminCertificates.certificateId")}</th>
-                    <th className="text-left p-4 font-medium text-slate-600">{t("adminCertificates.course")}</th>
-                    <th className="text-left p-4 font-medium text-slate-600">{t("adminCertificates.student")}</th>
-                    <th className="text-left p-4 font-medium text-slate-600">{t("adminCertificates.score")}</th>
-                    <th className="text-left p-4 font-medium text-slate-600">{t("adminCertificates.language")}</th>
-                    <th className="text-left p-4 font-medium text-slate-600">{t("adminCertificates.issuedOn")}</th>
-                    <th className="text-left p-4 font-medium text-slate-600">{t("adminCertificates.validUntil")}</th>
-                    <th className="text-left p-4 font-medium text-slate-600">{t("adminCertificates.actions")}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {certificates.map((cert) => (
-                    <tr key={cert.id} className="border-b border-slate-100" data-testid={`certificate-row-${cert.id}`}>
-                      <td className="p-4 font-mono text-xs text-slate-600">{cert.certificate_id}</td>
-                      <td className="p-4 text-slate-700">{cert.course_title}</td>
-                      <td className="p-4 text-slate-700">{cert.user_name}</td>
-                      <td className="p-4">
-                        <Badge variant="secondary" className="rounded-sm">
-                          {cert.score}%
-                        </Badge>
-                      </td>
-                      <td className="p-4 text-slate-500 text-sm">
-                        {courseLanguageShortNames[cert.language] || cert.language || "EN"}
-                      </td>
-                      <td className="p-4 text-slate-500 text-sm">
-                        {cert.issued_at ? new Date(cert.issued_at).toLocaleDateString() : "—"}
-                      </td>
-                      <td className="p-4 text-sm">
-                        {cert.valid_until ? (
-                          <span className={cert.is_expired ? "text-red-600 font-medium" : "text-slate-500"}>
-                            {new Date(cert.valid_until).toLocaleDateString()}
-                            {cert.is_expired ? ` (${t("adminCertificates.expired")})` : ""}
-                          </span>
-                        ) : (
-                          "—"
-                        )}
-                      </td>
-                      <td className="p-4">
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="rounded-sm"
-                            onClick={() => openCustomize(cert)}
-                            data-testid={`customize-cert-btn-${cert.id}`}
-                          >
-                            <Palette className="w-4 h-4 mr-2" /> {t("adminCertificates.customize")}
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="rounded-sm"
-                            onClick={() => downloadCertificate(cert.id, cert.certificate_id)}
-                            data-testid={`download-cert-btn-${cert.id}`}
-                          >
-                            <Download className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          <TabsContent value="issued" className="mt-6">
+            <div className="mb-6 flex items-start gap-3 rounded-sm border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
+              <Info className="w-4 h-4 mt-0.5 shrink-0" />
+              <p>{t("adminCertificates.autoIssueNotice")}</p>
             </div>
-          </Card>
-        )}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              <StatCard
+                label={t("adminCertificates.totalCertificates")}
+                value={certificates.length}
+                icon={Award}
+                testId="certificates-total-stat"
+              />
+            </div>
+
+            {loading ? (
+              <TableSkeleton rows={6} cols={7} />
+            ) : certificates.length === 0 ? (
+              <EmptyState
+                icon={Award}
+                title={t("adminCertificates.noCertificates")}
+                description={t("adminCertificates.noCertificatesHint")}
+                testId="certificates-empty"
+              />
+            ) : (
+              <Card className="card-swiss overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-slate-50 border-b border-slate-200">
+                      <tr>
+                        <th className="text-left p-4 font-medium text-slate-600">{t("adminCertificates.certificateId")}</th>
+                        <th className="text-left p-4 font-medium text-slate-600">{t("adminCertificates.course")}</th>
+                        <th className="text-left p-4 font-medium text-slate-600">{t("adminCertificates.student")}</th>
+                        <th className="text-left p-4 font-medium text-slate-600">{t("adminCertificates.score")}</th>
+                        <th className="text-left p-4 font-medium text-slate-600">{t("adminCertificates.language")}</th>
+                        <th className="text-left p-4 font-medium text-slate-600">{t("adminCertificates.issuedOn")}</th>
+                        <th className="text-left p-4 font-medium text-slate-600">{t("adminCertificates.validUntil")}</th>
+                        <th className="text-left p-4 font-medium text-slate-600">{t("adminCertificates.actions")}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {certificates.map((cert) => (
+                        <tr key={cert.id} className="border-b border-slate-100" data-testid={`certificate-row-${cert.id}`}>
+                          <td className="p-4 font-mono text-xs text-slate-600">{cert.certificate_id}</td>
+                          <td className="p-4 text-slate-700">{cert.course_title}</td>
+                          <td className="p-4 text-slate-700">{cert.user_name}</td>
+                          <td className="p-4">
+                            <Badge variant="secondary" className="rounded-sm">
+                              {cert.score}%
+                            </Badge>
+                          </td>
+                          <td className="p-4 text-slate-500 text-sm">
+                            {courseLanguageShortNames[cert.language] || cert.language || "EN"}
+                          </td>
+                          <td className="p-4 text-slate-500 text-sm">
+                            {cert.issued_at ? new Date(cert.issued_at).toLocaleDateString() : "—"}
+                          </td>
+                          <td className="p-4 text-sm">
+                            {cert.valid_until ? (
+                              <span className={cert.is_expired ? "text-red-600 font-medium" : "text-slate-500"}>
+                                {new Date(cert.valid_until).toLocaleDateString()}
+                                {cert.is_expired ? ` (${t("adminCertificates.expired")})` : ""}
+                              </span>
+                            ) : (
+                              "—"
+                            )}
+                          </td>
+                          <td className="p-4">
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="rounded-sm"
+                                onClick={() => openCustomize(cert)}
+                                data-testid={`customize-cert-btn-${cert.id}`}
+                              >
+                                <Palette className="w-4 h-4 mr-2" /> {t("adminCertificates.customize")}
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="rounded-sm"
+                                onClick={() => downloadCertificate(cert.id, cert.certificate_id)}
+                                data-testid={`download-cert-btn-${cert.id}`}
+                              >
+                                <Download className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+            )}
+          </TabsContent>
+
+          <TabsContent value="templates" className="mt-6">
+            <div className="mb-6 flex items-start gap-3 rounded-sm border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
+              <Info className="w-4 h-4 mt-0.5 shrink-0" />
+              <p>{t("adminCertificates.templatesNotice")}</p>
+            </div>
+            <CertificateTemplatesPanel />
+          </TabsContent>
+        </Tabs>
 
         <Dialog open={showCustomizeDialog} onOpenChange={setShowCustomizeDialog}>
           <DialogContent className="max-w-lg">

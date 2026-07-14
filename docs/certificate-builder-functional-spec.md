@@ -6,7 +6,7 @@
 | Audience | Product, design, engineering |
 | Status | Draft for implementation |
 | Actors | Admin only |
-| Related surfaces | `/admin/certificate-templates`, `/admin/certificates`, `certificate_templates` collection, `/certificates/preview` |
+| Related surfaces | `/admin/certificates` (Issued + Templates tabs), `certificate_templates` collection, `/certificates/preview` |
 
 ---
 
@@ -91,7 +91,7 @@ Admin opens Certificate Builder (from course detail or Admin → Certificates / 
 ### Entry points
 
 1. **From a course** — “Certificate” / “Certificate Builder” on admin course management → course pre-selected.
-2. **From Admin Certificate Templates** — “Create with Builder” → course required before save.
+2. **From Admin Certificates → Templates** — “Create with Builder” → course required before save.
 3. **Edit existing** — open an existing course-linked template → same flow in edit mode.
 
 ### Exit / cancel
@@ -327,7 +327,7 @@ Renderer must accept both builder aliases and legacy tokens:
 
 ## 13. Implementation Notes (for engineering)
 
-1. **Prefer extending** `certificate_templates` + `AdminCertificateTemplatesPage` / new builder page over a parallel collection.
+1. **Prefer extending** `certificate_templates` + Admin Certificates Templates tab / new builder page over a parallel collection.
 2. **Generate `html` on save** from builder fields so existing `render_certification_template` / PDF pipeline keeps working.
 3. **Reuse** `ThumbnailUpload` patterns for drag-and-drop UX (add DnD if not present) and `upload_utils` for validation.
 4. **Extend** `resolve_certificate_template` to accept `course_id` and prefer course-linked templates.

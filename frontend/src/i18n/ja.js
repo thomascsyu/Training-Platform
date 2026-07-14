@@ -416,6 +416,9 @@ export default {
     adminCertificates: {
       title: "修了証",
       description: "受講者がコースの最低スコアに達すると、修了証が自動的に発行されます。",
+      tabIssued: "発行済み",
+      tabTemplates: "テンプレート",
+      templatesNotice: "テンプレートは修了証発行時に使用される既定の印刷デザインを定義します。1つをデフォルトに設定するとプラットフォーム全体に適用されます。",
       totalCertificates: "修了証の総数",
       manageAutoIssue: "修了証設定",
       autoIssueNotice: "受講者がコースの合格スコアに達すると、修了証が自動的に発行されます。修了証設定で修了証IDのフォーマットと既定のデザインを設定できます。",
