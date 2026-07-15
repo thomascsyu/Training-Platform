@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Request
@@ -7,16 +8,19 @@ from auth_utils import get_current_user, require_admin_or_manager, require_roles
 from certificate_i18n import normalize_certificate_language
 from certificate_id import (
     course_code_from,
-    generate_certificate_id,
     get_certificate_id_format,
     preview_certificate_id,
 )
 from certificate_pdf import generate_certificate_pdf
-from certificate_template import DEFAULT_BACKGROUND, compute_valid_until, is_certificate_expired
-from certificate_utils import apply_template_to_certificate
+from certificate_template import (
+    compute_valid_until,
+    create_certification_template,
+    is_certificate_expired,
+)
+from certificate_utils import apply_template_to_certificate, resolve_certificate_template
 from database import db
 from db_utils import parse_object_id
-from models import CertificateCustomize
+from models import CertificateCustomize, CertificatePreview
 
 router = APIRouter(tags=["certificates"])
 
@@ -36,7 +40,7 @@ def _serialize_certificate(cert: dict, fallback_course_title: str | None = None)
         "template_name": cert.get("template_name"),
         "primary_color": cert.get("primary_color"),
         "secondary_color": cert.get("secondary_color"),
-        "background": cert.get("background", DEFAULT_BACKGROUND),
+        "background": cert.get("background"),
         "issued_at": cert.get("issued_at"),
         "valid_until": valid_until,
         "is_expired": is_certificate_expired(valid_until),
@@ -118,6 +122,127 @@ async def list_certificates(
     ]
 
 
+@router.post("/certificates/preview")
+async def preview_certificate(data: CertificatePreview, request: Request):
+    """Render a fully filled certificate without issuing or persisting it.
+
+    Accepts a real course/student (by id) or free-form sample title/name. The
+    certificate ID shown in the preview is a non-consuming sample derived from
+    the configured ID format — the sequence counter is not incremented.
+    """
+    actor = await require_admin_or_manager(request)
+
+    course = None
+    course_title = (data.course_title or "").strip() or "Course"
+    course_language = None
+    if data.course_id:
+        course = await db.courses.find_one(
+            {"_id": parse_object_id(data.course_id, "course")},
+            {"_id": 1, "title": 1, "company_ids": 1, "language": 1},
+        )
+        if not course:
+            raise HTTPException(status_code=404, detail="Course not found")
+        course_title = course.get("title") or course_title
+        course_language = course.get("language")
+
+    target_user = None
+    user_name = (data.user_name or "").strip() or "Student"
+    if data.user_id:
+        target_user = await db.users.find_one(
+            {"_id": parse_object_id(data.user_id, "user")},
+            {"_id": 1, "name": 1, "role": 1, "company_id": 1},
+        )
+        if not target_user or target_user.get("role") != "student":
+            raise HTTPException(status_code=404, detail="Student not found")
+        user_name = target_user.get("name") or user_name
+
+    if actor["role"] == "client_manager":
+        company_id = actor["company_id"]
+        if target_user and target_user.get("company_id") != company_id:
+            raise HTTPException(
+                status_code=403,
+                detail="Not authorized to preview certificates for this student",
+            )
+        if course is not None:
+            course_company_ids = course.get("company_ids", [])
+            if not course_company_ids or company_id not in course_company_ids:
+                raise HTTPException(
+                    status_code=403,
+                    detail="Not authorized to preview certificates for this course",
+                )
+
+    template = await resolve_certificate_template(db, data.template_id, course_id=data.course_id)
+
+    issued_at = datetime.now(timezone.utc).isoformat()
+    if data.certificate_id:
+        sample_id = data.certificate_id
+    else:
+        settings = await db.platform_settings.find_one({"_id": "certificate"})
+        id_format = await get_certificate_id_format(db)
+        next_sequence = ((settings or {}).get("sequence", 0) or 0) + 1
+        sample_id = preview_certificate_id(
+            id_format,
+            sequence=next_sequence,
+            course_code=course_code_from(course_title) or "COURSE",
+        )
+
+    cert_doc = {
+        "certificate_id": sample_id,
+        "course_id": data.course_id,
+        "course_title": course_title,
+        "user_id": data.user_id,
+        "user_name": user_name,
+        "score": data.score,
+        "issued_at": issued_at,
+    }
+    if data.language:
+        cert_doc["language"] = data.language
+
+    # Builder fields on the preview request override / compose without a saved template.
+    use_builder_fields = (
+        data.body_text is not None
+        or data.background_image_url is not None
+        or (data.orientation and data.orientation != "landscape")
+    )
+    if use_builder_fields and not data.template_id:
+        apply_template_to_certificate(
+            cert_doc,
+            None,
+            fallback_template=data.template,
+            fallback_primary_color=data.primary_color,
+            fallback_secondary_color=data.secondary_color,
+            fallback_background=data.background,
+            fallback_orientation=data.orientation,
+            fallback_background_image_url=data.background_image_url,
+            fallback_body_text=data.body_text,
+            fallback_language=course_language or data.language,
+        )
+    else:
+        apply_template_to_certificate(
+            cert_doc,
+            template,
+            fallback_template=data.template,
+            fallback_primary_color=data.primary_color,
+            fallback_secondary_color=data.secondary_color,
+            fallback_background=data.background,
+            fallback_orientation=data.orientation,
+            fallback_background_image_url=data.background_image_url,
+            fallback_body_text=data.body_text,
+            fallback_language=course_language or data.language,
+        )
+
+    if data.format == "pdf":
+        pdf_bytes = generate_certificate_pdf(cert_doc)
+        filename = f"certificate-preview-{sample_id}.pdf"
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={"Content-Disposition": f'inline; filename="{filename}"'},
+        )
+
+    return Response(content=cert_doc["template_html"], media_type="text/html")
+
+
 async def _get_authorized_certificate(certificate_id: str, request: Request) -> dict:
     user = await get_current_user(request)
     cert = await db.certificates.find_one(
@@ -187,12 +312,6 @@ async def customize_certificate(
     if not cert:
         raise HTTPException(status_code=404, detail="Certificate not found")
 
-    update_fields = {
-        "template": data.template,
-        "primary_color": data.primary_color,
-        "secondary_color": data.secondary_color,
-        "background": data.background,
-    }
     if data.apply_to_course:
         targets = await db.certificates.find({"course_id": cert["course_id"]}).to_list(1000)
     else:

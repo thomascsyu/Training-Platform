@@ -11,7 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
-  ArrowLeft, Bot, Globe, Loader2, Pencil, Plus, Trash2, Upload, Video, X
+  ArrowLeft, Award, Bot, Globe, Loader2, Pencil, Plus, Trash2, Upload, Video, X
 } from "lucide-react";
 import { courseLanguages } from "@/i18n";
 import { API, formatError } from "@/lib/api";
@@ -562,6 +562,16 @@ export const AdminCourseEditPage = () => {
                 <Label>{t("courses.autoIssueCertificate")}</Label>
               </div>
               <p className="text-xs text-slate-500">{t("courses.autoIssueCertificateHint")}</p>
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-sm mt-2"
+                onClick={() => navigate(`/admin/certificate-builder?course_id=${id}`)}
+                data-testid="course-certificate-builder-btn"
+              >
+                <Award className="w-4 h-4 mr-2" />
+                {t("certificateBuilder.openFromCourse")}
+              </Button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">

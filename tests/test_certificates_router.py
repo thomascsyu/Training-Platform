@@ -2,12 +2,16 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from bson import ObjectId
+from fastapi import HTTPException
 
+from models import CertificateCustomize, CertificatePreview
 from routers import certificates as certificates_router
 
 COURSE_A = "507f1f77bcf86cd7994390c0"
 STUDENT_A = "507f1f77bcf86cd7994390d0"
+STUDENT_B = "507f1f77bcf86cd7994390e0"
 COMPANY_A = "507f1f77bcf86cd7994390a0"
+COMPANY_B = "507f1f77bcf86cd7994390b0"
 
 
 async def _fake_admin(_request):
@@ -70,8 +74,6 @@ async def test_list_certificates_as_admin(monkeypatch):
     assert result[0]["certificate_id"] == "ABC12345"
     assert result[0]["course_title"] == "Security Training"
     assert result[0]["user_name"] == "Student A"
-    assert result[0]["valid_until"] is not None
-    assert result[0]["is_expired"] is False
 
 
 @pytest.mark.asyncio

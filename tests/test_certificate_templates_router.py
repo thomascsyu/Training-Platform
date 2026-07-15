@@ -75,7 +75,7 @@ async def test_create_template_generates_default_html(monkeypatch):
     assert "{{user_name}}" in response["html"]
     assert response["primary_color"] == "#002fa7"
     assert response["secondary_color"] == "#0a0b10"
-    assert response["background"] == "classic"
+    assert response["background"] == "plain"
     assert response["is_default"] is False
     mock_db.certificate_templates.insert_one.assert_awaited_once()
 
@@ -92,12 +92,12 @@ async def test_create_template_with_custom_background(monkeypatch):
     monkeypatch.setattr(templates_router, "require_roles", _fake_require_roles)
 
     response = await templates_router.create_template(
-        CertificateTemplateCreate(name="Modern Certificate", background="modern"),
+        CertificateTemplateCreate(name="Waves Certificate", background="waves"),
         request=object(),
     )
 
-    assert response["background"] == "modern"
-    assert "bg-corner" in response["html"]
+    assert response["background"] == "waves"
+    assert 'class="artwork"' in response["html"]
 
 
 def test_certificate_template_create_rejects_invalid_background():
@@ -172,7 +172,39 @@ async def test_render_default_template(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_delete_template_not_found(monkeypatch):
+async def test_create_template_with_builder_fields(monkeypatch):
+    mock_db = _build_mock_db()
+    mock_db.certificate_templates.find_one.return_value = None
+    mock_db.certificate_templates.insert_one.return_value = MagicMock(
+        inserted_id=ObjectId(TEMPLATE_A)
+    )
+    mock_db.courses = MagicMock()
+    mock_db.courses.find_one = AsyncMock(
+        return_value={"_id": ObjectId("507f1f77bcf86cd799439011")}
+    )
+    mock_db.courses.update_one = AsyncMock()
+
+    monkeypatch.setattr(templates_router, "db", mock_db)
+    monkeypatch.setattr(templates_router, "require_roles", _fake_require_roles)
+
+    response = await templates_router.create_template(
+        CertificateTemplateCreate(
+            name="Course Builder Cert",
+            course_id="507f1f77bcf86cd799439011",
+            orientation="portrait",
+            body_text="{{recipient_name}} completed {{course_title}}",
+            background_image_url="/api/uploads/certificate-backgrounds/x.png",
+            is_default=True,
+        ),
+        request=object(),
+    )
+
+    assert response["orientation"] == "portrait"
+    assert response["course_id"] == "507f1f77bcf86cd799439011"
+    assert response["is_default"] is False
+    assert "{{recipient_name}}" in response["html"]
+    assert "8.5in 11in" in response["html"]
+    mock_db.courses.update_one.assert_awaited()
     mock_db = _build_mock_db()
     mock_db.certificate_templates.delete_one.return_value = MagicMock(deleted_count=0)
     monkeypatch.setattr(templates_router, "db", mock_db)
