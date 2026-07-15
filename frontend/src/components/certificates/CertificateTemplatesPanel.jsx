@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/select";
 import { Plus, Edit, Trash2, Loader2, FileCheck, Palette, Wand2 } from "lucide-react";
 import { API, formatError } from "@/lib/api";
-import { CERTIFICATE_BACKGROUNDS, backgroundLabel } from "@/lib/certificateBackgrounds";
+import { CERTIFICATE_BACKGROUNDS, DEFAULT_CERTIFICATE_BACKGROUND, backgroundLabel } from "@/lib/certificateBackgrounds";
 import { useLanguage } from "@/contexts/LanguageContext";
 import EmptyState from "@/components/enhanced/EmptyState";
 import { TableSkeleton } from "@/components/enhanced/Skeletons";
@@ -35,7 +35,7 @@ const emptyTemplate = () => ({
   html: "",
   primary_color: "#002fa7",
   secondary_color: "#0a0b10",
-  background: "plain",
+  background: DEFAULT_CERTIFICATE_BACKGROUND,
   is_default: false,
 });
 
@@ -318,9 +318,9 @@ export const CertificateTemplatesPanel = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {CERTIFICATE_BACKGROUNDS.map((key) => (
-                      <SelectItem key={key} value={key}>
-                        {backgroundLabel(t, key)}
+                    {CERTIFICATE_BACKGROUNDS.map((bg) => (
+                      <SelectItem key={bg.id} value={bg.id}>
+                        {backgroundLabel(t, bg.id)}
                       </SelectItem>
                     ))}
                   </SelectContent>

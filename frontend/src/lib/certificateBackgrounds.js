@@ -8,11 +8,13 @@ export const CERTIFICATE_BACKGROUNDS = [
   "corners",
 ];
 
-export const DEFAULT_CERTIFICATE_BACKGROUND = "plain";
+export const DEFAULT_CERTIFICATE_BACKGROUND = "classic";
 
-// Translate a background key to a human label using the i18n `t` helper,
-// falling back to the raw key when no translation is available.
-export const backgroundLabel = (t, key) => {
-  const label = t(`certificateBackgrounds.${key}`);
-  return label === `certificateBackgrounds.${key}` ? key : label;
+export const backgroundLabel = (t, idOrBg) => {
+  const id = typeof idOrBg === "string" ? idOrBg : idOrBg?.id;
+  if (!id) return "";
+  const bg = CERTIFICATE_BACKGROUNDS.find((b) => b.id === id);
+  const translationKey = `certificateBackgrounds.${id}`;
+  const translated = t(translationKey);
+  return translated !== translationKey ? translated : bg?.label || id;
 };

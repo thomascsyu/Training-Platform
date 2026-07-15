@@ -24,13 +24,17 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Award, Download, Palette, Settings, Loader2, Info, Eye } from "lucide-react";
 import { API, formatError } from "@/lib/api";
-import { CERTIFICATE_BACKGROUNDS, backgroundLabel } from "@/lib/certificateBackgrounds";
+import {
+  CERTIFICATE_BACKGROUNDS,
+  DEFAULT_CERTIFICATE_BACKGROUND,
+  backgroundLabel,
+} from "@/lib/certificateBackgrounds";
 import { previewCertificateId } from "@/lib/certificateId";
 import { courseLanguages, courseLanguageShortNames } from "@/i18n";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { CertificateBackgroundPicker } from "@/components/CertificateBackgroundPicker";
-import { DEFAULT_CERTIFICATE_BACKGROUND } from "@/lib/certificateBackgrounds";
+import { CertificateTemplatesPanel } from "@/components/certificates/CertificateTemplatesPanel";
 import PageHeader from "@/components/enhanced/PageHeader";
 import StatCard from "@/components/enhanced/StatCard";
 import EmptyState from "@/components/enhanced/EmptyState";
@@ -49,7 +53,7 @@ const emptyCustomizeForm = () => ({
 
 const emptySettingsForm = () => ({
   id_format: "CERT-{year}-{seq:6}",
-  default_background: "plain",
+  default_background: DEFAULT_CERTIFICATE_BACKGROUND,
   default_primary_color: "#002fa7",
   default_secondary_color: "#0a0b10",
   next_sequence: 1,
@@ -65,7 +69,7 @@ const emptyPreviewForm = () => ({
   score: 92,
   primary_color: "#002FA7",
   secondary_color: "#0A0B10",
-  background: "plain",
+  background: DEFAULT_CERTIFICATE_BACKGROUND,
   language: "en",
 });
 
@@ -591,9 +595,9 @@ export const AdminCertificatesPage = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {CERTIFICATE_BACKGROUNDS.map((key) => (
-                      <SelectItem key={key} value={key}>
-                        {backgroundLabel(t, key)}
+                    {CERTIFICATE_BACKGROUNDS.map((bg) => (
+                      <SelectItem key={bg.id} value={bg.id}>
+                        {backgroundLabel(t, bg.id)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -815,9 +819,9 @@ export const AdminCertificatesPage = () => {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {CERTIFICATE_BACKGROUNDS.map((key) => (
-                        <SelectItem key={key} value={key}>
-                          {backgroundLabel(t, key)}
+                      {CERTIFICATE_BACKGROUNDS.map((bg) => (
+                        <SelectItem key={bg.id} value={bg.id}>
+                          {backgroundLabel(t, bg.id)}
                         </SelectItem>
                       ))}
                     </SelectContent>

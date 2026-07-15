@@ -276,11 +276,11 @@ export default {
     },
 
     certificateBackgrounds: {
-      plain: "純色",
-      geometric: "幾何",
-      waves: "波紋",
-      guilloche: "扭索紋",
-      corners: "邊角裝飾"
+      classic: "經典邊框",
+      modern: "現代邊角",
+      elegant: "優雅裝飾",
+      minimal: "簡約",
+      bold: "粗體緞帶"
     },
 
     certificateSettings: {

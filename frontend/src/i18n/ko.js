@@ -277,11 +277,11 @@ export default {
     },
 
     certificateBackgrounds: {
-      plain: "플레인",
-      geometric: "기하학",
-      waves: "물결",
-      guilloche: "기요셰",
-      corners: "모서리 장식"
+      classic: "클래식 프레임",
+      modern: "모던 코너",
+      elegant: "우아한 장식",
+      minimal: "미니멀",
+      bold: "볼드 리본"
     },
 
     certificateSettings: {
