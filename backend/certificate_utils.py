@@ -2,6 +2,7 @@ from fastapi import HTTPException
 
 from certificate_i18n import normalize_certificate_language
 from certificate_template import (
+    DEFAULT_BACKGROUND,
     compute_valid_until,
     create_certification_template,
     create_certification_template_source,
@@ -34,7 +35,6 @@ def apply_template_to_certificate(
     fallback_primary_color: str = DEFAULT_PRIMARY_COLOR,
     fallback_secondary_color: str = DEFAULT_SECONDARY_COLOR,
     fallback_background: str = DEFAULT_BACKGROUND,
-    fallback_language: str | None = None,
 ) -> dict:
     """Attach selected template metadata and rendered HTML to a certificate document.
 
@@ -63,7 +63,6 @@ def apply_template_to_certificate(
             primary,
             secondary,
             background,
-            cert_doc["language"],
         )
         cert_doc["template_html"] = render_certification_template(
             source_html,

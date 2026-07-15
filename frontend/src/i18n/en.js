@@ -473,8 +473,6 @@ export default {
       primaryColor: "Primary Color",
       secondaryColor: "Secondary Color",
       background: "Background Artwork",
-      language: "Certificate Language",
-      languageHint: "Defaults to the course's language. The certificate text, dates, and PDF are rendered in this language.",
       applyToCourse: "Apply to all certificates for this course",
       applyToCourseHint: "When enabled, the style changes will be applied to every certificate for the selected course.",
       certificateId: "Certificate ID",

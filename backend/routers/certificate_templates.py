@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, Request
 
 from auth_utils import require_roles
-from certificate_template import create_certification_template_source
+from certificate_template import DEFAULT_BACKGROUND, create_certification_template_source
 from database import db
 from db_utils import parse_object_id
 from models import CertificateTemplateCreate, CertificateTemplateRender, CertificateTemplateUpdate
@@ -22,14 +22,14 @@ def _serialize_template(doc: dict) -> dict:
         "html": doc["html"],
         "primary_color": doc.get("primary_color", _PRIMARY_DEFAULT),
         "secondary_color": doc.get("secondary_color", _SECONDARY_DEFAULT),
-        "background": doc.get("background", _BACKGROUND_DEFAULT),
+        "background": doc.get("background", DEFAULT_BACKGROUND),
         "is_default": doc.get("is_default", False),
         "created_at": doc.get("created_at"),
         "updated_at": doc.get("updated_at"),
     }
 
 
-def _default_html(primary: str, secondary: str, background: str = _BACKGROUND_DEFAULT) -> str:
+def _default_html(primary: str, secondary: str, background: str = DEFAULT_BACKGROUND) -> str:
     return create_certification_template_source(primary, secondary, background)
 
 

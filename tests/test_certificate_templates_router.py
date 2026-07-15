@@ -3,6 +3,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from bson import ObjectId
 from fastapi import HTTPException
+from pydantic import ValidationError
 
 from models import CertificateTemplateCreate, CertificateTemplateRender, CertificateTemplateUpdate
 from routers import certificate_templates as templates_router
@@ -74,8 +75,34 @@ async def test_create_template_generates_default_html(monkeypatch):
     assert "{{user_name}}" in response["html"]
     assert response["primary_color"] == "#002fa7"
     assert response["secondary_color"] == "#0a0b10"
+    assert response["background"] == "classic"
     assert response["is_default"] is False
     mock_db.certificate_templates.insert_one.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_create_template_with_custom_background(monkeypatch):
+    mock_db = _build_mock_db()
+    mock_db.certificate_templates.find_one.return_value = None
+    mock_db.certificate_templates.insert_one.return_value = MagicMock(
+        inserted_id=ObjectId(TEMPLATE_A)
+    )
+
+    monkeypatch.setattr(templates_router, "db", mock_db)
+    monkeypatch.setattr(templates_router, "require_roles", _fake_require_roles)
+
+    response = await templates_router.create_template(
+        CertificateTemplateCreate(name="Modern Certificate", background="modern"),
+        request=object(),
+    )
+
+    assert response["background"] == "modern"
+    assert "bg-corner" in response["html"]
+
+
+def test_certificate_template_create_rejects_invalid_background():
+    with pytest.raises(ValidationError):
+        CertificateTemplateCreate(name="Bad Background", background="not-a-real-style")
 
 
 @pytest.mark.asyncio

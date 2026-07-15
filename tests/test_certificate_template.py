@@ -99,6 +99,42 @@ def test_create_certification_template_shows_expired_badge_past_validity():
     assert ">Expired<" in html
 
 
+def test_certificate_backgrounds_has_five_options():
+    assert len(CERTIFICATE_BACKGROUNDS) == 5
+    assert DEFAULT_BACKGROUND in CERTIFICATE_BACKGROUNDS
+
+
+def test_create_certification_template_renders_each_background_distinctly():
+    rendered = {}
+    for background in CERTIFICATE_BACKGROUNDS:
+        html = create_certification_template({
+            "course_title": "Advanced Security Training",
+            "user_name": "Jane Doe",
+            "score": 92,
+            "certificate_id": "ABCD1234",
+            "issued_at": "2026-06-08T12:00:00+00:00",
+            "background": background,
+        })
+        assert "Jane Doe" in html
+        assert "Advanced Security Training" in html
+        rendered[background] = html
+
+    # Each background produces visibly different markup.
+    assert len(set(rendered.values())) == len(CERTIFICATE_BACKGROUNDS)
+
+
+def test_create_certification_template_falls_back_to_default_for_invalid_background():
+    html = create_certification_template({"background": "not-a-real-style"})
+    default_html = create_certification_template({"background": DEFAULT_BACKGROUND})
+    assert html == default_html
+
+
+def test_create_certification_template_source_accepts_background():
+    source = create_certification_template_source("#002FA7", "#0A0B10", "modern")
+    assert "bg-corner" in source
+    assert "{{user_name}}" in source
+
+
 def test_create_source_and_render_template():
     source = create_certification_template_source("#002FA7", "#0A0B10")
     assert "{{user_name}}" in source

@@ -441,8 +441,6 @@ export default {
       primaryColor: "主色",
       secondaryColor: "輔色",
       background: "背景圖案",
-      language: "證書語言",
-      languageHint: "預設為課程所使用的語言。證書文字、日期與 PDF 皆會以此語言呈現。",
       applyToCourse: "套用至此課程的所有證書",
       applyToCourseHint: "啟用後，樣式變更將套用至該課程的每一份證書。",
       certificateId: "證書 ID",
