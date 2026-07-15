@@ -595,9 +595,9 @@ export const AdminCertificatesPage = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {CERTIFICATE_BACKGROUNDS.map((bg) => (
-                      <SelectItem key={bg.id} value={bg.id}>
-                        {backgroundLabel(t, bg.id)}
+                    {CERTIFICATE_BACKGROUNDS.map((key) => (
+                      <SelectItem key={key} value={key}>
+                        {backgroundLabel(t, key)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -819,9 +819,9 @@ export const AdminCertificatesPage = () => {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {CERTIFICATE_BACKGROUNDS.map((bg) => (
-                        <SelectItem key={bg.id} value={bg.id}>
-                          {backgroundLabel(t, bg.id)}
+                      {CERTIFICATE_BACKGROUNDS.map((key) => (
+                        <SelectItem key={key} value={key}>
+                          {backgroundLabel(t, key)}
                         </SelectItem>
                       ))}
                     </SelectContent>

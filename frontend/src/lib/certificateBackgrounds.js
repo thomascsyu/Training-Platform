@@ -1,18 +1,18 @@
+// Selectable certificate background artworks. Keep the keys in sync with the
+// backend (`backend/certificate_template.py` -> CERTIFICATE_BACKGROUNDS).
 export const CERTIFICATE_BACKGROUNDS = [
-  { id: "classic", label: "Classic Frame" },
-  { id: "modern", label: "Modern Corners" },
-  { id: "elegant", label: "Elegant Flourish" },
-  { id: "minimal", label: "Minimal" },
-  { id: "bold", label: "Bold Ribbon" },
+  "plain",
+  "geometric",
+  "waves",
+  "guilloche",
+  "corners",
 ];
 
-export const DEFAULT_CERTIFICATE_BACKGROUND = "classic";
+export const DEFAULT_CERTIFICATE_BACKGROUND = "plain";
 
-export const backgroundLabel = (t, idOrBg) => {
-  const id = typeof idOrBg === "string" ? idOrBg : idOrBg?.id;
-  if (!id) return "";
-  const bg = CERTIFICATE_BACKGROUNDS.find((b) => b.id === id);
-  const translationKey = `certificateBackgrounds.${id}`;
-  const translated = t(translationKey);
-  return translated !== translationKey ? translated : bg?.label || id;
+// Translate a background key to a human label using the i18n `t` helper,
+// falling back to the raw key when no translation is available.
+export const backgroundLabel = (t, key) => {
+  const label = t(`certificateBackgrounds.${key}`);
+  return label === `certificateBackgrounds.${key}` ? key : label;
 };

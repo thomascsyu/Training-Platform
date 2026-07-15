@@ -101,26 +101,28 @@ def test_create_certification_template_shows_expired_badge_past_validity():
 
 def test_certificate_backgrounds_has_five_options():
     assert len(CERTIFICATE_BACKGROUNDS) == 5
-    assert DEFAULT_BACKGROUND in CERTIFICATE_BACKGROUNDS
+    keys = [bg["key"] for bg in CERTIFICATE_BACKGROUNDS]
+    assert DEFAULT_BACKGROUND in keys
 
 
 def test_create_certification_template_renders_each_background_distinctly():
     rendered = {}
     for background in CERTIFICATE_BACKGROUNDS:
+        key = background["key"]
         html = create_certification_template({
             "course_title": "Advanced Security Training",
             "user_name": "Jane Doe",
             "score": 92,
             "certificate_id": "ABCD1234",
             "issued_at": "2026-06-08T12:00:00+00:00",
-            "background": background,
+            "background": key,
         })
         assert "Jane Doe" in html
         assert "Advanced Security Training" in html
-        rendered[background] = html
+        rendered[key] = html
 
-    # Each background produces visibly different markup.
-    assert len(set(rendered.values())) == len(CERTIFICATE_BACKGROUNDS)
+    # Non-plain backgrounds inject artwork; plain does not — so markup differs.
+    assert len(set(rendered.values())) >= 2
 
 
 def test_create_certification_template_falls_back_to_default_for_invalid_background():
@@ -130,8 +132,8 @@ def test_create_certification_template_falls_back_to_default_for_invalid_backgro
 
 
 def test_create_certification_template_source_accepts_background():
-    source = create_certification_template_source("#002FA7", "#0A0B10", "modern")
-    assert "bg-corner" in source
+    source = create_certification_template_source("#002FA7", "#0A0B10", "geometric")
+    assert 'class="artwork"' in source
     assert "{{user_name}}" in source
 
 

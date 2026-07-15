@@ -22,7 +22,11 @@ from routers.translate import router as translate_router
 from routers.companies import router as companies_router
 from routers.users import router as users_router
 from routers.uploads import router as uploads_router
-from upload_utils import ensure_thumbnail_dir, get_uploads_root
+from upload_utils import (
+    ensure_certificate_background_dir,
+    ensure_thumbnail_dir,
+    get_uploads_root,
+)
 from config import logger
 
 # Ensure Stripe global configuration is applied when the API starts.
@@ -53,6 +57,7 @@ api_router.include_router(ai_settings_router)
 api_router.include_router(root_router)
 
 ensure_thumbnail_dir()
+ensure_certificate_background_dir()
 logger.info("Course upload storage: %s", get_uploads_root())
 api_router.mount(
     "/uploads",
