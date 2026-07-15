@@ -318,9 +318,9 @@ export const CertificateTemplatesPanel = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {CERTIFICATE_BACKGROUNDS.map((bg) => (
-                      <SelectItem key={bg.id} value={bg.id}>
-                        {backgroundLabel(t, bg.id)}
+                    {CERTIFICATE_BACKGROUNDS.map((key) => (
+                      <SelectItem key={key} value={key}>
+                        {backgroundLabel(t, key)}
                       </SelectItem>
                     ))}
                   </SelectContent>

@@ -277,11 +277,11 @@ export default {
     },
 
     certificateBackgrounds: {
-      classic: "クラシック枠",
-      modern: "モダンコーナー",
-      elegant: "エレガント装飾",
-      minimal: "ミニマル",
-      bold: "太リボン"
+      plain: "プレーン",
+      geometric: "幾何学模様",
+      waves: "波模様",
+      guilloche: "ギヨシェ",
+      corners: "コーナー装飾"
     },
 
     certificateSettings: {

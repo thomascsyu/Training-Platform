@@ -277,12 +277,13 @@ export default {
     },
 
     // Certificate background artworks
+    // Certificate background artworks
     certificateBackgrounds: {
-      classic: "Classic Frame",
-      modern: "Modern Corners",
-      elegant: "Elegant Flourish",
-      minimal: "Minimal",
-      bold: "Bold Ribbon"
+      plain: "Plain",
+      geometric: "Geometric",
+      waves: "Waves",
+      guilloche: "Guilloché",
+      corners: "Corner Flourish"
     },
 
     // Certificate Settings (ID naming + defaults)
