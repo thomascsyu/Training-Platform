@@ -1,5 +1,6 @@
 from fastapi import HTTPException
 
+from certificate_i18n import normalize_certificate_language
 from certificate_template import (
     DEFAULT_BACKGROUND,
     compute_valid_until,
@@ -11,6 +12,7 @@ from db_utils import parse_object_id
 
 DEFAULT_PRIMARY_COLOR = "#002FA7"
 DEFAULT_SECONDARY_COLOR = "#0A0B10"
+DEFAULT_BACKGROUND = "plain"
 
 
 async def resolve_certificate_template(database, template_id: str | None = None) -> dict | None:
@@ -34,8 +36,16 @@ def apply_template_to_certificate(
     fallback_secondary_color: str = DEFAULT_SECONDARY_COLOR,
     fallback_background: str = DEFAULT_BACKGROUND,
 ) -> dict:
-    """Attach selected template metadata and rendered HTML to a certificate document."""
+    """Attach selected template metadata and rendered HTML to a certificate document.
+
+    The certificate is rendered in ``cert_doc["language"]`` when set, otherwise
+    ``fallback_language`` (typically the issuing course's language), falling
+    back to English when neither is a supported language.
+    """
     cert_doc.setdefault("valid_until", compute_valid_until(cert_doc.get("issued_at")))
+    cert_doc["language"] = normalize_certificate_language(
+        cert_doc.get("language") or fallback_language
+    )
 
     if template:
         primary = template.get("primary_color") or fallback_primary_color

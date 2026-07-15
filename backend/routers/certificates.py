@@ -4,6 +4,13 @@ from fastapi import APIRouter, HTTPException, Request
 from starlette.responses import Response
 
 from auth_utils import get_current_user, require_admin_or_manager, require_roles
+from certificate_i18n import normalize_certificate_language
+from certificate_id import (
+    course_code_from,
+    generate_certificate_id,
+    get_certificate_id_format,
+    preview_certificate_id,
+)
 from certificate_pdf import generate_certificate_pdf
 from certificate_template import DEFAULT_BACKGROUND, compute_valid_until, is_certificate_expired
 from certificate_utils import apply_template_to_certificate
@@ -23,6 +30,7 @@ def _serialize_certificate(cert: dict, fallback_course_title: str | None = None)
         "course_title": cert.get("course_title") or fallback_course_title,
         "user_name": cert.get("user_name"),
         "score": cert.get("score"),
+        "language": cert.get("language", "en"),
         "template": cert.get("template"),
         "template_id": cert.get("template_id"),
         "template_name": cert.get("template_name"),
@@ -186,13 +194,33 @@ async def customize_certificate(
         "background": data.background,
     }
     if data.apply_to_course:
-        result = await db.certificates.update_many(
-            {"course_id": cert["course_id"]},
-            {"$set": update_fields},
-        )
+        targets = await db.certificates.find({"course_id": cert["course_id"]}).to_list(1000)
     else:
-        result = await db.certificates.update_one(
-            {"_id": parse_object_id(certificate_id, "certificate")},
-            {"$set": update_fields},
+        targets = [cert]
+
+    modified = 0
+    for target in targets:
+        target["template"] = data.template
+        target["primary_color"] = data.primary_color
+        target["secondary_color"] = data.secondary_color
+        target["background"] = data.background or target.get("background") or "plain"
+        target["language"] = normalize_certificate_language(
+            data.language or target.get("language")
         )
-    return {"message": f"Updated {result.modified_count} certificate(s)"}
+        # Re-render the stored HTML so downloads/previews reflect the new style.
+        rendered = create_certification_template(target)
+        await db.certificates.update_one(
+            {"_id": target["_id"]},
+            {
+                "$set": {
+                    "template": target["template"],
+                    "primary_color": target["primary_color"],
+                    "secondary_color": target["secondary_color"],
+                    "background": target["background"],
+                    "language": target["language"],
+                    "template_html": rendered,
+                }
+            },
+        )
+        modified += 1
+    return {"message": f"Updated {modified} certificate(s)"}

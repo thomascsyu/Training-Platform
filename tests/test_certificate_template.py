@@ -5,6 +5,7 @@ from certificate_template import (
     create_certification_template,
     create_certification_template_source,
     is_certificate_expired,
+    normalize_background,
     render_certification_template,
 )
 
@@ -156,3 +157,115 @@ def test_create_source_and_render_template():
     assert "Security Training" in rendered
     assert "92%" in rendered
     assert "June 08, 2027" in rendered
+
+
+def test_there_are_five_selectable_backgrounds():
+    assert len(CERTIFICATE_BACKGROUNDS) == 5
+    keys = [bg["key"] for bg in CERTIFICATE_BACKGROUNDS]
+    assert keys[0] == DEFAULT_BACKGROUND == "plain"
+    assert set(keys) == {"plain", "geometric", "waves", "guilloche", "corners"}
+
+
+def test_normalize_background_falls_back_to_default():
+    assert normalize_background("waves") == "waves"
+    assert normalize_background("nonsense") == "plain"
+    assert normalize_background(None) == "plain"
+
+
+def test_plain_background_has_no_artwork_layer():
+    html = create_certification_template({"course_title": "X", "background": "plain"})
+    assert 'class="artwork"' not in html
+
+
+def test_selected_background_injects_artwork_svg():
+    html = create_certification_template({
+        "course_title": "Advanced Security Training",
+        "user_name": "Jane Doe",
+        "score": 92,
+        "background": "waves",
+        "primary_color": "#002FA7",
+    })
+    assert 'class="artwork"' in html
+    assert "<svg" in html
+
+
+def test_template_source_accepts_background():
+    source = create_certification_template_source("#002FA7", "#0A0B10", "geometric")
+    assert 'class="artwork"' in source
+    assert "{{user_name}}" in source
+
+
+def test_create_certification_template_defaults_to_english():
+    html = create_certification_template({"course_title": "X", "user_name": "Jane"})
+    assert '<html lang="en">' in html
+    assert "Certificate of Completion" in html
+    assert "Training Certificate" in html
+
+
+def test_create_certification_template_renders_in_japanese():
+    html = create_certification_template({
+        "course_title": "Advanced Security Training",
+        "user_name": "Jane Doe",
+        "score": 92,
+        "certificate_id": "ABCD1234",
+        "issued_at": "2026-06-08T12:00:00+00:00",
+        "language": "ja",
+    })
+    assert '<html lang="ja">' in html
+    assert "修了証明書" in html
+    assert "証明書番号: <strong>ABCD1234</strong>" in html
+    assert "2026年06月08日" in html
+    assert "Certificate of Completion" not in html
+
+
+def test_create_certification_template_renders_in_korean():
+    html = create_certification_template({
+        "course_title": "Advanced Security Training",
+        "user_name": "Jane Doe",
+        "score": 92,
+        "language": "ko",
+    })
+    assert '<html lang="ko">' in html
+    assert "수료증" in html
+    assert "점수 <strong>92%</strong>" in html
+
+
+def test_create_certification_template_renders_in_simplified_chinese():
+    html = create_certification_template({
+        "course_title": "Security Training",
+        "user_name": "Jane Doe",
+        "score": 88,
+        "language": "zh-CN",
+    })
+    assert '<html lang="zh-CN">' in html
+    assert "结业证书" in html
+    assert "证书编号" in html
+
+
+def test_create_certification_template_unsupported_language_falls_back_to_english():
+    html = create_certification_template({
+        "course_title": "X",
+        "user_name": "Jane",
+        "language": "fr",
+    })
+    assert '<html lang="en">' in html
+    assert "Certificate of Completion" in html
+
+
+def test_create_certification_template_expired_badge_is_localized():
+    html = create_certification_template({
+        "course_title": "Advanced Security Training",
+        "user_name": "Jane Doe",
+        "score": 92,
+        "issued_at": "2020-01-01T12:00:00+00:00",
+        "language": "ja",
+    })
+    assert 'class="expired-stamp"' in html
+    assert ">期限切れ<" in html
+
+
+def test_create_certification_template_source_accepts_language():
+    source = create_certification_template_source("#002FA7", "#0A0B10", "plain", "zh-TW")
+    assert "結業證書" in source
+    assert "{{user_name}}" in source
+    assert "{{score}}" in source

@@ -2,6 +2,12 @@ import html
 import re
 from datetime import datetime
 
+from certificate_i18n import (
+    format_certificate_date,
+    get_certificate_strings,
+    normalize_certificate_language,
+)
+
 _PRIMARY_DEFAULT = "#002FA7"
 _SECONDARY_DEFAULT = "#0A0B10"
 _TEXT_MUTED = "#64748B"
@@ -9,6 +15,36 @@ _TEXT_PRIMARY = "#0A0B10"
 _BACKGROUND = "#F4F5F7"
 
 _COLOR_RE = re.compile(r"^#[0-9A-Fa-f]{6}$")
+
+# Selectable background artworks for certificates. The first entry ("plain") is
+# the default and keeps the original clean look; the remaining four add a
+# decorative pattern rendered behind the certificate content.
+CERTIFICATE_BACKGROUNDS = [
+    {"key": "plain", "label": "Plain"},
+    {"key": "geometric", "label": "Geometric"},
+    {"key": "waves", "label": "Waves"},
+    {"key": "guilloche", "label": "Guilloché"},
+    {"key": "corners", "label": "Corner Flourish"},
+]
+_BACKGROUND_KEYS = {bg["key"] for bg in CERTIFICATE_BACKGROUNDS}
+DEFAULT_BACKGROUND = "plain"
+
+
+def normalize_background(value: str | None) -> str:
+    """Return a valid background artwork key, falling back to the default."""
+    if isinstance(value, str) and value.strip() in _BACKGROUND_KEYS:
+        return value.strip()
+    return DEFAULT_BACKGROUND
+
+
+def _render_artwork(background: str, primary: str, secondary: str) -> str:
+    """Return an SVG artwork layer (with colors already inlined) for a background."""
+    key = normalize_background(background)
+    svg = _ARTWORK_SVGS.get(key, "")
+    if not svg:
+        return ""
+    svg = svg.replace("__PRIMARY__", primary).replace("__SECONDARY__", secondary)
+    return f'<div class="artwork" aria-hidden="true">{svg}</div>'
 
 
 def _validate_color(value: str, fallback: str) -> str:
@@ -48,14 +84,9 @@ def _format_score(value: int | float | str | None) -> int:
         return 0
 
 
-def _format_date(value: str | None) -> str:
-    if not value:
-        return "—"
-    try:
-        dt = datetime.fromisoformat(str(value))
-        return dt.strftime("%B %d, %Y")
-    except Exception:
-        return html.escape(str(value)[:10])
+def _expired_badge_html(language: str | None) -> str:
+    strings = get_certificate_strings(language)
+    return f'<div class="expired-stamp">{html.escape(strings["expired"])}</div>'
 
 
 CERTIFICATE_VALIDITY_YEARS = 1
@@ -271,6 +302,7 @@ def create_certification_template_source(
 
 def render_certification_template(template_html: str, cert: dict) -> str:
     """Render certificate data into a reusable HTML certificate template."""
+    language = cert.get("language")
     valid_until = cert.get("valid_until") or compute_valid_until(cert.get("issued_at"))
     expired = is_certificate_expired(valid_until)
     values = {
@@ -278,8 +310,8 @@ def render_certification_template(template_html: str, cert: dict) -> str:
         "course_title": _safe(cert.get("course_title", cert.get("course", "Course"))),
         "score": str(_format_score(cert.get("score"))),
         "certificate_id": _safe(cert.get("certificate_id"), "—"),
-        "issued_at": _format_date(cert.get("issued_at")),
-        "valid_until": _format_date(valid_until),
+        "issued_at": format_certificate_date(cert.get("issued_at"), language),
+        "valid_until": format_certificate_date(valid_until, language),
     }
     replacements = {
         "__USER_NAME__": values["user_name"],
@@ -288,7 +320,7 @@ def render_certification_template(template_html: str, cert: dict) -> str:
         "__CERTIFICATE_ID__": values["certificate_id"],
         "__ISSUED_AT__": values["issued_at"],
         "__VALID_UNTIL__": values["valid_until"],
-        "__EXPIRED_BADGE__": _EXPIRED_BADGE_HTML if expired else "",
+        "__EXPIRED_BADGE__": _expired_badge_html(language) if expired else "",
         "{{user_name}}": values["user_name"],
         "{{course_title}}": values["course_title"],
         "{{score}}": values["score"],
@@ -308,7 +340,10 @@ def create_certification_template(cert: dict) -> str:
     Design reference: https://claude.ai/design/p/5f15a85e-9833-48c2-8e02-b82b726e130d
     The template follows the LearnHub design system (International Klein Blue, high
     contrast, sharp edges) and is safe to render with untrusted certificate fields.
+    Renders in the certificate's ``language`` (course language at issuance time),
+    falling back to English.
     """
+    language = normalize_certificate_language(cert.get("language"))
     primary = _validate_color(cert.get("primary_color"), _PRIMARY_DEFAULT)
     secondary = _validate_color(cert.get("secondary_color"), _SECONDARY_DEFAULT)
     background = _validate_background(cert.get("background"))
@@ -319,11 +354,11 @@ def create_certification_template(cert: dict) -> str:
 
 
 _CERTIFICATE_HTML = """<!DOCTYPE html>
-<html lang="en">
+<html lang="__HTML_LANG__">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Training Certificate - __COURSE_TITLE__</title>
+  <title>__OVERLINE__ - __COURSE_TITLE__</title>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
   <style>
     @page {
@@ -481,23 +516,23 @@ _CERTIFICATE_HTML = """<!DOCTYPE html>
         <circle cx="12" cy="8" r="6"></circle>
         <path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"></path>
       </svg>
-      <div class="overline">Training Certificate</div>
-      <h1>Certificate of Completion</h1>
-      <div class="presented">This certifies that</div>
+      <div class="overline">__OVERLINE__</div>
+      <h1>__CERT_TITLE__</h1>
+      <div class="presented">__INTRO__</div>
       <div class="recipient">__USER_NAME__</div>
-      <div class="presented">has successfully completed</div>
+      <div class="presented">__COMPLETED_TEXT__</div>
       <div class="course">__COURSE_TITLE__</div>
-      <div class="score">with a score of <strong>__SCORE__%</strong></div>
+      <div class="score">__SCORE_PREFIX__<strong>__SCORE__%</strong></div>
     </div>
     <div class="footer">
       <div class="signature">
         <div class="signature-line"></div>
-        <div class="signature-label">LearnHub</div>
+        <div class="signature-label">__SIGNATURE_LABEL__</div>
       </div>
       <div class="meta">
-        <div>Certificate ID: <strong>__CERTIFICATE_ID__</strong></div>
-        <div>Issued: <strong>__ISSUED_AT__</strong></div>
-        <div>Valid Until: <strong>__VALID_UNTIL__</strong></div>
+        <div>__CERT_ID_LABEL__: <strong>__CERTIFICATE_ID__</strong></div>
+        <div>__ISSUED_LABEL__: <strong>__ISSUED_AT__</strong></div>
+        <div>__VALID_UNTIL_LABEL__: <strong>__VALID_UNTIL__</strong></div>
       </div>
     </div>
     __EXPIRED_BADGE__
@@ -506,4 +541,68 @@ _CERTIFICATE_HTML = """<!DOCTYPE html>
 </html>
 """.replace("__BACKGROUND__", _BACKGROUND).replace("__TEXT_PRIMARY__", _TEXT_PRIMARY).replace("__TEXT_MUTED__", _TEXT_MUTED)
 
-_EXPIRED_BADGE_HTML = '<div class="expired-stamp">Expired</div>'
+# Decorative background artworks. Each SVG uses __PRIMARY__ / __SECONDARY__
+# placeholders that are replaced with the certificate colours before rendering.
+# Opacity is kept low so the artwork never competes with the certificate text.
+_ARTWORK_SVGS = {
+    "geometric": """
+<svg viewBox="0 0 1100 850" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <pattern id="geo" width="70" height="70" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect width="70" height="70" fill="none"/>
+      <path d="M0 35 H70 M35 0 V70" stroke="__PRIMARY__" stroke-width="1" opacity="0.06"/>
+      <circle cx="35" cy="35" r="3" fill="__SECONDARY__" opacity="0.05"/>
+    </pattern>
+  </defs>
+  <rect width="1100" height="850" fill="url(#geo)"/>
+  <polygon points="0,0 300,0 0,300" fill="__PRIMARY__" opacity="0.05"/>
+  <polygon points="1100,850 800,850 1100,550" fill="__SECONDARY__" opacity="0.05"/>
+</svg>
+""",
+    "waves": """
+<svg viewBox="0 0 1100 850" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+  <g fill="none" stroke-width="2" opacity="0.08">
+    <path d="M0 120 Q 275 40 550 120 T 1100 120" stroke="__PRIMARY__"/>
+    <path d="M0 180 Q 275 100 550 180 T 1100 180" stroke="__PRIMARY__"/>
+    <path d="M0 240 Q 275 160 550 240 T 1100 240" stroke="__SECONDARY__"/>
+  </g>
+  <g fill="none" stroke-width="2" opacity="0.08">
+    <path d="M0 730 Q 275 650 550 730 T 1100 730" stroke="__SECONDARY__"/>
+    <path d="M0 670 Q 275 590 550 670 T 1100 670" stroke="__PRIMARY__"/>
+    <path d="M0 610 Q 275 530 550 610 T 1100 610" stroke="__PRIMARY__"/>
+  </g>
+</svg>
+""",
+    "guilloche": """
+<svg viewBox="0 0 1100 850" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+  <g fill="none" stroke="__PRIMARY__" stroke-width="0.8" opacity="0.07">
+    <circle cx="550" cy="425" r="120"/>
+    <circle cx="550" cy="425" r="170"/>
+    <circle cx="550" cy="425" r="220"/>
+    <circle cx="550" cy="425" r="270"/>
+    <circle cx="550" cy="425" r="320"/>
+  </g>
+  <g fill="none" stroke="__SECONDARY__" stroke-width="0.8" opacity="0.06">
+    <ellipse cx="550" cy="425" rx="360" ry="150"/>
+    <ellipse cx="550" cy="425" rx="150" ry="360"/>
+  </g>
+</svg>
+""",
+    "corners": """
+<svg viewBox="0 0 1100 850" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+  <g fill="none" stroke="__PRIMARY__" stroke-width="3" opacity="0.14">
+    <path d="M60 160 Q60 60 160 60"/>
+    <path d="M1040 160 Q1040 60 940 60"/>
+    <path d="M60 690 Q60 790 160 790"/>
+    <path d="M1040 690 Q1040 790 940 790"/>
+  </g>
+  <g fill="__SECONDARY__" opacity="0.10">
+    <circle cx="60" cy="60" r="6"/>
+    <circle cx="1040" cy="60" r="6"/>
+    <circle cx="60" cy="790" r="6"/>
+    <circle cx="1040" cy="790" r="6"/>
+  </g>
+</svg>
+""",
+}
+

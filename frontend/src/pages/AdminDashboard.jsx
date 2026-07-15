@@ -66,7 +66,7 @@ export const AdminDashboard = () => {
             <Button onClick={() => navigate("/admin/users")} variant="outline" className="w-full justify-start rounded-sm" data-testid="manage-users-btn">
               <Users className="w-4 h-4 mr-2" /> {t("dashboard.manageUsers")}
             </Button>
-            <Button onClick={() => navigate("/admin/certificate-templates")} variant="outline" className="w-full justify-start rounded-sm" data-testid="manage-certificate-templates-btn">
+            <Button onClick={() => navigate("/admin/certificates?tab=templates")} variant="outline" className="w-full justify-start rounded-sm" data-testid="manage-certificate-templates-btn">
               <Palette className="w-4 h-4 mr-2" /> {t("certificateTemplates.manageTemplates")}
             </Button>
           </CardContent>

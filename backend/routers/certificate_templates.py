@@ -12,6 +12,7 @@ router = APIRouter(tags=["certificate_templates"])
 
 _PRIMARY_DEFAULT = "#002FA7"
 _SECONDARY_DEFAULT = "#0A0B10"
+_BACKGROUND_DEFAULT = "plain"
 
 
 def _serialize_template(doc: dict) -> dict:

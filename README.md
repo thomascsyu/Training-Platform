@@ -267,6 +267,8 @@ Base path: `/api`
 | GET | `/certificates/{id}` | Owner, admin, or client manager |
 | GET | `/certificates/{id}/pdf` | Owner, admin, or client manager — PDF download |
 | PUT | `/certificates/{id}/customize` | Admin |
+| GET | `/certificate-settings` | Admin |
+| PUT | `/certificate-settings` | Admin |
 
 **Customize request body:**
 
@@ -275,11 +277,25 @@ Base path: `/api`
   "template": "default",
   "primary_color": "#002FA7",
   "secondary_color": "#0A0B10",
+  "background": "geometric",
   "apply_to_course": false
 }
 ```
 
-Set `apply_to_course: true` to apply styling to all certificates for that certificate's course.
+Set `apply_to_course: true` to apply styling to all certificates for that certificate's course. `background` selects one of five artworks: `plain`, `geometric`, `waves`, `guilloche`, `corners`.
+
+**Certificate settings** (managed from the certificate module itself, not course settings) control the certificate ID naming structure and default styling:
+
+```json
+{
+  "id_format": "CERT-{year}-{seq:6}",
+  "default_background": "plain",
+  "default_primary_color": "#002fa7",
+  "default_secondary_color": "#0a0b10"
+}
+```
+
+`id_format` tokens: `{seq}`/`{seq:N}` (running sequence, zero-padded to `N`), `{year}`, `{month}`, `{day}`, `{random}`/`{random:N}`, `{course}` (short course code). Text outside braces is literal, so `CERT-{year}-{seq:6}` yields `CERT-2026-000042`.
 
 ### AI, forums, payments, admin
 
@@ -388,7 +404,15 @@ Course content supports **5 languages**: `en`, `zh-TW`, `zh-CN`, `ja`, `ko`. UI 
 ```javascript
 {
   certificate_id, course_id, user_id, user_name, course_title, score,
-  template, primary_color, secondary_color, issued_at
+  template, primary_color, secondary_color, background, issued_at, valid_until
+}
+```
+
+#### `platform_settings` (`_id: "certificate"`)
+```javascript
+{
+  id_format, sequence, default_background,
+  default_primary_color, default_secondary_color
 }
 ```
 

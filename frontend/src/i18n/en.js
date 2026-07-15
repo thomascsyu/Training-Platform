@@ -235,6 +235,31 @@ export default {
       deleted: "Template deleted.",
       generated: "Default HTML generated."
     },
+
+    // Certificate background artworks
+    certificateBackgrounds: {
+      plain: "Plain",
+      geometric: "Geometric",
+      waves: "Waves",
+      guilloche: "Guilloché",
+      corners: "Corner Flourish"
+    },
+
+    // Certificate Settings (ID naming + defaults)
+    certificateSettings: {
+      title: "Certificate Settings",
+      description: "Configure how certificate IDs are generated and the default look for new certificates.",
+      open: "Certificate Settings",
+      idFormat: "Certificate ID Format",
+      idFormatHint: "Available tokens: {seq} or {seq:6} (sequence), {year}, {month}, {day}, {random} or {random:4}, {course}. Text outside braces is used literally.",
+      preview: "Next certificate ID",
+      defaultBackground: "Default Background",
+      defaultPrimaryColor: "Default Primary Color",
+      defaultSecondaryColor: "Default Secondary Color",
+      save: "Save Settings",
+      saved: "Certificate settings updated.",
+      cancel: "Cancel"
+    },
     
     // Chat
     chat: {
@@ -422,11 +447,27 @@ export default {
     adminCertificates: {
       title: "Certificates",
       description: "Certificates are issued automatically to students who pass a course's minimum score.",
+      tabIssued: "Issued",
+      tabTemplates: "Templates",
+      templatesNotice: "Templates define the default printable design used when certificates are issued. Set one as Default to apply it platform-wide.",
       totalCertificates: "Total Certificates",
-      manageAutoIssue: "Manage Course Settings",
-      autoIssueNotice: "Certificates are issued automatically when a student meets a course's passing score. Turn auto-issue on or off per course from Course Settings.",
+      manageAutoIssue: "Certificate Settings",
+      autoIssueNotice: "Certificates are issued automatically when a student meets a course's passing score. Use Certificate Settings to configure the certificate ID format and default styling.",
       customizeCertificate: "Customize Certificate",
       customizeDescription: "Update the visual style for this certificate.",
+      previewCertificate: "Preview Certificate",
+      previewDescription: "Render a fully filled certificate without issuing it. Use a real course and student, or sample values.",
+      preview: "Preview",
+      previewGenerate: "Generate Preview",
+      previewDownloadPdf: "Download PDF Preview",
+      previewHint: "This preview is not saved and does not consume a certificate ID from the sequence.",
+      sampleCourse: "Sample course (no real course)",
+      sampleCourseTitle: "Sample Course Title",
+      sampleStudent: "Use sample student name",
+      sampleStudentName: "Sample Student Name",
+      selectCourse: "Select a course",
+      selectStudent: "Select a student",
+      scoreLabel: "Score",
       score: "Score (0-100)",
       template: "Template",
       primaryColor: "Primary Color",
@@ -447,7 +488,9 @@ export default {
       noCertificatesHint: "Certificates appear here once students pass a course's minimum score.",
       customized: "Certificate style updated.",
       filterByCourse: "Filter by course",
-      allCourses: "All courses"
+      allCourses: "All courses",
+      previewCourseRequired: "Select a course or enter a sample course title.",
+      previewStudentRequired: "Select a student or enter a sample student name."
     },
 
     // Common

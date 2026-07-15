@@ -2,7 +2,9 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from bson import ObjectId
+from fastapi import HTTPException
 
+from models import PaymentCreate
 from routers import payments as payments_router
 
 ADMIN_ID = "507f1f77bcf86cd7994390a0"
@@ -98,6 +100,66 @@ async def test_get_transaction_detail_returns_record(monkeypatch):
     assert result["session_id"] == "sess_456"
     assert result["user_name"] == "Student B"
     assert result["course_title"] == "Another Course"
+
+
+@pytest.mark.asyncio
+async def test_create_checkout_rejects_when_already_enrolled(monkeypatch):
+    mock_db = _build_mock_db()
+    mock_db.courses.find_one = AsyncMock(
+        return_value={"_id": ObjectId(COURSE_ID), "title": "Course", "price": 49.0, "is_free": False}
+    )
+    mock_db.enrollments = MagicMock()
+    mock_db.enrollments.find_one = AsyncMock(return_value={"_id": "existing"})
+
+    monkeypatch.setattr(payments_router, "db", mock_db)
+    monkeypatch.setattr(payments_router, "STRIPE_API_KEY", "sk_test_123")
+    monkeypatch.setattr(
+        payments_router,
+        "get_current_user",
+        AsyncMock(return_value={"id": STUDENT_ID, "role": "student"}),
+    )
+
+    data = PaymentCreate(course_id=COURSE_ID, origin_url="https://example.com")
+
+    with pytest.raises(HTTPException) as exc_info:
+        await payments_router.create_checkout(data, request=object())
+
+    assert exc_info.value.status_code == 400
+    assert "already enrolled" in exc_info.value.detail.lower()
+
+
+@pytest.mark.asyncio
+async def test_get_payment_status_includes_receipt_info(monkeypatch):
+    mock_db = _build_mock_db()
+    transaction = {
+        "_id": ObjectId(),
+        "session_id": "sess_789",
+        "course_id": COURSE_ID,
+        "user_id": STUDENT_ID,
+        "amount": 49.0,
+        "currency": "usd",
+        "payment_status": "paid",
+    }
+    mock_db.payment_transactions.find_one.return_value = transaction
+    mock_db.courses.find_one = AsyncMock(
+        return_value={"_id": ObjectId(COURSE_ID), "title": "Stripe Course"}
+    )
+
+    monkeypatch.setattr(payments_router, "db", mock_db)
+    monkeypatch.setattr(payments_router, "STRIPE_API_KEY", "sk_test_123")
+    monkeypatch.setattr(
+        payments_router,
+        "get_current_user",
+        AsyncMock(return_value={"id": STUDENT_ID, "role": "student"}),
+    )
+
+    result = await payments_router.get_payment_status("sess_789", request=object())
+
+    assert result["payment_status"] == "paid"
+    assert result["course_id"] == COURSE_ID
+    assert result["course_title"] == "Stripe Course"
+    assert result["amount"] == 49.0
+    assert result["currency"] == "usd"
 
 
 @pytest.mark.asyncio

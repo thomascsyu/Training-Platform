@@ -132,6 +132,10 @@ Build a Kajabi-like course/content platform with:
 - [ ] Instructor profiles
 - [ ] Mobile app
 
+### Planned — Certificate Builder
+- [ ] Admin Certificate Builder for course-scoped certificate configs (custom background upload + DnD, landscape/portrait, body text with placeholders, live preview Review → Save). Spec: [`docs/certificate-builder-functional-spec.md`](../docs/certificate-builder-functional-spec.md)
+
 ## Next Tasks
-1. P3 features: categories/tags, reviews, instructor profiles
-2. Vite migration (replace CRA)
+1. Implement Certificate Builder per `docs/certificate-builder-functional-spec.md`
+2. P3 features: categories/tags, reviews, instructor profiles
+3. Vite migration (replace CRA)

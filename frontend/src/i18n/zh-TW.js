@@ -234,6 +234,29 @@ export default {
       deleted: "範本已刪除。",
       generated: "已產生預設 HTML。"
     },
+
+    certificateBackgrounds: {
+      plain: "純色",
+      geometric: "幾何",
+      waves: "波紋",
+      guilloche: "扭索紋",
+      corners: "邊角裝飾"
+    },
+
+    certificateSettings: {
+      title: "證書設定",
+      description: "設定證書編號的產生方式以及新證書的預設樣式。",
+      open: "證書設定",
+      idFormat: "證書編號格式",
+      idFormatHint: "可用符記：{seq} 或 {seq:6}（序號）、{year}、{month}、{day}、{random} 或 {random:4}、{course}。大括號以外的文字將原樣使用。",
+      preview: "下一個證書編號",
+      defaultBackground: "預設背景",
+      defaultPrimaryColor: "預設主色",
+      defaultSecondaryColor: "預設輔色",
+      save: "儲存設定",
+      saved: "證書設定已更新。",
+      cancel: "取消"
+    },
     
     // Chat
     chat: {
@@ -392,11 +415,27 @@ export default {
     adminCertificates: {
       title: "證書",
       description: "學生達到課程的最低分數後將自動頒發證書。",
+      tabIssued: "已頒發",
+      tabTemplates: "範本",
+      templatesNotice: "範本定義頒發證書時使用的預設列印設計。將其中一個設為預設即可套用至整個平台。",
       totalCertificates: "證書總數",
-      manageAutoIssue: "管理課程設定",
-      autoIssueNotice: "當學生達到課程的及格分數時，證書將自動頒發。可在課程設定中依課程開啟或關閉自動頒發。",
+      manageAutoIssue: "證書設定",
+      autoIssueNotice: "當學生達到課程的及格分數時，證書將自動頒發。可在證書設定中設定證書編號格式與預設樣式。",
       customizeCertificate: "自訂證書",
       customizeDescription: "更新此證書的視覺樣式。",
+      previewCertificate: "預覽證書",
+      previewDescription: "在未頒發的情況下渲染完整證書。可使用真實課程與學生，或範例資料。",
+      preview: "預覽",
+      previewGenerate: "產生預覽",
+      previewDownloadPdf: "下載 PDF 預覽",
+      previewHint: "此預覽不會儲存，也不會消耗證書序號。",
+      sampleCourse: "範例課程（非真實課程）",
+      sampleCourseTitle: "範例課程名稱",
+      sampleStudent: "使用範例學生姓名",
+      sampleStudentName: "範例學生姓名",
+      selectCourse: "選擇課程",
+      selectStudent: "選擇學生",
+      scoreLabel: "分數",
       score: "分數 (0-100)",
       template: "範本",
       primaryColor: "主色",
@@ -417,7 +456,9 @@ export default {
       noCertificatesHint: "學生達到課程的最低分數後，證書將顯示於此。",
       customized: "證書樣式已更新。",
       filterByCourse: "依課程篩選",
-      allCourses: "所有課程"
+      allCourses: "所有課程",
+      previewCourseRequired: "請選擇課程或輸入範例課程名稱。",
+      previewStudentRequired: "請選擇學生或輸入範例學生姓名。"
     },
 
     // Common

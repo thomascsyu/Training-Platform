@@ -4,8 +4,33 @@ from reportlab.lib.pagesizes import landscape, letter
 from reportlab.lib.units import inch
 from reportlab.pdfgen import canvas
 from reportlab.lib.colors import HexColor
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.cidfonts import UnicodeCIDFont
 
 from certificate_template import DEFAULT_BACKGROUND, compute_valid_until, is_certificate_expired
+
+# Helvetica has no CJK glyphs, so non-Latin certificate languages fall back to
+# ReportLab's built-in (non-embedded) CID fonts, which every PDF viewer can
+# substitute with a locally installed CJK font.
+_CID_FONTS = {
+    "zh-CN": "STSong-Light",
+    "zh-TW": "MSung-Light",
+    "ja": "HeiseiKakuGo-W5",
+    "ko": "HYSMyeongJo-Medium",
+}
+_registered_cid_fonts: set[str] = set()
+
+
+def _fonts_for_language(language: str | None) -> tuple[str, str]:
+    """Return (regular, bold) font names usable for the given certificate language."""
+    cid_font = _CID_FONTS.get(language)
+    if not cid_font:
+        return "Helvetica", "Helvetica-Bold"
+    if cid_font not in _registered_cid_fonts:
+        pdfmetrics.registerFont(UnicodeCIDFont(cid_font))
+        _registered_cid_fonts.add(cid_font)
+    # These CID fonts ship a single weight; reuse it in place of a bold variant.
+    return cid_font, cid_font
 
 
 def _hex(color: str, fallback: str = "#002FA7") -> HexColor:
@@ -96,10 +121,14 @@ def _draw_background(c, style: str, primary: HexColor, secondary: HexColor, widt
 
 
 def generate_certificate_pdf(cert: dict) -> bytes:
-    """Render a certificate PDF from a certificate document."""
+    """Render a certificate PDF from a certificate document, in the certificate's language."""
     buffer = io.BytesIO()
     width, height = landscape(letter)
     c = canvas.Canvas(buffer, pagesize=(width, height))
+
+    language = cert.get("language")
+    strings = get_certificate_strings(language)
+    regular_font, bold_font = _fonts_for_language(language)
 
     primary = _hex(cert.get("primary_color", "#002FA7"))
     secondary = _hex(cert.get("secondary_color", "#0A0B10"))
@@ -108,56 +137,60 @@ def generate_certificate_pdf(cert: dict) -> bytes:
     c.setFillColor(HexColor("#FFFFFF"))
     c.rect(0, 0, width, height, fill=1, stroke=0)
 
+    _draw_artwork(c, width, height, cert.get("background", "plain"), primary, secondary)
+
     margin = 0.75 * inch
     _draw_background(c, background_style, primary, secondary, width, height, margin)
 
     c.setFillColor(secondary)
-    c.setFont("Helvetica-Bold", 14)
-    c.drawCentredString(width / 2, height - 1.4 * inch, "CERTIFICATE OF COMPLETION")
+    c.setFont(bold_font, 14)
+    c.drawCentredString(width / 2, height - 1.4 * inch, strings["pdf_title"])
 
     c.setFillColor(primary)
-    c.setFont("Helvetica-Bold", 28)
+    c.setFont(bold_font, 28)
     course_title = cert.get("course_title", "Course")
     if len(course_title) > 48:
         course_title = course_title[:45] + "..."
     c.drawCentredString(width / 2, height - 2.1 * inch, course_title)
 
     c.setFillColor(HexColor("#64748B"))
-    c.setFont("Helvetica", 12)
-    c.drawCentredString(width / 2, height - 2.7 * inch, "This is to certify that")
+    c.setFont(regular_font, 12)
+    c.drawCentredString(width / 2, height - 2.7 * inch, strings["pdf_intro"])
 
     c.setFillColor(primary)
-    c.setFont("Helvetica-Bold", 22)
+    c.setFont(bold_font, 22)
     c.drawCentredString(width / 2, height - 3.3 * inch, cert.get("user_name", "Student"))
 
     c.setFillColor(HexColor("#64748B"))
-    c.setFont("Helvetica", 12)
+    c.setFont(regular_font, 12)
     c.drawCentredString(
         width / 2,
         height - 3.9 * inch,
-        f"has successfully completed the course with a score of {cert.get('score', 0)}%",
+        strings["pdf_score_line"].format(score=cert.get("score", 0)),
     )
 
     issued_at = cert.get("issued_at", "")
-    issued = issued_at[:10]
+    issued = format_certificate_date(issued_at, language)
     valid_until = cert.get("valid_until") or compute_valid_until(issued_at)
-    valid_until_display = valid_until[:10] if valid_until else "—"
+    valid_until_display = format_certificate_date(valid_until, language)
     cert_id = cert.get("certificate_id", "")
-    c.setFont("Helvetica", 10)
+    c.setFont(regular_font, 10)
     c.drawCentredString(
         width / 2,
         margin + 0.6 * inch,
-        f"Certificate ID: {cert_id}  ·  Issued: {issued}  ·  Valid Until: {valid_until_display}",
+        strings["pdf_meta_line"].format(
+            cert_id=cert_id, issued=issued, valid_until=valid_until_display
+        ),
     )
 
     if is_certificate_expired(valid_until):
         c.saveState()
         c.setFillColor(HexColor("#DC2626"))
         c.setFillAlpha(0.35)
-        c.setFont("Helvetica-Bold", 60)
+        c.setFont(bold_font, 60)
         c.translate(width / 2, height / 2)
         c.rotate(25)
-        c.drawCentredString(0, 0, "EXPIRED")
+        c.drawCentredString(0, 0, strings["expired"].upper())
         c.restoreState()
 
     c.showPage()

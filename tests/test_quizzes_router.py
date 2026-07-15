@@ -31,6 +31,10 @@ def _build_mock_db():
     mock_db.certificates.insert_one = AsyncMock(return_value=MagicMock(inserted_id=ObjectId()))
     mock_db.certificates.update_one = AsyncMock()
     mock_db.certificate_templates.find_one = AsyncMock(return_value=None)
+    mock_db.platform_settings = MagicMock()
+    mock_db.platform_settings.find_one_and_update = AsyncMock(
+        return_value={"_id": "certificate", "id_format": "CERT-{year}-{seq:6}", "sequence": 1}
+    )
     return mock_db
 
 
@@ -64,6 +68,33 @@ async def test_submit_quiz_auto_issues_certificate_by_default(monkeypatch):
     inserted_doc = mock_db.certificates.insert_one.await_args.args[0]
     assert inserted_doc["course_id"] == COURSE_A
     assert inserted_doc["user_id"] == STUDENT_A
+
+
+@pytest.mark.asyncio
+async def test_submit_quiz_auto_issues_certificate_in_course_language(monkeypatch):
+    mock_db = _build_mock_db()
+    mock_db.courses.find_one = AsyncMock(return_value={
+        "_id": ObjectId(COURSE_A),
+        "title": "Security Training",
+        "passing_score": 70,
+        "language": "ja",
+    })
+
+    send_certificate_email = AsyncMock()
+    monkeypatch.setattr(quizzes_router, "db", mock_db)
+    monkeypatch.setattr(quizzes_router, "get_current_user", _fake_user)
+    monkeypatch.setattr(quizzes_router, "require_enrollment", AsyncMock(return_value={"course_id": COURSE_A}))
+    monkeypatch.setattr(quizzes_router, "send_certificate_email", send_certificate_email)
+    monkeypatch.setattr(quizzes_router, "send_progress_email", AsyncMock())
+
+    result = await quizzes_router.submit_quiz(
+        QUIZ_A, QuizAttemptCreate(quiz_id=QUIZ_A, answers=[0, 1]), request=object()
+    )
+
+    assert result["passed"] is True
+    inserted_doc = mock_db.certificates.insert_one.await_args.args[0]
+    assert inserted_doc["language"] == "ja"
+    assert "修了証明書" in inserted_doc["template_html"]
 
 
 @pytest.mark.asyncio

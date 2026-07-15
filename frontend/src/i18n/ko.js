@@ -235,6 +235,29 @@ export default {
       deleted: "템플릿이 삭제되었습니다.",
       generated: "기본 HTML이 생성되었습니다."
     },
+
+    certificateBackgrounds: {
+      plain: "플레인",
+      geometric: "기하학",
+      waves: "물결",
+      guilloche: "기요셰",
+      corners: "모서리 장식"
+    },
+
+    certificateSettings: {
+      title: "수료증 설정",
+      description: "수료증 ID 생성 방식과 새 수료증의 기본 디자인을 설정합니다.",
+      open: "수료증 설정",
+      idFormat: "수료증 ID 형식",
+      idFormatHint: "사용 가능한 토큰: {seq} 또는 {seq:6}(순번), {year}, {month}, {day}, {random} 또는 {random:4}, {course}. 중괄호 밖의 텍스트는 그대로 사용됩니다.",
+      preview: "다음 수료증 ID",
+      defaultBackground: "기본 배경",
+      defaultPrimaryColor: "기본 기본 색상",
+      defaultSecondaryColor: "기본 보조 색상",
+      save: "설정 저장",
+      saved: "수료증 설정이 업데이트되었습니다.",
+      cancel: "취소"
+    },
     
     // Chat
     chat: {
@@ -393,11 +416,27 @@ export default {
     adminCertificates: {
       title: "수료증",
       description: "학생이 코스의 최저 점수를 통과하면 수료증이 자동으로 발급됩니다.",
+      tabIssued: "발급됨",
+      tabTemplates: "템플릿",
+      templatesNotice: "템플릿은 수료증 발급 시 사용되는 기본 인쇄 디자인을 정의합니다. 하나를 기본값으로 설정하면 플랫폼 전체에 적용됩니다.",
       totalCertificates: "총 수료증",
-      manageAutoIssue: "코스 설정 관리",
-      autoIssueNotice: "학생이 코스의 합격 점수를 충족하면 수료증이 자동으로 발급됩니다. 코스 설정에서 코스별로 자동 발급을 켜거나 끌 수 있습니다.",
+      manageAutoIssue: "수료증 설정",
+      autoIssueNotice: "학생이 코스의 합격 점수를 충족하면 수료증이 자동으로 발급됩니다. 수료증 설정에서 수료증 ID 형식과 기본 디자인을 구성할 수 있습니다.",
       customizeCertificate: "수료증 사용자 지정",
       customizeDescription: "이 수료증의 시각적 스타일을 업데이트하세요.",
+      previewCertificate: "수료증 미리보기",
+      previewDescription: "발급하지 않고 완성된 수료증을 렌더링합니다. 실제 코스와 학생, 또는 샘플 값을 사용할 수 있습니다.",
+      preview: "미리보기",
+      previewGenerate: "미리보기 생성",
+      previewDownloadPdf: "PDF 미리보기 다운로드",
+      previewHint: "이 미리보기는 저장되지 않으며 수료증 ID 일련번호를 소비하지 않습니다.",
+      sampleCourse: "샘플 코스 (실제 코스 없음)",
+      sampleCourseTitle: "샘플 코스 제목",
+      sampleStudent: "샘플 학생 이름 사용",
+      sampleStudentName: "샘플 학생 이름",
+      selectCourse: "코스 선택",
+      selectStudent: "학생 선택",
+      scoreLabel: "점수",
       score: "점수 (0-100)",
       template: "템플릿",
       primaryColor: "기본 색상",
@@ -418,7 +457,9 @@ export default {
       noCertificatesHint: "학생이 코스의 최저 점수를 통과하면 여기에 표시됩니다.",
       customized: "수료증 스타일이 업데이트되었습니다.",
       filterByCourse: "코스로 필터",
-      allCourses: "모든 코스"
+      allCourses: "모든 코스",
+      previewCourseRequired: "코스를 선택하거나 샘플 코스 제목을 입력하세요.",
+      previewStudentRequired: "학생을 선택하거나 샘플 학생 이름을 입력하세요."
     },
 
     // Common

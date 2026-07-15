@@ -235,6 +235,29 @@ export default {
       deleted: "テンプレートを削除しました。",
       generated: "デフォルトHTMLを生成しました。"
     },
+
+    certificateBackgrounds: {
+      plain: "プレーン",
+      geometric: "幾何学模様",
+      waves: "波模様",
+      guilloche: "ギヨシェ",
+      corners: "コーナー装飾"
+    },
+
+    certificateSettings: {
+      title: "修了証設定",
+      description: "修了証IDの生成方法と、新しい修了証の既定デザインを設定します。",
+      open: "修了証設定",
+      idFormat: "修了証IDフォーマット",
+      idFormatHint: "使用可能なトークン: {seq} または {seq:6}（連番）、{year}、{month}、{day}、{random} または {random:4}、{course}。括弧の外の文字はそのまま使用されます。",
+      preview: "次の修了証ID",
+      defaultBackground: "既定の背景",
+      defaultPrimaryColor: "既定のプライマリカラー",
+      defaultSecondaryColor: "既定のセカンダリカラー",
+      save: "設定を保存",
+      saved: "修了証設定を更新しました。",
+      cancel: "キャンセル"
+    },
     
     // Chat
     chat: {
@@ -393,11 +416,27 @@ export default {
     adminCertificates: {
       title: "修了証",
       description: "受講者がコースの最低スコアに達すると、修了証が自動的に発行されます。",
+      tabIssued: "発行済み",
+      tabTemplates: "テンプレート",
+      templatesNotice: "テンプレートは修了証発行時に使用される既定の印刷デザインを定義します。1つをデフォルトに設定するとプラットフォーム全体に適用されます。",
       totalCertificates: "修了証の総数",
-      manageAutoIssue: "コース設定を管理",
-      autoIssueNotice: "受講者がコースの合格スコアに達すると、修了証が自動的に発行されます。コース設定でコースごとに自動発行のオン・オフを切り替えられます。",
+      manageAutoIssue: "修了証設定",
+      autoIssueNotice: "受講者がコースの合格スコアに達すると、修了証が自動的に発行されます。修了証設定で修了証IDのフォーマットと既定のデザインを設定できます。",
       customizeCertificate: "修了証をカスタマイズ",
       customizeDescription: "この修了証のビジュアルスタイルを更新します。",
+      previewCertificate: "修了証をプレビュー",
+      previewDescription: "発行せずに完成した修了証を表示します。実コース・受講者、またはサンプル値を使用できます。",
+      preview: "プレビュー",
+      previewGenerate: "プレビューを生成",
+      previewDownloadPdf: "PDFプレビューをダウンロード",
+      previewHint: "このプレビューは保存されず、修了証IDの連番も消費しません。",
+      sampleCourse: "サンプルコース（実コースなし）",
+      sampleCourseTitle: "サンプルコース名",
+      sampleStudent: "サンプル受講者名を使用",
+      sampleStudentName: "サンプル受講者名",
+      selectCourse: "コースを選択",
+      selectStudent: "受講者を選択",
+      scoreLabel: "スコア",
       score: "スコア (0-100)",
       template: "テンプレート",
       primaryColor: "プライマリカラー",
@@ -418,7 +457,9 @@ export default {
       noCertificatesHint: "受講者がコースの最低スコアに達すると、ここに表示されます。",
       customized: "修了証のスタイルが更新されました。",
       filterByCourse: "コースで絞り込み",
-      allCourses: "すべてのコース"
+      allCourses: "すべてのコース",
+      previewCourseRequired: "コースを選択するか、サンプルコース名を入力してください。",
+      previewStudentRequired: "受講者を選択するか、サンプル受講者名を入力してください。"
     },
 
     // Common
