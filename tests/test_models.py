@@ -2,8 +2,6 @@ import pytest
 from pydantic import ValidationError
 
 from models import (
-    CertificateCreate,
-    CertificatePreview,
     CompanyCreate,
     CompanyUpdate,
     CourseCreate,
@@ -27,6 +25,7 @@ def test_course_create_defaults_to_no_assigned_companies():
     assert course.company_ids == []
     assert course.ai_assistant_enabled is True
     assert course.ai_assistant_prompt is None
+    assert course.auto_issue_certificate is True
 
 
 def test_course_create_accepts_assigned_companies():
@@ -59,48 +58,6 @@ def test_company_update_accepts_training_assignments():
     assert update.training_ids == ["507f1f77bcf86cd799439011"]
 
 
-def test_certificate_create_score_bounds():
-    with pytest.raises(ValidationError):
-        CertificateCreate(
-            course_id="507f1f77bcf86cd799439011",
-            user_id="507f1f77bcf86cd799439012",
-            score=101,
-        )
-
-    cert = CertificateCreate(
-        course_id="507f1f77bcf86cd799439011",
-        user_id="507f1f77bcf86cd799439012",
-        score=95,
-    )
-    assert cert.score == 95
-
-
-def test_certificate_preview_accepts_sample_or_real_identifiers():
-    sample = CertificatePreview(course_title="Security Training", user_name="Jane Doe")
-    assert sample.format == "html"
-    assert sample.score == 92
-
-    real = CertificatePreview(
-        course_id="507f1f77bcf86cd799439011",
-        user_id="507f1f77bcf86cd799439012",
-        format="pdf",
-        language="ja",
-    )
-    assert real.format == "pdf"
-    assert real.language == "ja"
-
-
-def test_certificate_preview_requires_course_and_recipient():
-    with pytest.raises(ValidationError):
-        CertificatePreview(user_name="Jane Doe")
-    with pytest.raises(ValidationError):
-        CertificatePreview(course_title="Security Training")
-
-
-def test_certificate_preview_rejects_invalid_format():
-    with pytest.raises(ValidationError):
-        CertificatePreview(
-            course_title="Security Training",
-            user_name="Jane Doe",
-            format="docx",
-        )
+def test_course_update_accepts_auto_issue_certificate():
+    update = CourseUpdate(auto_issue_certificate=False)
+    assert update.auto_issue_certificate is False

@@ -8,7 +8,6 @@ from auth_utils import get_current_user, require_admin_or_manager, require_roles
 from certificate_i18n import normalize_certificate_language
 from certificate_id import (
     course_code_from,
-    generate_certificate_id,
     get_certificate_id_format,
     preview_certificate_id,
 )
@@ -21,8 +20,7 @@ from certificate_template import (
 from certificate_utils import apply_template_to_certificate, resolve_certificate_template
 from database import db
 from db_utils import parse_object_id
-from email_service import send_certificate_email
-from models import CertificateCreate, CertificateCustomize, CertificatePreview
+from models import CertificateCustomize, CertificatePreview
 
 router = APIRouter(tags=["certificates"])
 
@@ -122,87 +120,6 @@ async def list_certificates(
         )
         for cert in certs
     ]
-
-
-@router.post("/certificates")
-async def create_certificate(data: CertificateCreate, request: Request):
-    actor = await require_admin_or_manager(request)
-
-    course = await db.courses.find_one(
-        {"_id": parse_object_id(data.course_id, "course")},
-        {"_id": 1, "title": 1, "company_ids": 1, "language": 1},
-    )
-    if not course:
-        raise HTTPException(status_code=404, detail="Course not found")
-
-    target_user = await db.users.find_one(
-        {"_id": parse_object_id(data.user_id, "user")},
-        {"_id": 1, "name": 1, "email": 1, "role": 1, "company_id": 1},
-    )
-    if not target_user or target_user.get("role") != "student":
-        raise HTTPException(status_code=404, detail="Student not found")
-
-    if actor["role"] == "client_manager":
-        company_id = actor["company_id"]
-        if target_user.get("company_id") != company_id:
-            raise HTTPException(
-                status_code=403,
-                detail="Not authorized to create certificates for this student",
-            )
-        course_company_ids = course.get("company_ids", [])
-        if not course_company_ids or company_id not in course_company_ids:
-            raise HTTPException(
-                status_code=403,
-                detail="Not authorized to create certificates for this course",
-            )
-
-    existing_cert = await db.certificates.find_one({
-        "course_id": data.course_id,
-        "user_id": data.user_id,
-    })
-    if existing_cert:
-        raise HTTPException(
-            status_code=409,
-            detail="Certificate already exists for this student and course",
-        )
-
-    template = await resolve_certificate_template(db, data.template_id, course_id=data.course_id)
-
-    issued_at = datetime.now(timezone.utc).isoformat()
-    course_title = course.get("title") or "Course"
-    cert_doc = {
-        "certificate_id": await generate_certificate_id(
-            db, issued_at=issued_at, course_title=course_title
-        ),
-        "course_id": data.course_id,
-        "course_title": course_title,
-        "user_id": data.user_id,
-        "user_name": target_user.get("name"),
-        "score": data.score,
-        "issued_at": issued_at,
-    }
-    if data.language:
-        cert_doc["language"] = data.language
-    apply_template_to_certificate(
-        cert_doc,
-        template,
-        fallback_template=data.template,
-        fallback_primary_color=data.primary_color,
-        fallback_secondary_color=data.secondary_color,
-        fallback_background=data.background,
-        fallback_language=course.get("language"),
-    )
-    result = await db.certificates.insert_one(cert_doc)
-    cert_doc["_id"] = result.inserted_id
-
-    await send_certificate_email(
-        target_user["email"],
-        target_user["name"],
-        cert_doc["course_title"],
-        cert_doc["certificate_id"],
-        data.score,
-    )
-    return _serialize_certificate(cert_doc)
 
 
 @router.post("/certificates/preview")
