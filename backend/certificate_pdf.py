@@ -1,4 +1,5 @@
 import io
+import textwrap
 
 from reportlab.lib.pagesizes import landscape, letter
 from reportlab.lib.units import inch
@@ -6,9 +7,16 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.colors import HexColor
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.cidfonts import UnicodeCIDFont
+from reportlab.lib.utils import ImageReader
 
 from certificate_i18n import format_certificate_date, get_certificate_strings
-from certificate_template import compute_valid_until, is_certificate_expired
+from certificate_template import (
+    DEFAULT_ORIENTATION,
+    compute_valid_until,
+    is_certificate_expired,
+    normalize_orientation,
+)
+from upload_utils import resolve_certificate_background_path
 
 # Helvetica has no CJK glyphs, so non-Latin certificate languages fall back to
 # ReportLab's built-in (non-embedded) CID fonts, which every PDF viewer can
@@ -39,6 +47,24 @@ def _hex(color: str, fallback: str = "#002FA7") -> HexColor:
         return HexColor(color)
     except Exception:
         return HexColor(fallback)
+
+
+def _page_size(orientation: str | None) -> tuple[float, float]:
+    if normalize_orientation(orientation) == "portrait":
+        return letter
+    return landscape(letter)
+
+
+def _draw_background_image(c, width, height, background_image_url: str | None) -> bool:
+    path = resolve_certificate_background_path(background_image_url)
+    if not path:
+        return False
+    try:
+        image = ImageReader(str(path))
+        c.drawImage(image, 0, 0, width=width, height=height, preserveAspectRatio=False, mask="auto")
+        return True
+    except Exception:
+        return False
 
 
 def _draw_artwork(c, width, height, background: str, primary, secondary) -> None:
@@ -121,10 +147,29 @@ def _draw_artwork(c, width, height, background: str, primary, secondary) -> None
     c.restoreState()
 
 
+def _substitute_body_text(body_text: str, cert: dict, language: str | None) -> str:
+    issued = format_certificate_date(cert.get("issued_at"), language)
+    user_name = cert.get("user_name", "Student")
+    replacements = {
+        "{{recipient_name}}": user_name,
+        "{{user_name}}": user_name,
+        "{{course_title}}": cert.get("course_title", "Course"),
+        "{{completion_date}}": issued,
+        "{{issued_at}}": issued,
+        "{{score}}": str(cert.get("score", 0)),
+        "{{certificate_id}}": cert.get("certificate_id", ""),
+    }
+    rendered = body_text
+    for token, value in replacements.items():
+        rendered = rendered.replace(token, str(value))
+    return rendered
+
+
 def generate_certificate_pdf(cert: dict) -> bytes:
     """Render a certificate PDF from a certificate document, in the certificate's language."""
     buffer = io.BytesIO()
-    width, height = landscape(letter)
+    orientation = cert.get("orientation") or DEFAULT_ORIENTATION
+    width, height = _page_size(orientation)
     c = canvas.Canvas(buffer, pagesize=(width, height))
 
     language = cert.get("language")
@@ -134,10 +179,11 @@ def generate_certificate_pdf(cert: dict) -> bytes:
     primary = _hex(cert.get("primary_color", "#002FA7"))
     secondary = _hex(cert.get("secondary_color", "#0A0B10"))
 
-    c.setFillColor(HexColor("#FFFFFF"))
-    c.rect(0, 0, width, height, fill=1, stroke=0)
-
-    _draw_artwork(c, width, height, cert.get("background", "plain"), primary, secondary)
+    drew_image = _draw_background_image(c, width, height, cert.get("background_image_url"))
+    if not drew_image:
+        c.setFillColor(HexColor("#FFFFFF"))
+        c.rect(0, 0, width, height, fill=1, stroke=0)
+        _draw_artwork(c, width, height, cert.get("background", "plain"), primary, secondary)
 
     margin = 0.75 * inch
     c.setStrokeColor(primary)
@@ -148,38 +194,57 @@ def generate_certificate_pdf(cert: dict) -> bytes:
     c.setLineWidth(1)
     c.rect(margin + 10, margin + 10, width - 2 * margin - 20, height - 2 * margin - 20, fill=0, stroke=1)
 
-    c.setFillColor(secondary)
-    c.setFont(bold_font, 14)
-    c.drawCentredString(width / 2, height - 1.4 * inch, strings["pdf_title"])
+    body_text = cert.get("body_text")
+    if body_text:
+        c.setFillColor(secondary)
+        c.setFont(bold_font, 14)
+        c.drawCentredString(width / 2, height - 1.4 * inch, strings["pdf_title"])
 
-    c.setFillColor(primary)
-    c.setFont(bold_font, 28)
-    course_title = cert.get("course_title", "Course")
-    if len(course_title) > 48:
-        course_title = course_title[:45] + "..."
-    c.drawCentredString(width / 2, height - 2.1 * inch, course_title)
+        rendered_body = _substitute_body_text(body_text, cert, language)
+        c.setFillColor(HexColor("#0A0B10"))
+        c.setFont(regular_font, 14)
+        max_chars = 70 if normalize_orientation(orientation) == "landscape" else 52
+        lines = []
+        for paragraph in rendered_body.split("\n"):
+            wrapped = textwrap.wrap(paragraph, width=max_chars) or [""]
+            lines.extend(wrapped)
+        start_y = height / 2 + (len(lines) * 10)
+        for index, line in enumerate(lines[:18]):
+            c.drawCentredString(width / 2, start_y - index * 20, line)
+    else:
+        c.setFillColor(secondary)
+        c.setFont(bold_font, 14)
+        c.drawCentredString(width / 2, height - 1.4 * inch, strings["pdf_title"])
 
-    c.setFillColor(HexColor("#64748B"))
-    c.setFont(regular_font, 12)
-    c.drawCentredString(width / 2, height - 2.7 * inch, strings["pdf_intro"])
+        c.setFillColor(primary)
+        c.setFont(bold_font, 28)
+        course_title = cert.get("course_title", "Course")
+        if len(course_title) > 48:
+            course_title = course_title[:45] + "..."
+        c.drawCentredString(width / 2, height - 2.1 * inch, course_title)
 
-    c.setFillColor(primary)
-    c.setFont(bold_font, 22)
-    c.drawCentredString(width / 2, height - 3.3 * inch, cert.get("user_name", "Student"))
+        c.setFillColor(HexColor("#64748B"))
+        c.setFont(regular_font, 12)
+        c.drawCentredString(width / 2, height - 2.7 * inch, strings["pdf_intro"])
 
-    c.setFillColor(HexColor("#64748B"))
-    c.setFont(regular_font, 12)
-    c.drawCentredString(
-        width / 2,
-        height - 3.9 * inch,
-        strings["pdf_score_line"].format(score=cert.get("score", 0)),
-    )
+        c.setFillColor(primary)
+        c.setFont(bold_font, 22)
+        c.drawCentredString(width / 2, height - 3.3 * inch, cert.get("user_name", "Student"))
+
+        c.setFillColor(HexColor("#64748B"))
+        c.setFont(regular_font, 12)
+        c.drawCentredString(
+            width / 2,
+            height - 3.9 * inch,
+            strings["pdf_score_line"].format(score=cert.get("score", 0)),
+        )
 
     issued_at = cert.get("issued_at", "")
     issued = format_certificate_date(issued_at, language)
     valid_until = cert.get("valid_until") or compute_valid_until(issued_at)
     valid_until_display = format_certificate_date(valid_until, language)
     cert_id = cert.get("certificate_id", "")
+    c.setFillColor(HexColor("#64748B"))
     c.setFont(regular_font, 10)
     c.drawCentredString(
         width / 2,

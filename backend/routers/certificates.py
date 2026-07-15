@@ -166,7 +166,7 @@ async def create_certificate(data: CertificateCreate, request: Request):
             detail="Certificate already exists for this student and course",
         )
 
-    template = await resolve_certificate_template(db, data.template_id)
+    template = await resolve_certificate_template(db, data.template_id, course_id=data.course_id)
 
     issued_at = datetime.now(timezone.utc).isoformat()
     course_title = course.get("title") or "Course"
@@ -254,7 +254,7 @@ async def preview_certificate(data: CertificatePreview, request: Request):
                     detail="Not authorized to preview certificates for this course",
                 )
 
-    template = await resolve_certificate_template(db, data.template_id)
+    template = await resolve_certificate_template(db, data.template_id, course_id=data.course_id)
 
     issued_at = datetime.now(timezone.utc).isoformat()
     if data.certificate_id:
@@ -281,15 +281,38 @@ async def preview_certificate(data: CertificatePreview, request: Request):
     if data.language:
         cert_doc["language"] = data.language
 
-    apply_template_to_certificate(
-        cert_doc,
-        template,
-        fallback_template=data.template,
-        fallback_primary_color=data.primary_color,
-        fallback_secondary_color=data.secondary_color,
-        fallback_background=data.background,
-        fallback_language=course_language or data.language,
+    # Builder fields on the preview request override / compose without a saved template.
+    use_builder_fields = (
+        data.body_text is not None
+        or data.background_image_url is not None
+        or (data.orientation and data.orientation != "landscape")
     )
+    if use_builder_fields and not data.template_id:
+        apply_template_to_certificate(
+            cert_doc,
+            None,
+            fallback_template=data.template,
+            fallback_primary_color=data.primary_color,
+            fallback_secondary_color=data.secondary_color,
+            fallback_background=data.background,
+            fallback_orientation=data.orientation,
+            fallback_background_image_url=data.background_image_url,
+            fallback_body_text=data.body_text,
+            fallback_language=course_language or data.language,
+        )
+    else:
+        apply_template_to_certificate(
+            cert_doc,
+            template,
+            fallback_template=data.template,
+            fallback_primary_color=data.primary_color,
+            fallback_secondary_color=data.secondary_color,
+            fallback_background=data.background,
+            fallback_orientation=data.orientation,
+            fallback_background_image_url=data.background_image_url,
+            fallback_body_text=data.body_text,
+            fallback_language=course_language or data.language,
+        )
 
     if data.format == "pdf":
         pdf_bytes = generate_certificate_pdf(cert_doc)

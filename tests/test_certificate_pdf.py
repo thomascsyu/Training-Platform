@@ -17,6 +17,22 @@ def test_generate_certificate_pdf_returns_bytes():
     assert pdf[:4] == b"%PDF"
 
 
+def test_generate_certificate_pdf_portrait_and_body_text():
+    pdf = generate_certificate_pdf({
+        "course_title": "Intro to Python",
+        "user_name": "Jane Doe",
+        "score": 92,
+        "certificate_id": "ABCD1234",
+        "issued_at": "2026-06-08T12:00:00+00:00",
+        "primary_color": "#002FA7",
+        "secondary_color": "#0A0B10",
+        "orientation": "portrait",
+        "body_text": "{{recipient_name}} completed {{course_title}} on {{completion_date}}",
+    })
+    assert isinstance(pdf, bytes)
+    assert pdf[:4] == b"%PDF"
+
+
 def test_generate_certificate_pdf_renders_when_expired():
     pdf = generate_certificate_pdf({
         "course_title": "Intro to Python",

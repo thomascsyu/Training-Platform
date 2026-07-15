@@ -201,6 +201,8 @@ class CertificatePreview(BaseModel):
     Provide either a real ``course_id`` or a free-form ``course_title``, and
     either a real ``user_id`` or a free-form ``user_name``. Style fields and
     language default to the selected course / template when omitted.
+    Builder fields (orientation, background_image_url, body_text) compose a
+    live preview without requiring a saved template.
     """
 
     course_id: Optional[str] = None
@@ -213,6 +215,9 @@ class CertificatePreview(BaseModel):
     primary_color: str = "#002FA7"
     secondary_color: str = "#0A0B10"
     background: str = "plain"
+    background_image_url: Optional[str] = Field(default=None, max_length=500)
+    orientation: str = "landscape"
+    body_text: Optional[str] = Field(default=None, max_length=4000)
     language: Optional[str] = None
     format: str = "html"
     certificate_id: Optional[str] = Field(default=None, min_length=1, max_length=120)
@@ -224,6 +229,11 @@ class CertificatePreview(BaseModel):
         if key not in {"html", "pdf"}:
             raise ValueError("format must be 'html' or 'pdf'")
         return key
+
+    @field_validator("orientation")
+    @classmethod
+    def _validate_orientation(cls, value: str) -> str:
+        return _validate_orientation(value)
 
     @field_validator("background")
     @classmethod
@@ -308,6 +318,11 @@ class AITestConnectionResponse(BaseModel):
 
 
 _CERTIFICATE_BACKGROUND_KEYS = {"plain", "geometric", "waves", "guilloche", "corners"}
+_CERTIFICATE_ORIENTATIONS = {"landscape", "portrait"}
+_DEFAULT_BODY_TEXT = (
+    "This certifies that {{recipient_name}} has successfully completed "
+    "{{course_title}} on {{completion_date}}."
+)
 
 
 def _validate_background(value: Optional[str]) -> Optional[str]:
@@ -320,12 +335,25 @@ def _validate_background(value: Optional[str]) -> Optional[str]:
     return key
 
 
+def _validate_orientation(value: Optional[str]) -> Optional[str]:
+    if value is None:
+        return value
+    key = str(value).strip().lower()
+    if key not in _CERTIFICATE_ORIENTATIONS:
+        raise ValueError("orientation must be 'landscape' or 'portrait'")
+    return key
+
+
 class CertificateTemplateCreate(BaseModel):
     name: str = Field(min_length=1, max_length=120)
     html: Optional[str] = None
     primary_color: str = "#002fa7"
     secondary_color: str = "#0a0b10"
     background: str = "plain"
+    background_image_url: Optional[str] = Field(default=None, max_length=500)
+    orientation: str = "landscape"
+    body_text: Optional[str] = Field(default=None, max_length=4000)
+    course_id: Optional[str] = None
     is_default: bool = False
 
     @field_validator("primary_color", "secondary_color")
@@ -340,6 +368,21 @@ class CertificateTemplateCreate(BaseModel):
     def _check_background(cls, value: str) -> str:
         return _validate_background(value)
 
+    @field_validator("orientation")
+    @classmethod
+    def _check_orientation(cls, value: str) -> str:
+        return _validate_orientation(value)
+
+    @field_validator("body_text")
+    @classmethod
+    def _normalize_body_text(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return value
+        text = value.strip()
+        if not text:
+            raise ValueError("body_text cannot be empty")
+        return text
+
 
 class CertificateTemplateUpdate(BaseModel):
     name: Optional[str] = Field(default=None, min_length=1, max_length=120)
@@ -347,6 +390,10 @@ class CertificateTemplateUpdate(BaseModel):
     primary_color: Optional[str] = None
     secondary_color: Optional[str] = None
     background: Optional[str] = None
+    background_image_url: Optional[str] = Field(default=None, max_length=500)
+    orientation: Optional[str] = None
+    body_text: Optional[str] = Field(default=None, max_length=4000)
+    course_id: Optional[str] = None
     is_default: Optional[bool] = None
 
     @field_validator("primary_color", "secondary_color")
@@ -363,11 +410,29 @@ class CertificateTemplateUpdate(BaseModel):
     def _check_background(cls, value: Optional[str]) -> Optional[str]:
         return _validate_background(value)
 
+    @field_validator("orientation")
+    @classmethod
+    def _check_orientation(cls, value: Optional[str]) -> Optional[str]:
+        return _validate_orientation(value)
+
+    @field_validator("body_text")
+    @classmethod
+    def _normalize_body_text(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return value
+        text = value.strip()
+        if not text:
+            raise ValueError("body_text cannot be empty")
+        return text
+
 
 class CertificateTemplateRender(BaseModel):
     primary_color: str = "#002fa7"
     secondary_color: str = "#0a0b10"
     background: str = "plain"
+    background_image_url: Optional[str] = Field(default=None, max_length=500)
+    orientation: str = "landscape"
+    body_text: Optional[str] = Field(default=None, max_length=4000)
 
     @field_validator("primary_color", "secondary_color")
     @classmethod
@@ -380,6 +445,11 @@ class CertificateTemplateRender(BaseModel):
     @classmethod
     def _check_background(cls, value: str) -> str:
         return _validate_background(value)
+
+    @field_validator("orientation")
+    @classmethod
+    def _check_orientation(cls, value: str) -> str:
+        return _validate_orientation(value)
 
 
 class CertificateSettingsUpdate(BaseModel):
