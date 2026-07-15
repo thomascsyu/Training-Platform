@@ -21,12 +21,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Edit, Trash2, Loader2, FileCheck, Palette } from "lucide-react";
+import { Plus, Edit, Trash2, Loader2, FileCheck, Palette, Wand2 } from "lucide-react";
 import { API, formatError } from "@/lib/api";
 import { CERTIFICATE_BACKGROUNDS, backgroundLabel } from "@/lib/certificateBackgrounds";
 import { useLanguage } from "@/contexts/LanguageContext";
 import EmptyState from "@/components/enhanced/EmptyState";
 import { TableSkeleton } from "@/components/enhanced/Skeletons";
+import { useNavigate } from "react-router-dom";
 
 const emptyTemplate = () => ({
   id: null,
@@ -40,6 +41,7 @@ const emptyTemplate = () => ({
 
 export const CertificateTemplatesPanel = () => {
   const { t } = useLanguage();
+  const navigate = useNavigate();
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -139,7 +141,15 @@ export const CertificateTemplatesPanel = () => {
 
   return (
     <div data-testid="admin-certificate-templates-page">
-      <div className="flex justify-end mb-4">
+      <div className="flex justify-end gap-2 mb-4">
+        <Button
+          variant="outline"
+          className="rounded-sm"
+          onClick={() => navigate("/admin/certificate-builder")}
+          data-testid="create-with-builder-btn"
+        >
+          <Wand2 className="w-4 h-4 mr-2" /> {t("certificateTemplates.createWithBuilder")}
+        </Button>
         <Button
           onClick={openCreate}
           className="btn-primary"
@@ -217,6 +227,18 @@ export const CertificateTemplatesPanel = () => {
                     </td>
                     <td className="p-4">
                       <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="rounded-sm"
+                          onClick={() =>
+                            navigate(`/admin/certificate-builder?template_id=${template.id}`)
+                          }
+                          data-testid={`builder-edit-template-btn-${template.id}`}
+                          title={t("certificateTemplates.createWithBuilder")}
+                        >
+                          <Wand2 className="w-4 h-4" />
+                        </Button>
                         <Button
                           variant="outline"
                           size="sm"

@@ -94,6 +94,15 @@ export const uploadThumbnail = async (file) => {
   return data;
 };
 
+export const uploadCertificateBackground = async (file) => {
+  const formData = new FormData();
+  formData.append("file", file);
+  const { data } = await API.post("/uploads/certificate-background", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return data;
+};
+
 export const requestPasswordReset = async (email) => {
   const { data } = await API.post("/auth/forgot-password", { email });
   return data;

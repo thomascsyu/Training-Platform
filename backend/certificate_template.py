@@ -15,6 +15,7 @@ _TEXT_PRIMARY = "#0A0B10"
 _BACKGROUND = "#F4F5F7"
 
 _COLOR_RE = re.compile(r"^#[0-9A-Fa-f]{6}$")
+_PLACEHOLDER_RE = re.compile(r"\{\{[a-z_]+\}\}")
 
 # Selectable background artworks for certificates. The first entry ("plain") is
 # the default and keeps the original clean look; the remaining four add a
@@ -28,6 +29,12 @@ CERTIFICATE_BACKGROUNDS = [
 ]
 _BACKGROUND_KEYS = {bg["key"] for bg in CERTIFICATE_BACKGROUNDS}
 DEFAULT_BACKGROUND = "plain"
+DEFAULT_ORIENTATION = "landscape"
+_ORIENTATIONS = {"landscape", "portrait"}
+DEFAULT_BODY_TEXT = (
+    "This certifies that {{recipient_name}} has successfully completed "
+    "{{course_title}} on {{completion_date}}."
+)
 
 
 def normalize_background(value: str | None) -> str:
@@ -35,6 +42,20 @@ def normalize_background(value: str | None) -> str:
     if isinstance(value, str) and value.strip() in _BACKGROUND_KEYS:
         return value.strip()
     return DEFAULT_BACKGROUND
+
+
+def normalize_orientation(value: str | None) -> str:
+    """Return a valid orientation, falling back to landscape."""
+    if isinstance(value, str) and value.strip().lower() in _ORIENTATIONS:
+        return value.strip().lower()
+    return DEFAULT_ORIENTATION
+
+
+def page_size_css(orientation: str | None) -> tuple[str, str, str]:
+    """Return (@page size, width, height) CSS values for the orientation."""
+    if normalize_orientation(orientation) == "portrait":
+        return "8.5in 11in", "8.5in", "11in"
+    return "11in 8.5in landscape", "11in", "8.5in"
 
 
 def _render_artwork(background: str, primary: str, secondary: str) -> str:
@@ -47,28 +68,39 @@ def _render_artwork(background: str, primary: str, secondary: str) -> str:
     return f'<div class="artwork" aria-hidden="true">{svg}</div>'
 
 
+def _background_image_layer(background_image_url: str | None) -> str:
+    """Return an absolute-positioned background image layer when a URL is set."""
+    if not background_image_url or not isinstance(background_image_url, str):
+        return ""
+    url = background_image_url.strip()
+    if not url.startswith("/api/uploads/certificate-backgrounds/"):
+        return ""
+    safe_url = html.escape(url, quote=True)
+    return (
+        f'<div class="bg-image" aria-hidden="true" '
+        f'style="background-image:url(\'{safe_url}\')"></div>'
+    )
+
+
+def _escape_body_text_preserving_placeholders(text: str) -> str:
+    """Escape body text for HTML while leaving {{placeholders}} intact."""
+    placeholders: list[str] = []
+
+    def _stash(match: re.Match) -> str:
+        placeholders.append(match.group(0))
+        return f"__PH_{len(placeholders) - 1}__"
+
+    stashed = _PLACEHOLDER_RE.sub(_stash, text)
+    escaped = html.escape(stashed).replace("\n", "<br>\n")
+    for index, token in enumerate(placeholders):
+        escaped = escaped.replace(f"__PH_{index}__", token)
+    return escaped
+
+
 def _validate_color(value: str, fallback: str) -> str:
     if isinstance(value, str) and _COLOR_RE.match(value.strip()):
         return value.strip().lower()
     return fallback.lower()
-
-
-CERTIFICATE_BACKGROUNDS = ("classic", "modern", "elegant", "minimal", "bold")
-DEFAULT_BACKGROUND = "classic"
-
-CERTIFICATE_BACKGROUND_LABELS = {
-    "classic": "Classic Frame",
-    "modern": "Modern Corners",
-    "elegant": "Elegant Flourish",
-    "minimal": "Minimal",
-    "bold": "Bold Ribbon",
-}
-
-
-def _validate_background(value: str | None) -> str:
-    if isinstance(value, str) and value in CERTIFICATE_BACKGROUNDS:
-        return value
-    return DEFAULT_BACKGROUND
 
 
 def _safe(value: str | None, default: str = "") -> str:
@@ -120,177 +152,150 @@ def is_certificate_expired(valid_until: str | None) -> bool:
     return now > expiry
 
 
-def _background_layer(style: str) -> tuple[str, str]:
-    """Return (css, html) for the decorative frame/background layer of a style."""
-    if style == "modern":
-        css = """
-    .bg-corner {
-      position: absolute;
-      width: 0;
-      height: 0;
-    }
-    .bg-corner-tl {
-      top: 0;
-      left: 0;
-      border-top: 140px solid __SECONDARY_COLOR__;
-      border-right: 140px solid transparent;
-      opacity: 0.08;
-    }
-    .bg-corner-br {
-      bottom: 0;
-      right: 0;
-      border-bottom: 140px solid __PRIMARY_COLOR__;
-      border-left: 140px solid transparent;
-      opacity: 0.08;
-    }
-    .bg-thin-border {
-      position: absolute;
-      top: 0.4in;
-      left: 0.4in;
-      right: 0.4in;
-      bottom: 0.4in;
-      border: 1px solid __PRIMARY_COLOR__;
-    }
-"""
-        markup = (
-            '<div class="bg-corner bg-corner-tl"></div>'
-            '<div class="bg-corner bg-corner-br"></div>'
-            '<div class="bg-thin-border"></div>'
-        )
-        return css, markup
-
-    if style == "elegant":
-        css = """
-    .frame-outer {
-      position: absolute;
-      top: 0.5in;
-      left: 0.5in;
-      right: 0.5in;
-      bottom: 0.5in;
-      border: 2px solid __PRIMARY_COLOR__;
-    }
-    .frame-inner {
-      position: absolute;
-      top: 0.62in;
-      left: 0.62in;
-      right: 0.62in;
-      bottom: 0.62in;
-      border: 1px dashed __SECONDARY_COLOR__;
-    }
-    .bg-mark {
-      position: absolute;
-      width: 10px;
-      height: 10px;
-      background: __PRIMARY_COLOR__;
-      transform: rotate(45deg);
-    }
-    .bg-mark-tl { top: 0.45in; left: 0.45in; }
-    .bg-mark-tr { top: 0.45in; right: 0.45in; }
-    .bg-mark-bl { bottom: 0.45in; left: 0.45in; }
-    .bg-mark-br { bottom: 0.45in; right: 0.45in; }
-"""
-        markup = (
-            '<div class="frame-outer"></div><div class="frame-inner"></div>'
-            '<div class="bg-mark bg-mark-tl"></div><div class="bg-mark bg-mark-tr"></div>'
-            '<div class="bg-mark bg-mark-bl"></div><div class="bg-mark bg-mark-br"></div>'
-        )
-        return css, markup
-
-    if style == "minimal":
-        css = """
-    .bg-minimal-line {
-      position: absolute;
-      left: 1.1in;
-      right: 1.1in;
-      bottom: 0.95in;
-      height: 2px;
-      background: __PRIMARY_COLOR__;
-    }
-    .bg-minimal-mark {
-      position: absolute;
-      top: 0.5in;
-      left: 0.5in;
-      width: 28px;
-      height: 6px;
-      background: __SECONDARY_COLOR__;
-    }
-"""
-        markup = '<div class="bg-minimal-line"></div><div class="bg-minimal-mark"></div>'
-        return css, markup
-
-    if style == "bold":
-        css = """
-    .frame-outer {
-      position: absolute;
-      top: 0.35in;
-      left: 0.35in;
-      right: 0.35in;
-      bottom: 0.35in;
-      border: 10px solid __PRIMARY_COLOR__;
-    }
-    .bg-ribbon {
-      position: absolute;
-      top: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 2.6in;
-      height: 0.5in;
-      background: __SECONDARY_COLOR__;
-    }
-"""
-        markup = '<div class="frame-outer"></div><div class="bg-ribbon"></div>'
-        return css, markup
-
-    # classic (default)
-    css = """
-    .accent-bar {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 14px;
-      background: linear-gradient(90deg, __PRIMARY_COLOR__, __SECONDARY_COLOR__);
-    }
-    .frame-outer {
-      position: absolute;
-      top: 0.5in;
-      left: 0.5in;
-      right: 0.5in;
-      bottom: 0.5in;
-      border: 4px solid __PRIMARY_COLOR__;
-    }
-    .frame-inner {
-      position: absolute;
-      top: 0.65in;
-      left: 0.65in;
-      right: 0.65in;
-      bottom: 0.65in;
-      border: 1px solid __SECONDARY_COLOR__;
-    }
-"""
-    markup = '<div class="accent-bar"></div><div class="frame-outer"></div><div class="frame-inner"></div>'
-    return css, markup
-
-
-def _base_certificate_html(primary: str, secondary: str, background: str = DEFAULT_BACKGROUND) -> str:
-    style = _validate_background(background)
-    bg_css, bg_markup = _background_layer(style)
-    html_out = _CERTIFICATE_HTML.replace("__BACKGROUND_CSS__", bg_css).replace(
-        "__BACKGROUND_MARKUP__", bg_markup
+def _base_certificate_html(
+    primary: str,
+    secondary: str,
+    background: str = DEFAULT_BACKGROUND,
+    language: str | None = None,
+    orientation: str = DEFAULT_ORIENTATION,
+    background_image_url: str | None = None,
+) -> str:
+    # Insert the artwork (with real colors already inlined) before running the
+    # placeholder colour substitution so the artwork colours are untouched.
+    artwork = _render_artwork(background, primary, secondary)
+    bg_image = _background_image_layer(background_image_url)
+    page_size, width, height = page_size_css(orientation)
+    strings = get_certificate_strings(language)
+    score_prefix = strings["score_line"].split("{score}")[0]
+    return (
+        _CERTIFICATE_HTML.replace("__ARTWORK__", artwork)
+        .replace("__BG_IMAGE__", bg_image)
+        .replace("__PAGE_SIZE__", page_size)
+        .replace("__CERT_WIDTH__", width)
+        .replace("__CERT_HEIGHT__", height)
+        .replace("__PRIMARY_COLOR__", primary)
+        .replace("__SECONDARY_COLOR__", secondary)
+        .replace("__HTML_LANG__", strings["html_lang"])
+        .replace("__OVERLINE__", strings["overline"])
+        .replace("__CERT_TITLE__", strings["title"])
+        .replace("__INTRO__", strings["intro"])
+        .replace("__COMPLETED_TEXT__", strings["completed"])
+        .replace("__SCORE_PREFIX__", score_prefix)
+        .replace("__CERT_ID_LABEL__", strings["cert_id_label"])
+        .replace("__ISSUED_LABEL__", strings["issued_label"])
+        .replace("__VALID_UNTIL_LABEL__", strings["valid_until_label"])
+        .replace("__SIGNATURE_LABEL__", strings["signature_label"])
     )
-    return html_out.replace("__PRIMARY_COLOR__", primary).replace("__SECONDARY_COLOR__", secondary)
+
+
+def compose_builder_certificate_html(
+    *,
+    primary_color: str = _PRIMARY_DEFAULT,
+    secondary_color: str = _SECONDARY_DEFAULT,
+    background: str = DEFAULT_BACKGROUND,
+    orientation: str = DEFAULT_ORIENTATION,
+    background_image_url: str | None = None,
+    body_text: str | None = None,
+    language: str | None = None,
+) -> str:
+    """Compose certificate HTML from Certificate Builder fields.
+
+    When ``body_text`` is provided, a simplified centered body layout is used.
+    Otherwise the classic full certificate chrome is produced (with orientation
+    and optional custom background image applied).
+    """
+    primary = _validate_color(primary_color, _PRIMARY_DEFAULT)
+    secondary = _validate_color(secondary_color, _SECONDARY_DEFAULT)
+    orientation = normalize_orientation(orientation)
+    background = normalize_background(background)
+    text = (body_text or "").strip() or DEFAULT_BODY_TEXT
+
+    if body_text is not None:
+        return _builder_body_html(
+            primary=primary,
+            secondary=secondary,
+            background=background,
+            orientation=orientation,
+            background_image_url=background_image_url,
+            body_text=text,
+            language=language,
+        )
+
+    return (
+        _base_certificate_html(
+            primary,
+            secondary,
+            background,
+            language,
+            orientation,
+            background_image_url,
+        )
+        .replace("__USER_NAME__", "{{user_name}}")
+        .replace("__COURSE_TITLE__", "{{course_title}}")
+        .replace("__SCORE__", "{{score}}")
+        .replace("__CERTIFICATE_ID__", "{{certificate_id}}")
+        .replace("__ISSUED_AT__", "{{issued_at}}")
+        .replace("__VALID_UNTIL__", "{{valid_until}}")
+    )
+
+
+def _builder_body_html(
+    *,
+    primary: str,
+    secondary: str,
+    background: str,
+    orientation: str,
+    background_image_url: str | None,
+    body_text: str,
+    language: str | None,
+) -> str:
+    artwork = _render_artwork(background, primary, secondary)
+    bg_image = _background_image_layer(background_image_url)
+    page_size, width, height = page_size_css(orientation)
+    strings = get_certificate_strings(language)
+    safe_body = _escape_body_text_preserving_placeholders(body_text)
+    return (
+        _BUILDER_CERTIFICATE_HTML.replace("__ARTWORK__", artwork)
+        .replace("__BG_IMAGE__", bg_image)
+        .replace("__PAGE_SIZE__", page_size)
+        .replace("__CERT_WIDTH__", width)
+        .replace("__CERT_HEIGHT__", height)
+        .replace("__PRIMARY_COLOR__", primary)
+        .replace("__SECONDARY_COLOR__", secondary)
+        .replace("__HTML_LANG__", strings["html_lang"])
+        .replace("__OVERLINE__", strings["overline"])
+        .replace("__CERT_TITLE__", strings["title"])
+        .replace("__BODY_TEXT__", safe_body)
+        .replace("__CERT_ID_LABEL__", strings["cert_id_label"])
+        .replace("__ISSUED_LABEL__", strings["issued_label"])
+        .replace("__VALID_UNTIL_LABEL__", strings["valid_until_label"])
+        .replace("__SIGNATURE_LABEL__", strings["signature_label"])
+        .replace("__CERTIFICATE_ID__", "{{certificate_id}}")
+        .replace("__ISSUED_AT__", "{{issued_at}}")
+        .replace("__VALID_UNTIL__", "{{valid_until}}")
+    )
 
 
 def create_certification_template_source(
     primary_color: str = _PRIMARY_DEFAULT,
     secondary_color: str = _SECONDARY_DEFAULT,
     background: str = DEFAULT_BACKGROUND,
+    language: str | None = None,
+    orientation: str = DEFAULT_ORIENTATION,
+    background_image_url: str | None = None,
 ) -> str:
     """Return reusable certificate template HTML with user-data placeholders."""
     primary = _validate_color(primary_color, _PRIMARY_DEFAULT)
     secondary = _validate_color(secondary_color, _SECONDARY_DEFAULT)
     return (
-        _base_certificate_html(primary, secondary, background)
+        _base_certificate_html(
+            primary,
+            secondary,
+            background,
+            language,
+            orientation,
+            background_image_url,
+        )
         .replace("__USER_NAME__", "{{user_name}}")
         .replace("__COURSE_TITLE__", "{{course_title}}")
         .replace("__SCORE__", "{{score}}")
@@ -305,12 +310,16 @@ def render_certification_template(template_html: str, cert: dict) -> str:
     language = cert.get("language")
     valid_until = cert.get("valid_until") or compute_valid_until(cert.get("issued_at"))
     expired = is_certificate_expired(valid_until)
+    user_name = _safe(cert.get("user_name"), "Student")
+    issued_display = format_certificate_date(cert.get("issued_at"), language)
     values = {
-        "user_name": _safe(cert.get("user_name"), "Student"),
+        "user_name": user_name,
+        "recipient_name": user_name,
         "course_title": _safe(cert.get("course_title", cert.get("course", "Course"))),
         "score": str(_format_score(cert.get("score"))),
         "certificate_id": _safe(cert.get("certificate_id"), "—"),
-        "issued_at": format_certificate_date(cert.get("issued_at"), language),
+        "issued_at": issued_display,
+        "completion_date": issued_display,
         "valid_until": format_certificate_date(valid_until, language),
     }
     replacements = {
@@ -322,10 +331,12 @@ def render_certification_template(template_html: str, cert: dict) -> str:
         "__VALID_UNTIL__": values["valid_until"],
         "__EXPIRED_BADGE__": _expired_badge_html(language) if expired else "",
         "{{user_name}}": values["user_name"],
+        "{{recipient_name}}": values["recipient_name"],
         "{{course_title}}": values["course_title"],
         "{{score}}": values["score"],
         "{{certificate_id}}": values["certificate_id"],
         "{{issued_at}}": values["issued_at"],
+        "{{completion_date}}": values["completion_date"],
         "{{valid_until}}": values["valid_until"],
     }
     rendered = template_html
@@ -346,9 +357,30 @@ def create_certification_template(cert: dict) -> str:
     language = normalize_certificate_language(cert.get("language"))
     primary = _validate_color(cert.get("primary_color"), _PRIMARY_DEFAULT)
     secondary = _validate_color(cert.get("secondary_color"), _SECONDARY_DEFAULT)
-    background = _validate_background(cert.get("background"))
+    background = normalize_background(cert.get("background"))
+    orientation = normalize_orientation(cert.get("orientation"))
+    background_image_url = cert.get("background_image_url")
+    body_text = cert.get("body_text")
+    if body_text:
+        source = compose_builder_certificate_html(
+            primary_color=primary,
+            secondary_color=secondary,
+            background=background,
+            orientation=orientation,
+            background_image_url=background_image_url,
+            body_text=body_text,
+            language=language,
+        )
+        return render_certification_template(source, cert)
     return render_certification_template(
-        _base_certificate_html(primary, secondary, background),
+        _base_certificate_html(
+            primary,
+            secondary,
+            background,
+            language,
+            orientation,
+            background_image_url,
+        ),
         cert,
     )
 
@@ -362,7 +394,7 @@ _CERTIFICATE_HTML = """<!DOCTYPE html>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
   <style>
     @page {
-      size: 11in 8.5in landscape;
+      size: __PAGE_SIZE__;
       margin: 0;
     }
     * {
@@ -382,14 +414,60 @@ _CERTIFICATE_HTML = """<!DOCTYPE html>
       print-color-adjust: exact;
     }
     .certificate {
-      width: 11in;
-      height: 8.5in;
+      width: __CERT_WIDTH__;
+      height: __CERT_HEIGHT__;
       background: #FFFFFF;
       position: relative;
       overflow: hidden;
       box-shadow: 0 20px 60px rgba(10, 11, 16, 0.12);
     }
-    __BACKGROUND_CSS__
+    .bg-image {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      pointer-events: none;
+    }
+    .artwork {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+    }
+    .artwork svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    .accent-bar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 14px;
+      background: linear-gradient(90deg, __PRIMARY_COLOR__, __SECONDARY_COLOR__);
+      z-index: 1;
+    }
+    .frame-outer {
+      position: absolute;
+      top: 0.5in;
+      left: 0.5in;
+      right: 0.5in;
+      bottom: 0.5in;
+      border: 4px solid __PRIMARY_COLOR__;
+      z-index: 1;
+    }
+    .frame-inner {
+      position: absolute;
+      top: 0.65in;
+      left: 0.65in;
+      right: 0.65in;
+      bottom: 0.65in;
+      border: 1px solid __SECONDARY_COLOR__;
+      z-index: 1;
+    }
     .content {
       position: absolute;
       top: 0.85in;
@@ -402,6 +480,7 @@ _CERTIFICATE_HTML = """<!DOCTYPE html>
       justify-content: center;
       align-items: center;
       padding: 0 0.5in;
+      z-index: 2;
     }
     .badge {
       width: 84px;
@@ -466,6 +545,7 @@ _CERTIFICATE_HTML = """<!DOCTYPE html>
       align-items: flex-end;
       font-size: 13px;
       color: __TEXT_MUTED__;
+      z-index: 2;
     }
     .signature {
       text-align: center;
@@ -510,7 +590,11 @@ _CERTIFICATE_HTML = """<!DOCTYPE html>
 </head>
 <body>
   <div class="certificate">
-    __BACKGROUND_MARKUP__
+    __BG_IMAGE__
+    __ARTWORK__
+    <div class="accent-bar"></div>
+    <div class="frame-outer"></div>
+    <div class="frame-inner"></div>
     <div class="content">
       <svg class="badge" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <circle cx="12" cy="8" r="6"></circle>
@@ -523,6 +607,180 @@ _CERTIFICATE_HTML = """<!DOCTYPE html>
       <div class="presented">__COMPLETED_TEXT__</div>
       <div class="course">__COURSE_TITLE__</div>
       <div class="score">__SCORE_PREFIX__<strong>__SCORE__%</strong></div>
+    </div>
+    <div class="footer">
+      <div class="signature">
+        <div class="signature-line"></div>
+        <div class="signature-label">__SIGNATURE_LABEL__</div>
+      </div>
+      <div class="meta">
+        <div>__CERT_ID_LABEL__: <strong>__CERTIFICATE_ID__</strong></div>
+        <div>__ISSUED_LABEL__: <strong>__ISSUED_AT__</strong></div>
+        <div>__VALID_UNTIL_LABEL__: <strong>__VALID_UNTIL__</strong></div>
+      </div>
+    </div>
+    __EXPIRED_BADGE__
+  </div>
+</body>
+</html>
+""".replace("__BACKGROUND__", _BACKGROUND).replace("__TEXT_PRIMARY__", _TEXT_PRIMARY).replace("__TEXT_MUTED__", _TEXT_MUTED)
+
+_BUILDER_CERTIFICATE_HTML = """<!DOCTYPE html>
+<html lang="__HTML_LANG__">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>__OVERLINE__</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+  <style>
+    @page {
+      size: __PAGE_SIZE__;
+      margin: 0;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+      background: __BACKGROUND__;
+      color: __TEXT_PRIMARY__;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .certificate {
+      width: __CERT_WIDTH__;
+      height: __CERT_HEIGHT__;
+      background: #FFFFFF;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(10, 11, 16, 0.12);
+    }
+    .bg-image {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      pointer-events: none;
+    }
+    .artwork {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+    }
+    .artwork svg { width: 100%; height: 100%; display: block; }
+    .accent-bar {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 14px;
+      background: linear-gradient(90deg, __PRIMARY_COLOR__, __SECONDARY_COLOR__);
+      z-index: 1;
+    }
+    .frame-outer {
+      position: absolute;
+      top: 0.5in; left: 0.5in; right: 0.5in; bottom: 0.5in;
+      border: 4px solid __PRIMARY_COLOR__;
+      z-index: 1;
+    }
+    .frame-inner {
+      position: absolute;
+      top: 0.65in; left: 0.65in; right: 0.65in; bottom: 0.65in;
+      border: 1px solid __SECONDARY_COLOR__;
+      z-index: 1;
+    }
+    .content {
+      position: absolute;
+      top: 0.85in; left: 0.85in; right: 0.85in; bottom: 1.6in;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 0 0.5in;
+      z-index: 2;
+    }
+    .overline {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: __TEXT_MUTED__;
+      margin-bottom: 16px;
+    }
+    h1 {
+      font-family: "Playfair Display", Georgia, serif;
+      font-size: 42px;
+      font-weight: 700;
+      color: __SECONDARY_COLOR__;
+      margin: 0 0 28px;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+    }
+    .body-text {
+      font-size: 20px;
+      line-height: 1.55;
+      color: __TEXT_PRIMARY__;
+      max-width: 8in;
+    }
+    .footer {
+      position: absolute;
+      left: 1.1in; right: 1.1in; bottom: 1.1in;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      font-size: 13px;
+      color: __TEXT_MUTED__;
+      z-index: 2;
+    }
+    .signature { text-align: center; }
+    .signature-line {
+      width: 2.2in;
+      border-top: 1px solid __SECONDARY_COLOR__;
+      margin: 0 auto 6px;
+    }
+    .signature-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: __TEXT_PRIMARY__;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    .meta { text-align: right; line-height: 1.6; }
+    .meta strong { color: __TEXT_PRIMARY__; font-weight: 600; }
+    .expired-stamp {
+      position: absolute;
+      top: 55%; left: 50%;
+      transform: translate(-50%, -50%) rotate(-18deg);
+      font-family: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+      font-size: 64px;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      color: #DC2626;
+      border: 6px solid #DC2626;
+      padding: 8px 32px;
+      opacity: 0.35;
+      pointer-events: none;
+      z-index: 10;
+    }
+  </style>
+</head>
+<body>
+  <div class="certificate">
+    __BG_IMAGE__
+    __ARTWORK__
+    <div class="accent-bar"></div>
+    <div class="frame-outer"></div>
+    <div class="frame-inner"></div>
+    <div class="content">
+      <div class="overline">__OVERLINE__</div>
+      <h1>__CERT_TITLE__</h1>
+      <div class="body-text">__BODY_TEXT__</div>
     </div>
     <div class="footer">
       <div class="signature">

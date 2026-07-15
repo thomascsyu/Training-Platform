@@ -157,7 +157,7 @@ async def submit_quiz(quiz_id: str, data: QuizAttemptCreate, request: Request):
                         db, issued_at=issued_at, course_title=course_title
                     ),
                 }
-                template = await resolve_certificate_template(db)
+                template = await resolve_certificate_template(db, course_id=quiz["course_id"])
                 apply_template_to_certificate(
                     cert_doc,
                     template,
