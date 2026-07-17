@@ -1,6 +1,9 @@
+import re
 from datetime import datetime, timezone
+from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Request
+from pydantic import BaseModel, Field, field_validator
 
 from auth_utils import require_roles
 from certificate_id import (
@@ -9,9 +12,41 @@ from certificate_id import (
     preview_certificate_id,
     validate_certificate_id_format,
 )
-from certificate_template import CERTIFICATE_BACKGROUNDS, DEFAULT_BACKGROUND, normalize_background
+from certificate_template import CERTIFICATE_BACKGROUNDS, normalize_background
 from database import db
-from models import CertificateSettingsUpdate
+
+try:
+    from models import CertificateSettingsUpdate
+except ImportError:
+    # Older images may ship this router before models.py exports the class.
+    # Keep a local definition so the API still binds :8080 (login works).
+    _BACKGROUND_KEYS = {"plain", "geometric", "waves", "guilloche", "corners"}
+
+    class CertificateSettingsUpdate(BaseModel):
+        id_format: Optional[str] = Field(default=None, min_length=1, max_length=120)
+        default_background: Optional[str] = None
+        default_primary_color: Optional[str] = None
+        default_secondary_color: Optional[str] = None
+
+        @field_validator("default_primary_color", "default_secondary_color")
+        @classmethod
+        def _validate_hex(cls, value: Optional[str]) -> Optional[str]:
+            if value is None:
+                return value
+            if not re.match(r"^#[0-9A-Fa-f]{6}$", value):
+                raise ValueError("Color must be a valid 6-digit hex code")
+            return value.lower()
+
+        @field_validator("default_background")
+        @classmethod
+        def _check_background(cls, value: Optional[str]) -> Optional[str]:
+            if value is None:
+                return value
+            key = str(value).strip()
+            if key not in _BACKGROUND_KEYS:
+                allowed = ", ".join(sorted(_BACKGROUND_KEYS))
+                raise ValueError(f"Background must be one of: {allowed}")
+            return key
 
 router = APIRouter(tags=["certificate_settings"])
 
