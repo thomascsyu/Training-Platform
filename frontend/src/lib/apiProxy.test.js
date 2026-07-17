@@ -78,6 +78,7 @@ describe("api proxy helpers", () => {
     ).toEqual([
       "http://training-platform:8080",
       "http://training-platform.zeabur.internal:8080",
+      "https://api.example.zeabur.app",
     ]);
   });
 
@@ -88,6 +89,30 @@ describe("api proxy helpers", () => {
     });
     expect(candidates[0]).toBe("http://training-platform.zeabur.internal:8080");
     expect(candidates).toContain("http://backend.zeabur.internal:8080");
+  });
+
+  it("auto-discovers Zeabur *_HOST siblings and skips databases", () => {
+    const candidates = resolveBackendProxyCandidates({
+      CONTAINER_HOSTNAME: "frontend.zeabur.internal",
+      SERVICE_6A492B_HOST: "service-6a492b065b59c97aa607005d.zeabur.internal",
+      MONGO_HOST: "mongo.zeabur.internal",
+      BACKEND_PROXY_PORT: "8080",
+    });
+    expect(candidates).toContain(
+      "http://service-6a492b065b59c97aa607005d.zeabur.internal:8080"
+    );
+    expect(candidates).toContain("http://service-6a492b065b59c97aa607005d:8080");
+    expect(candidates.join(" ")).not.toContain("mongo.zeabur.internal");
+  });
+
+  it("appends public API URL as last-resort candidate", () => {
+    const candidates = resolveBackendProxyCandidates({
+      BACKEND_PROXY_URL: "http://training-platform.zeabur.internal:8080",
+      TRAINING_PLATFORM_URL: "https://api.example.zeabur.app",
+    });
+    expect(candidates[candidates.length - 1]).toBe(
+      "https://api.example.zeabur.app"
+    );
   });
 
   it("defaults to localhost outside Zeabur when unset", () => {

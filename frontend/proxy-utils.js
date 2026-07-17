@@ -89,19 +89,52 @@ const expandHostnameVariants = (rawUrl) => {
   return [...new Set(variants)];
 };
 
+const DEFAULT_PRIVATE_PORT = "8080";
+
+const resolveProxyPort = (env = process.env) => {
+  for (const key of [
+    "BACKEND_PROXY_PORT",
+    "TRAINING_PLATFORM_PORT",
+    "BACKEND_PORT",
+    "API_PORT",
+    "WEB_PORT",
+  ]) {
+    const raw = (env[key] || "").trim();
+    if (!raw) continue;
+    const port = Number.parseInt(raw, 10);
+    if (Number.isInteger(port) && port > 0 && port < 65536) {
+      return String(port);
+    }
+  }
+  return DEFAULT_PRIVATE_PORT;
+};
+
+const isLikelyDatabaseHostKey = (key = "") =>
+  /^(MONGO|MONGODB|POSTGRES|MYSQL|REDIS|MARIA|DB)_/i.test(key);
+
 /**
  * Build ordered backend proxy candidates from environment.
  *
  * Prefer an explicit BACKEND_PROXY_URL. Expand short hostnames to
  * *.zeabur.internal (and back) so either Zeabur or docker-compose style
- * targets work. Avoid using a browser-facing REACT_APP_BACKEND_URL as the
- * container-side proxy target.
+ * targets work. Private hosts are tried first; browser-facing public API
+ * URLs are kept as a last resort so login can still work when private
+ * networking is misconfigured but the API public domain is healthy.
  */
 const resolveBackendProxyCandidates = (env = process.env) => {
   const candidates = [];
-  const push = (value) => {
+  const publicCandidates = [];
+  const port = resolveProxyPort(env);
+
+  const push = (value, { allowPublic = false } = {}) => {
     const normalized = (value || "").trim().replace(/\/$/, "");
     if (!normalized) return;
+    if (isBrowserFacingBackendUrl(normalized)) {
+      if (allowPublic && !publicCandidates.includes(normalized)) {
+        publicCandidates.push(normalized);
+      }
+      return;
+    }
     for (const variant of expandHostnameVariants(normalized)) {
       if (!candidates.includes(variant)) candidates.push(variant);
     }
@@ -115,26 +148,52 @@ const resolveBackendProxyCandidates = (env = process.env) => {
     "TRAINING_PLATFORM_BELING_HOST",
     "API_HOST",
   ]) {
-    push(toHttpOrigin(env[key], env.BACKEND_PROXY_PORT || "8080"));
+    push(toHttpOrigin(env[key], port));
+  }
+
+  // Auto-discover Zeabur-injected sibling service hosts (NAME_HOST).
+  for (const [key, value] of Object.entries(env)) {
+    if (!key.endsWith("_HOST") || isLikelyDatabaseHostKey(key)) continue;
+    if (key === "CONTAINER_HOSTNAME") continue;
+    const host = (value || "").trim();
+    if (!host) continue;
+    // Prefer private DNS / short names; skip the frontend's own hostname.
+    if (
+      host === env.CONTAINER_HOSTNAME ||
+      host === `${(env.CONTAINER_HOSTNAME || "").replace(/\.zeabur\.internal$/, "")}`
+    ) {
+      continue;
+    }
+    push(toHttpOrigin(host, port));
   }
 
   // On Zeabur, try conventional private API hostnames when nothing explicit worked.
-  if (!env.BACKEND_PROXY_URL && (env.ZEABUR || env.CONTAINER_HOSTNAME)) {
+  if (candidates.length === 0 && (env.ZEABUR || env.CONTAINER_HOSTNAME)) {
     for (const host of ZEABUR_API_HOSTS) {
-      push(toHttpOrigin(host, env.BACKEND_PROXY_PORT || "8080"));
+      push(toHttpOrigin(host, port));
     }
   }
 
-  const browserUrl = (env.REACT_APP_BACKEND_URL || "").trim();
-  if (browserUrl && !isBrowserFacingBackendUrl(browserUrl)) {
-    push(browserUrl);
+  // Private (non-browser) REACT_APP_BACKEND_URL values.
+  push(env.REACT_APP_BACKEND_URL);
+
+  // Public API URLs last — server-side proxy can still reach them, and the
+  // browser keeps same-origin /api cookies on the frontend domain.
+  // Do not use ZEABUR_WEB_URL here: on the frontend service that is this app.
+  for (const key of [
+    "REACT_APP_BACKEND_URL",
+    "TRAINING_PLATFORM_URL",
+    "BACKEND_URL",
+    "API_URL",
+  ]) {
+    push(env[key], { allowPublic: true });
   }
 
-  if (candidates.length === 0) {
+  if (candidates.length === 0 && publicCandidates.length === 0) {
     push("http://localhost:8001");
   }
 
-  return candidates;
+  return [...candidates, ...publicCandidates];
 };
 
 const buildProxyRequestOptions = (req, backendOrigin) => {
