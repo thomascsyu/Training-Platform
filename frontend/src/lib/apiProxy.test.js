@@ -4,6 +4,7 @@ const {
   isBrowserFacingBackendUrl,
   normalizeBackendOrigin,
   resolveBackendProxyCandidates,
+  rewriteParsedJsonBody,
   shouldProxyApiRequest,
 } = require("../../proxy-utils");
 
@@ -119,5 +120,61 @@ describe("api proxy helpers", () => {
     expect(resolveBackendProxyCandidates({})).toEqual([
       "http://localhost:8001",
     ]);
+  });
+
+  it("rewrites a pre-parsed JSON body onto the proxy request", () => {
+    const writes = [];
+    const headers = {};
+    const proxyReq = {
+      setHeader: (key, value) => {
+        headers[key] = value;
+      },
+      write: (chunk) => {
+        writes.push(chunk);
+      },
+    };
+    const req = {
+      headers: { "content-type": "application/json" },
+      body: { email: "admin@learnhub.com", password: "secret" },
+    };
+
+    expect(rewriteParsedJsonBody(proxyReq, req)).toBe(true);
+    expect(headers["Content-Type"]).toBe("application/json");
+    expect(headers["Content-Length"]).toBe(
+      Buffer.byteLength(
+        '{"email":"admin@learnhub.com","password":"secret"}'
+      )
+    );
+    expect(writes).toEqual([
+      '{"email":"admin@learnhub.com","password":"secret"}',
+    ]);
+  });
+
+  it("does not rewrite when the body stream was never parsed", () => {
+    const proxyReq = {
+      setHeader: jest.fn(),
+      write: jest.fn(),
+    };
+    const req = {
+      headers: { "content-type": "application/json" },
+    };
+
+    expect(rewriteParsedJsonBody(proxyReq, req)).toBe(false);
+    expect(proxyReq.setHeader).not.toHaveBeenCalled();
+    expect(proxyReq.write).not.toHaveBeenCalled();
+  });
+
+  it("skips non-JSON content types even if body is present", () => {
+    const proxyReq = {
+      setHeader: jest.fn(),
+      write: jest.fn(),
+    };
+    const req = {
+      headers: { "content-type": "multipart/form-data; boundary=abc" },
+      body: { file: "x" },
+    };
+
+    expect(rewriteParsedJsonBody(proxyReq, req)).toBe(false);
+    expect(proxyReq.setHeader).not.toHaveBeenCalled();
   });
 });
