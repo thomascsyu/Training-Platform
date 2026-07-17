@@ -89,9 +89,12 @@ Attach a **persistent volume** to the API service mounted at `/app/uploads`. Wit
 **Frontend service:**
 
 ```bash
-BACKEND_PROXY_URL=http://<internal-backend-host>:8080
+# Use the API service's Zeabur private hostname (Networking → Private), port 8080.
+BACKEND_PROXY_URL=http://training-platform.zeabur.internal:8080
 # Do not set REACT_APP_BACKEND_URL unless you intentionally want cross-origin API calls.
 ```
+
+Find the exact private hostname under the **API** service → Networking → Private (e.g. `training-platform.zeabur.internal` or `backend.zeabur.internal`). Do **not** paste a ClusterIP like `10.x.x.x` — those go stale when services are recreated.
 
 If the frontend domain returns **HTTP 404**, Zeabur is not running the React container — the service name likely doesn't match any `Dockerfile.*` in the repo. Rename the service to `frontend` or `learnhub-frontend`, or set `ZBPACK_DOCKERFILE_PATH=Dockerfile.frontend`, then redeploy.
 
@@ -103,7 +106,7 @@ These three values must use the same public origins:
 
 | Variable | Service | Must match |
 |----------|---------|------------|
-| `BACKEND_PROXY_URL` | `frontend` | Internal API hostname (e.g. `http://training-platform:8080`) |
+| `BACKEND_PROXY_URL` | `frontend` | API private hostname (e.g. `http://training-platform.zeabur.internal:8080`) |
 | `FRONTEND_URL` | API | Public frontend URL |
 | `CORS_ORIGINS` | API | Same origin as `FRONTEND_URL` (not `*`) |
 
@@ -117,6 +120,7 @@ Bind the **frontend** domain to the `frontend` service. Bind the **API** domain 
 - **Frontend HTTP 404:** service name doesn't match a `Dockerfile.*` — set `ZBPACK_DOCKERFILE_PATH=Dockerfile.frontend` or rename to `frontend` / `learnhub-frontend`, then redeploy.
 - **Frontend calls `localhost:8001`:** `REACT_APP_BACKEND_URL` was set at build time — unset it and redeploy so the app uses same-origin `/api`.
 - **502 on API domain:** API service suspended or not deployed — resume/redeploy the API service, not a second copy.
+- **`API proxy error: connect ECONNREFUSED …:8080` on login:** the frontend container cannot reach the API over private networking. On the **frontend** service set `BACKEND_PROXY_URL=http://<api-private-hostname>:8080` (from the API service’s Networking → Private; usually `*.zeabur.internal`). Confirm the API service is running and `https://<api-domain>/health` returns `200`. Redeploy the frontend after changing the variable.
 - **Broken course thumbnails after redeploy:** attach persistent storage to the API service at `/app/uploads` and set `UPLOADS_DIR=/app/uploads`.
 
 ## Overview

@@ -1,6 +1,9 @@
 const {
   buildProxyRequestOptions,
+  expandHostnameVariants,
+  isBrowserFacingBackendUrl,
   normalizeBackendOrigin,
+  resolveBackendProxyCandidates,
   shouldProxyApiRequest,
 } = require("../../proxy-utils");
 
@@ -39,5 +42,57 @@ describe("api proxy helpers", () => {
     expect(options.headers.host).toBe("api:8080");
     expect(options.headers.cookie).toBe("access_token=abc");
     expect(options.headers.connection).toBeUndefined();
+    expect(options.family).toBe(4);
+  });
+
+  it("expands short hosts to Zeabur private DNS and back", () => {
+    expect(expandHostnameVariants("http://training-platform:8080")).toEqual([
+      "http://training-platform:8080",
+      "http://training-platform.zeabur.internal:8080",
+    ]);
+    expect(
+      expandHostnameVariants("http://training-platform.zeabur.internal:8080")
+    ).toEqual([
+      "http://training-platform.zeabur.internal:8080",
+      "http://training-platform:8080",
+    ]);
+  });
+
+  it("detects browser-facing backend URLs", () => {
+    expect(isBrowserFacingBackendUrl("https://api.example.zeabur.app")).toBe(
+      true
+    );
+    expect(isBrowserFacingBackendUrl("http://api:8080")).toBe(false);
+    expect(
+      isBrowserFacingBackendUrl("http://training-platform.zeabur.internal:8080")
+    ).toBe(false);
+    expect(isBrowserFacingBackendUrl("http://localhost:8001")).toBe(false);
+  });
+
+  it("resolves proxy candidates from BACKEND_PROXY_URL first", () => {
+    expect(
+      resolveBackendProxyCandidates({
+        BACKEND_PROXY_URL: "http://training-platform:8080",
+        REACT_APP_BACKEND_URL: "https://api.example.zeabur.app",
+      })
+    ).toEqual([
+      "http://training-platform:8080",
+      "http://training-platform.zeabur.internal:8080",
+    ]);
+  });
+
+  it("falls back to Zeabur private hostnames when unset on Zeabur", () => {
+    const candidates = resolveBackendProxyCandidates({
+      ZEABUR: "1",
+      CONTAINER_HOSTNAME: "frontend.zeabur.internal",
+    });
+    expect(candidates[0]).toBe("http://training-platform.zeabur.internal:8080");
+    expect(candidates).toContain("http://backend.zeabur.internal:8080");
+  });
+
+  it("defaults to localhost outside Zeabur when unset", () => {
+    expect(resolveBackendProxyCandidates({})).toEqual([
+      "http://localhost:8001",
+    ]);
   });
 });

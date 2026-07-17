@@ -61,10 +61,10 @@ let webpackConfig = {
 };
 
 webpackConfig.devServer = (devServerConfig) => {
-  const backendProxyTarget =
-    process.env.BACKEND_PROXY_URL ||
-    process.env.REACT_APP_BACKEND_URL ||
-    "http://localhost:8001";
+  const {
+    resolveBackendProxyCandidates,
+  } = require("./proxy-utils");
+  const backendProxyTarget = resolveBackendProxyCandidates()[0];
 
   devServerConfig.proxy = [
     ...(Array.isArray(devServerConfig.proxy) ? devServerConfig.proxy : []),

@@ -4,14 +4,14 @@ const path = require("path");
 const {
   normalizeBackendOrigin,
   proxyHttpRequest,
+  resolveBackendProxyCandidates,
   shouldProxyApiRequest,
 } = require("./proxy-utils");
 
 const buildDir = path.join(__dirname, "build");
 const indexPath = path.join(buildDir, "index.html");
-const backendOrigin = normalizeBackendOrigin(
-  process.env.BACKEND_PROXY_URL || process.env.REACT_APP_BACKEND_URL
-);
+const backendProxyCandidates = resolveBackendProxyCandidates();
+const backendOrigins = backendProxyCandidates.map(normalizeBackendOrigin);
 
 function validateBuildOutput() {
   if (!fs.existsSync(indexPath)) {
@@ -100,6 +100,7 @@ const server = http.createServer((req, res) => {
     res.end(
       JSON.stringify({
         status: hasBuildOutput ? "ok" : "build_missing",
+        backend_proxy_candidates: backendProxyCandidates,
       })
     );
     return;
@@ -114,7 +115,7 @@ const server = http.createServer((req, res) => {
   }
 
   if (shouldProxyApiRequest(requestUrl)) {
-    proxyHttpRequest(req, res, backendOrigin);
+    proxyHttpRequest(req, res, backendOrigins);
     return;
   }
 
@@ -135,5 +136,13 @@ if (!hasBuildOutput) {
 
 server.listen(port, host, () => {
   console.log(`Static server listening on http://${host}:${port}`);
-  console.log(`Proxying /api/* to ${backendOrigin.origin}`);
+  console.log(
+    `Proxying /api/* to: ${backendProxyCandidates.join(" -> ") || "(none)"}`
+  );
+  if (!process.env.BACKEND_PROXY_URL) {
+    console.warn(
+      "BACKEND_PROXY_URL is not set. For Zeabur, set it to your API private hostname, " +
+        "e.g. http://training-platform.zeabur.internal:8080"
+    );
+  }
 });
