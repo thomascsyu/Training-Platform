@@ -63,9 +63,13 @@ let webpackConfig = {
 webpackConfig.devServer = (devServerConfig) => {
   const {
     resolveBackendProxyCandidates,
+    rewriteParsedJsonBody,
   } = require("./proxy-utils");
   const backendProxyTarget = resolveBackendProxyCandidates()[0];
 
+  // Same-origin /api proxy. onProxyReq restores JSON bodies consumed by
+  // @emergentbase/visual-edits' setupMiddlewares (which reads every JSON POST
+  // and does not re-stream it). Without this, proxied login/refresh hang forever.
   devServerConfig.proxy = [
     ...(Array.isArray(devServerConfig.proxy) ? devServerConfig.proxy : []),
     {
@@ -73,6 +77,9 @@ webpackConfig.devServer = (devServerConfig) => {
       target: backendProxyTarget,
       changeOrigin: true,
       secure: false,
+      onProxyReq: (proxyReq, req) => {
+        rewriteParsedJsonBody(proxyReq, req);
+      },
     },
   ];
 

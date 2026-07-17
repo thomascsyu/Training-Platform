@@ -303,6 +303,37 @@ const proxyHttpRequest = async (req, res, backendOrigins) => {
 
 const shouldProxyApiRequest = (url = "") => url === "/api" || url.startsWith("/api/");
 
+/**
+ * Re-write a JSON body that was already consumed by upstream Express middleware
+ * (notably @emergentbase/visual-edits in CRACO dev) onto the outgoing proxy
+ * request. Without this, http-proxy-middleware waits forever for Content-Length
+ * bytes that will never arrive — login/refresh POSTs hang with a spinner.
+ *
+ * Safe no-op when req.body was never parsed (stream still intact).
+ */
+const rewriteParsedJsonBody = (proxyReq, req) => {
+  if (req == null || req.body === undefined) return false;
+
+  const contentType = String(
+    (req.headers && (req.headers["content-type"] || req.headers["Content-Type"])) ||
+      ""
+  ).toLowerCase();
+  if (!contentType.includes("application/json")) return false;
+
+  const bodyData =
+    typeof req.body === "string" || Buffer.isBuffer(req.body)
+      ? req.body
+      : JSON.stringify(req.body);
+
+  const length = Buffer.byteLength(bodyData);
+  proxyReq.setHeader("Content-Type", "application/json");
+  proxyReq.setHeader("Content-Length", length);
+  if (length > 0) {
+    proxyReq.write(bodyData);
+  }
+  return true;
+};
+
 module.exports = {
   buildProxyRequestOptions,
   expandHostnameVariants,
@@ -311,5 +342,6 @@ module.exports = {
   normalizeBackendOrigin,
   proxyHttpRequest,
   resolveBackendProxyCandidates,
+  rewriteParsedJsonBody,
   shouldProxyApiRequest,
 };
