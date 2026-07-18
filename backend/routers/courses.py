@@ -19,12 +19,21 @@ def _resolve_course_type(
     price: Optional[float],
     course_type: Optional[str],
 ) -> tuple[bool, float, str]:
+    normalized_price = float(price) if price is not None else 0.0
+
     if course_type == "payment_required":
-        return False, price if price is not None else 0.0, "payment_required"
+        return False, normalized_price, "payment_required"
     if course_type == "free":
         return True, 0.0, "free"
-    free = is_free if is_free is not None else True
-    return free, price if price is not None else 0.0, "free" if free else "payment_required"
+    if is_free is True:
+        return True, 0.0, "free"
+    if is_free is False:
+        return False, normalized_price, "payment_required"
+
+    # When clients only send a non-zero price, infer that payment is required.
+    if normalized_price > 0:
+        return False, normalized_price, "payment_required"
+    return True, 0.0, "free"
 
 
 def _course_type_for(course: dict) -> str:
@@ -295,11 +304,19 @@ async def get_course(course_id: str, request: Request, lang: Optional[str] = Non
 async def update_course(course_id: str, data: CourseUpdate, request: Request):
     user = await require_roles("admin")(request)
     update_data = {k: v for k, v in data.model_dump(exclude_unset=True).items() if v is not None}
-    if "course_type" in update_data:
+
+    pricing_fields = {"course_type", "is_free", "price"}
+    if update_data.keys() & pricing_fields:
+        existing_course = await db.courses.find_one(
+            {"_id": parse_object_id(course_id, "course")},
+            {"is_free": 1, "price": 1, "course_type": 1},
+        )
+        if not existing_course:
+            raise HTTPException(status_code=404, detail="Course not found")
         is_free, price, course_type = _resolve_course_type(
-            update_data.get("is_free"),
-            update_data.get("price"),
-            update_data["course_type"],
+            update_data.get("is_free", existing_course.get("is_free")),
+            update_data.get("price", existing_course.get("price")),
+            update_data.get("course_type", existing_course.get("course_type")),
         )
         update_data["is_free"] = is_free
         update_data["price"] = price

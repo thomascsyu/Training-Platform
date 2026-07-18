@@ -71,8 +71,8 @@ class CourseCreate(BaseModel):
     thumbnail_url: Optional[str] = None
     video_url: Optional[str] = None
     video_type: str = "youtube"
-    price: float = 0.0
-    is_free: bool = True
+    price: float = Field(default=0.0, ge=0)
+    is_free: Optional[bool] = None
     is_private: bool = False
     passing_score: int = 70
     auto_issue_certificate: bool = True
@@ -100,7 +100,7 @@ class CourseUpdate(BaseModel):
     thumbnail_url: Optional[str] = None
     video_url: Optional[str] = None
     video_type: Optional[str] = None
-    price: Optional[float] = None
+    price: Optional[float] = Field(default=None, ge=0)
     is_free: Optional[bool] = None
     is_private: Optional[bool] = None
     passing_score: Optional[int] = None
