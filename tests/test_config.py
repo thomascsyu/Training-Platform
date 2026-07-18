@@ -128,6 +128,46 @@ def test_cookie_samesite_none_forces_secure():
         assert cfg.COOKIE_SECURE is True
 
 
+def test_cookie_samesite_defaults_to_none_in_secure_production():
+    # Secure cross-domain production: default to 'none' so the browser keeps the
+    # auth cookie set from a cross-site XHR (otherwise login loops).
+    with _reloaded_config(
+        COOKIE_SAMESITE=None, COOKIE_SECURE="true", ENVIRONMENT="production"
+    ) as cfg:
+        assert cfg.COOKIE_SAMESITE == "none"
+        assert cfg.COOKIE_SECURE is True
+
+
+def test_cookie_samesite_stays_lax_in_insecure_production():
+    # Without secure cookies we cannot use SameSite=none, so keep 'lax'.
+    with _reloaded_config(
+        COOKIE_SAMESITE=None, COOKIE_SECURE="false", ENVIRONMENT="production"
+    ) as cfg:
+        assert cfg.COOKIE_SAMESITE == "lax"
+
+
+def test_cookie_samesite_stays_lax_in_secure_development():
+    with _reloaded_config(
+        COOKIE_SAMESITE=None, COOKIE_SECURE="true", ENVIRONMENT="development"
+    ) as cfg:
+        assert cfg.COOKIE_SAMESITE == "lax"
+
+
+def test_cookie_samesite_explicit_lax_respected_in_production():
+    # An explicit value must never be overridden by the production default.
+    with _reloaded_config(
+        COOKIE_SAMESITE="lax", COOKIE_SECURE="true", ENVIRONMENT="production"
+    ) as cfg:
+        assert cfg.COOKIE_SAMESITE == "lax"
+
+
+def test_cookie_samesite_blank_value_uses_production_default():
+    with _reloaded_config(
+        COOKIE_SAMESITE="   ", COOKIE_SECURE="true", ENVIRONMENT="production"
+    ) as cfg:
+        assert cfg.COOKIE_SAMESITE == "none"
+
+
 def test_cors_origins_default_to_frontend_url():
     with _reloaded_config(
         CORS_ORIGINS=None, FRONTEND_URL="http://example.com"

@@ -70,6 +70,11 @@ If your service name doesn't match any of the names above, either rename the ser
 ```bash
 ENVIRONMENT=production
 COOKIE_SECURE=true
+# Cookie SameSite. Leave unset: in secure production it defaults to 'none' so a
+# cross-domain SPA can keep its auth cookie. Set 'lax' explicitly only when the
+# SPA and API share a site (e.g. same-origin /api proxy). A cross-site SPA with
+# SameSite=lax drops the auth cookie and the user loops back to the login page.
+# COOKIE_SAMESITE=none
 JWT_SECRET=<64-char hex>
 DB_NAME=learnhub
 ADMIN_EMAIL=<your admin email>
@@ -525,7 +530,7 @@ Quick summary: one project needs **mongodb + one API service + frontend**. Do no
 - [ ] Strong `JWT_SECRET` and `ADMIN_PASSWORD`
 - [ ] `ENVIRONMENT=production`, `COOKIE_SECURE=true`
 - [ ] `CORS_ORIGINS` and `FRONTEND_URL` set to the frontend origin (not `*`)
-- [ ] `REACT_APP_BACKEND_URL` set on `frontend` before deploy/redeploy
+- [ ] `BACKEND_PROXY_URL` set on `frontend` to the API private hostname; **leave `REACT_APP_BACKEND_URL` unset** so the SPA uses the same-origin `/api` proxy (first-party cookies). If you must call the API cross-origin, set `COOKIE_SAMESITE=none` (with `COOKIE_SECURE=true`) or logins will loop
 - [ ] API `/ready` returns `200` after Mongo is linked
 - [ ] Stripe live keys + webhook secret enforced (if using payments)
 - [ ] Brevo configured; `FRONTEND_URL` correct (if using email)

@@ -139,12 +139,30 @@ def get_seeded_admin_accounts() -> list[tuple[str, str, str | None]]:
 ENVIRONMENT = os.environ.get("ENVIRONMENT", "development")
 COOKIE_SECURE = os.environ.get("COOKIE_SECURE", "false").lower() == "true"
 
-_COOKIE_SAMESITE_RAW = os.environ.get("COOKIE_SAMESITE", "lax").lower()
-COOKIE_SAMESITE = _COOKIE_SAMESITE_RAW if _COOKIE_SAMESITE_RAW in (
-    "lax",
-    "strict",
-    "none",
-) else "lax"
+# The browser only stores/sends auth cookies from a cross-site XHR response when
+# the cookie is SameSite=None; Secure. A cross-domain deployment (SPA on one
+# site calling the API on another, e.g. via REACT_APP_BACKEND_URL) therefore
+# needs SameSite=none — otherwise the default (lax) cookie is silently dropped,
+# every request 401s, and the user is bounced back to the login page in a loop.
+# When COOKIE_SAMESITE is not set explicitly, pick a safe default: 'none' for a
+# secure production deployment (so cross-site login works out of the box) and
+# 'lax' for local/insecure development.
+_COOKIE_SAMESITE_RAW = os.environ.get("COOKIE_SAMESITE")
+if _COOKIE_SAMESITE_RAW is None or _COOKIE_SAMESITE_RAW.strip() == "":
+    COOKIE_SAMESITE = "none" if (ENVIRONMENT == "production" and COOKIE_SECURE) else "lax"
+    if COOKIE_SAMESITE == "none":
+        logger.info(
+            "COOKIE_SAMESITE not set; defaulting to 'none' for secure production "
+            "so cross-site (cross-domain) login cookies are not dropped. Set "
+            "COOKIE_SAMESITE=lax explicitly if the SPA and API share a site."
+        )
+else:
+    _normalized_samesite = _COOKIE_SAMESITE_RAW.strip().lower()
+    COOKIE_SAMESITE = _normalized_samesite if _normalized_samesite in (
+        "lax",
+        "strict",
+        "none",
+    ) else "lax"
 
 if COOKIE_SAMESITE == "none" and not COOKIE_SECURE:
     COOKIE_SECURE = True
@@ -170,6 +188,21 @@ if CORS_ORIGINS_STR == "*":
 else:
     CORS_ORIGINS = [origin.strip() for origin in CORS_ORIGINS_STR.split(",") if origin.strip()]
     CORS_ALLOW_CREDENTIALS = True
+
+# A credentialed cross-origin CORS setup with SameSite=lax cookies is the classic
+# "login succeeds then bounces back to login in a loop" trap: the browser accepts
+# the login response but never stores the SameSite=lax auth cookie sent from a
+# cross-site XHR, so /auth/me and every protected call 401s. Warn loudly so the
+# misconfiguration is obvious in the logs.
+if ENVIRONMENT == "production" and CORS_ALLOW_CREDENTIALS and COOKIE_SAMESITE != "none":
+    logger.warning(
+        "Production CORS is configured for credentialed cross-origin requests but "
+        "COOKIE_SAMESITE=%s. If the SPA is served from a different site than "
+        "the API, browsers will drop the auth cookie and login will loop. Use "
+        "the same-origin /api proxy (BACKEND_PROXY_URL, do not set "
+        "REACT_APP_BACKEND_URL) or set COOKIE_SAMESITE=none with COOKIE_SECURE=true.",
+        COOKIE_SAMESITE,
+    )
 
 SUPPORTED_LANGUAGES = ["en", "zh-TW", "zh-CN", "ja", "ko"]
 LANGUAGE_NAMES = {
