@@ -14,9 +14,16 @@ _FALLBACK_MONGO_URL = "mongodb://localhost:27017"
 
 
 def _build_client(mongo_url: str) -> AsyncIOMotorClient:
+    # Cap connectTimeoutMS/socketTimeoutMS to the same bound as server
+    # selection. Motor/pymongo default these much higher (20s+), so an
+    # unreachable or stalled Mongo host (stale private address, paused
+    # service) can hang requests — including login, which queries Mongo —
+    # far longer than MONGO_SERVER_SELECTION_TIMEOUT_MS implies.
     return AsyncIOMotorClient(
         mongo_url,
         serverSelectionTimeoutMS=MONGO_SERVER_SELECTION_TIMEOUT_MS,
+        connectTimeoutMS=MONGO_SERVER_SELECTION_TIMEOUT_MS,
+        socketTimeoutMS=MONGO_SERVER_SELECTION_TIMEOUT_MS,
     )
 
 
