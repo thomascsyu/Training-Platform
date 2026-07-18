@@ -24,6 +24,7 @@ async def initialize_database():
     await db.command("ping")
     await db.users.create_index("email", unique=True)
     await db.users.create_index("password_reset_token_hash")
+    await db.users.create_index("role")
     await db.companies.create_index("name", unique=True)
     await db.certificate_templates.create_index("name", unique=True)
     await db.users.create_index("company_id")
@@ -33,6 +34,11 @@ async def initialize_database():
         [("user_id", 1), ("course_id", 1), ("lesson_id", 1)], unique=True
     )
     await db.chat_messages.create_index([("course_id", 1), ("user_id", 1)])
+    await db.quiz_attempts.create_index([("user_id", 1), ("course_id", 1)])
+    await db.certificates.create_index([("user_id", 1), ("course_id", 1)])
+    await db.lessons.create_index("course_id")
+    await db.payment_transactions.create_index("session_id")
+    await db.payment_transactions.create_index("payment_status")
 
     for name, email, password in get_seeded_admin_accounts():
         await _seed_admin_account(name, email, password)

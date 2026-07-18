@@ -1,3 +1,4 @@
+import asyncio
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, HTTPException, Request
@@ -23,6 +24,52 @@ async def _get_ai_client():
     return client, settings.get("model", "deepseek-chat")
 
 
+async def _translate_option(client, model, source_lang: str, target_lang: str, opt: str) -> str:
+    opt_response = await client.chat.completions.create(
+        model=model,
+        messages=[
+            {
+                "role": "system",
+                "content": build_translation_system_prompt(
+                    source_lang,
+                    target_lang,
+                    content_label="quiz answer option",
+                ),
+            },
+            {"role": "user", "content": opt}
+        ],
+        temperature=0.3
+    )
+    return opt_response.choices[0].message.content.strip()
+
+
+async def _translate_question(client, model, source_lang: str, target_lang: str, q: dict) -> dict:
+    q_task = client.chat.completions.create(
+        model=model,
+        messages=[
+            {
+                "role": "system",
+                "content": build_translation_system_prompt(
+                    source_lang,
+                    target_lang,
+                    content_label="quiz question",
+                ),
+            },
+            {"role": "user", "content": q.get("question", "")}
+        ],
+        temperature=0.3
+    )
+    opts_task = asyncio.gather(
+        *[_translate_option(client, model, source_lang, target_lang, opt) for opt in q.get("options", [])]
+    )
+    q_response, translated_opts = await asyncio.gather(q_task, opts_task)
+    return {
+        "question": q_response.choices[0].message.content.strip(),
+        "options": translated_opts,
+        "correct_answer": q.get("correct_answer"),  # Index stays the same
+    }
+
+
 @router.post("/translate/text")
 async def translate_text(data: TranslateRequest, request: Request):
     """Translate a single text using Deepseek AI"""
@@ -35,7 +82,7 @@ async def translate_text(data: TranslateRequest, request: Request):
         raise HTTPException(status_code=400, detail=f"Unsupported target language: {data.target_language}")
     
     try:
-        response = client.chat.completions.create(
+        response = await client.chat.completions.create(
             model=model,
             messages=[
                 {
@@ -76,61 +123,56 @@ async def translate_course(course_id: str, data: TranslateCourseRequest, request
             raise HTTPException(status_code=400, detail=f"Unsupported language: {lang}")
     
     source_lang = course.get("language", "en")
-    
+
     translations = {}
-    
+
+    async def _translate_course_fields(target_lang: str):
+        title_task = client.chat.completions.create(
+            model=model,
+            messages=[
+                {
+                    "role": "system",
+                    "content": build_translation_system_prompt(
+                        source_lang,
+                        target_lang,
+                        role="professional translator specializing in educational content",
+                        content_label="course title",
+                    ),
+                },
+                {"role": "user", "content": course.get("title", "")}
+            ],
+            temperature=0.3
+        )
+        desc_task = client.chat.completions.create(
+            model=model,
+            messages=[
+                {
+                    "role": "system",
+                    "content": build_translation_system_prompt(
+                        source_lang,
+                        target_lang,
+                        role="professional translator specializing in educational content",
+                        content_label="course description",
+                        preserve_formatting=True,
+                    ),
+                },
+                {"role": "user", "content": course.get("description", "")}
+            ],
+            temperature=0.3
+        )
+        title_response, desc_response = await asyncio.gather(title_task, desc_task)
+        return {
+            "title": title_response.choices[0].message.content.strip(),
+            "description": desc_response.choices[0].message.content.strip(),
+            "language_name": LANGUAGE_NAMES.get(target_lang, target_lang),
+        }
+
     for target_lang in data.target_languages:
         if target_lang == source_lang:
             continue
-            
-        target_name = LANGUAGE_NAMES.get(target_lang, target_lang)
-        
+
         try:
-            # Translate title
-            title_response = client.chat.completions.create(
-                model=model,
-                messages=[
-                    {
-                        "role": "system",
-                        "content": build_translation_system_prompt(
-                            source_lang,
-                            target_lang,
-                            role="professional translator specializing in educational content",
-                            content_label="course title",
-                        ),
-                    },
-                    {"role": "user", "content": course.get("title", "")}
-                ],
-                temperature=0.3
-            )
-            translated_title = title_response.choices[0].message.content.strip()
-            
-            # Translate description
-            desc_response = client.chat.completions.create(
-                model=model,
-                messages=[
-                    {
-                        "role": "system",
-                        "content": build_translation_system_prompt(
-                            source_lang,
-                            target_lang,
-                            role="professional translator specializing in educational content",
-                            content_label="course description",
-                            preserve_formatting=True,
-                        ),
-                    },
-                    {"role": "user", "content": course.get("description", "")}
-                ],
-                temperature=0.3
-            )
-            translated_desc = desc_response.choices[0].message.content.strip()
-            
-            translations[target_lang] = {
-                "title": translated_title,
-                "description": translated_desc,
-                "language_name": target_name
-            }
-            
+            translations[target_lang] = await _translate_course_fields(target_lang)
         except Exception as e:
             logger.error(f"Translation error for {target_lang}: {e}")
             translations[target_lang] = {"error": str(e)}
@@ -163,16 +205,16 @@ async def translate_quiz(quiz_id: str, data: TranslateQuizRequest, request: Requ
     source_lang = course.get("language", "en") if course else "en"
     
     translations = {}
-    
+
     for target_lang in data.target_languages:
         if target_lang == source_lang or target_lang not in SUPPORTED_LANGUAGES:
             continue
-            
+
         target_name = LANGUAGE_NAMES.get(target_lang, target_lang)
-        
+
         try:
             # Translate title
-            title_response = client.chat.completions.create(
+            title_response = await client.chat.completions.create(
                 model=model,
                 messages=[
                     {
@@ -188,60 +230,21 @@ async def translate_quiz(quiz_id: str, data: TranslateQuizRequest, request: Requ
                 temperature=0.3
             )
             translated_title = title_response.choices[0].message.content.strip()
-            
-            # Translate questions
-            translated_questions = []
-            for q in quiz.get("questions", []):
-                # Translate question text
-                q_response = client.chat.completions.create(
-                    model=model,
-                    messages=[
-                        {
-                            "role": "system",
-                            "content": build_translation_system_prompt(
-                                source_lang,
-                                target_lang,
-                                content_label="quiz question",
-                            ),
-                        },
-                        {"role": "user", "content": q.get("question", "")}
-                    ],
-                    temperature=0.3
-                )
-                translated_q = q_response.choices[0].message.content.strip()
-                
-                # Translate options
-                translated_opts = []
-                for opt in q.get("options", []):
-                    opt_response = client.chat.completions.create(
-                        model=model,
-                        messages=[
-                            {
-                                "role": "system",
-                                "content": build_translation_system_prompt(
-                                    source_lang,
-                                    target_lang,
-                                    content_label="quiz answer option",
-                                ),
-                            },
-                            {"role": "user", "content": opt}
-                        ],
-                        temperature=0.3
-                    )
-                    translated_opts.append(opt_response.choices[0].message.content.strip())
-                
-                translated_questions.append({
-                    "question": translated_q,
-                    "options": translated_opts,
-                    "correct_answer": q.get("correct_answer")  # Index stays the same
-                })
-            
+
+            # Translate questions (options within each question run concurrently)
+            translated_questions = await asyncio.gather(
+                *[
+                    _translate_question(client, model, source_lang, target_lang, q)
+                    for q in quiz.get("questions", [])
+                ]
+            )
+
             translations[target_lang] = {
                 "title": translated_title,
-                "questions": translated_questions,
+                "questions": list(translated_questions),
                 "language_name": target_name
             }
-            
+
         except Exception as e:
             logger.error(f"Quiz translation error for {target_lang}: {e}")
             translations[target_lang] = {"error": str(e)}
@@ -281,8 +284,7 @@ async def create_translated_course(course_id: str, target_language: str, request
         translated_title = stored_translations[target_language]["title"]
         translated_desc = stored_translations[target_language]["description"]
     else:
-        # Translate title
-        title_response = client.chat.completions.create(
+        title_task = client.chat.completions.create(
             model=model,
             messages=[
                 {
@@ -297,10 +299,7 @@ async def create_translated_course(course_id: str, target_language: str, request
             ],
             temperature=0.3
         )
-        translated_title = title_response.choices[0].message.content.strip()
-        
-        # Translate description
-        desc_response = client.chat.completions.create(
+        desc_task = client.chat.completions.create(
             model=model,
             messages=[
                 {
@@ -316,6 +315,8 @@ async def create_translated_course(course_id: str, target_language: str, request
             ],
             temperature=0.3
         )
+        title_response, desc_response = await asyncio.gather(title_task, desc_task)
+        translated_title = title_response.choices[0].message.content.strip()
         translated_desc = desc_response.choices[0].message.content.strip()
     
     # Create new course
@@ -347,10 +348,8 @@ async def create_translated_course(course_id: str, target_language: str, request
     result = await db.courses.insert_one(new_course)
     new_course_id = str(result.inserted_id)
     
-    # Also translate lessons if any
-    lessons = await db.lessons.find({"course_id": course_id}).to_list(100)
-    for lesson in lessons:
-        lesson_title_resp = client.chat.completions.create(
+    async def _translate_lesson(lesson: dict) -> dict:
+        title_task = client.chat.completions.create(
             model=model,
             messages=[
                 {
@@ -365,7 +364,7 @@ async def create_translated_course(course_id: str, target_language: str, request
             ],
             temperature=0.3
         )
-        lesson_desc_resp = client.chat.completions.create(
+        desc_task = client.chat.completions.create(
             model=model,
             messages=[
                 {
@@ -380,77 +379,67 @@ async def create_translated_course(course_id: str, target_language: str, request
             ],
             temperature=0.3
         )
-        
-        await db.lessons.insert_one({
+        title_resp, desc_resp = await asyncio.gather(title_task, desc_task)
+        return {
             "course_id": new_course_id,
-            "title": lesson_title_resp.choices[0].message.content.strip(),
-            "description": lesson_desc_resp.choices[0].message.content.strip(),
+            "title": title_resp.choices[0].message.content.strip(),
+            "description": desc_resp.choices[0].message.content.strip(),
             "video_url": lesson.get("video_url"),
             "video_type": lesson.get("video_type"),
             "order": lesson.get("order"),
             "materials": lesson.get("materials", []),
             "created_at": datetime.now(timezone.utc).isoformat()
-        })
+        }
 
-    quizzes = await db.quizzes.find({"course_id": course_id}).to_list(100)
-    for quiz in quizzes:
+    # Also translate lessons if any
+    lessons = await db.lessons.find({"course_id": course_id}).to_list(100)
+    if lessons:
+        translated_lessons = await asyncio.gather(*[_translate_lesson(l) for l in lessons])
+        await db.lessons.insert_many(list(translated_lessons))
+
+    async def _translate_quiz(quiz: dict) -> dict:
         stored_quiz_translation = quiz.get("translations", {}).get(target_language)
         if stored_quiz_translation and not stored_quiz_translation.get("error"):
             translated_quiz_title = stored_quiz_translation.get("title", quiz.get("title", ""))
             translated_questions = stored_quiz_translation.get("questions", quiz.get("questions", []))
         else:
-            quiz_title_resp = client.chat.completions.create(
+            title_task = client.chat.completions.create(
                 model=model,
                 messages=[
                     {
                         "role": "system",
-                        "content": f"Translate this quiz title from {source_name} to {target_name}. Only output the translation."
+                        "content": build_translation_system_prompt(
+                            source_lang,
+                            target_language,
+                            content_label="quiz title",
+                        ),
                     },
                     {"role": "user", "content": quiz.get("title", "")}
                 ],
                 temperature=0.3
             )
-            translated_quiz_title = quiz_title_resp.choices[0].message.content.strip()
-            translated_questions = []
-            for question in quiz.get("questions", []):
-                question_resp = client.chat.completions.create(
-                    model=model,
-                    messages=[
-                        {
-                            "role": "system",
-                            "content": f"Translate this quiz question from {source_name} to {target_name}. Only output the translation."
-                        },
-                        {"role": "user", "content": question.get("question", "")}
-                    ],
-                    temperature=0.3
-                )
-                translated_options = []
-                for option in question.get("options", []):
-                    option_resp = client.chat.completions.create(
-                        model=model,
-                        messages=[
-                            {
-                                "role": "system",
-                                "content": f"Translate from {source_name} to {target_name}. Only output the translation."
-                            },
-                            {"role": "user", "content": option}
-                        ],
-                        temperature=0.3
-                    )
-                    translated_options.append(option_resp.choices[0].message.content.strip())
-                translated_questions.append({
-                    "question": question_resp.choices[0].message.content.strip(),
-                    "options": translated_options,
-                    "correct_answer": question.get("correct_answer"),
-                })
+            questions_task = asyncio.gather(
+                *[
+                    _translate_question(client, model, source_lang, target_language, q)
+                    for q in quiz.get("questions", [])
+                ]
+            )
+            title_resp, translated_questions = await asyncio.gather(title_task, questions_task)
+            translated_quiz_title = title_resp.choices[0].message.content.strip()
+            translated_questions = list(translated_questions)
 
-        await db.quizzes.insert_one({
+        return {
             "course_id": new_course_id,
             "title": translated_quiz_title,
             "questions": translated_questions,
             "source_quiz_id": str(quiz["_id"]),
             "created_at": datetime.now(timezone.utc).isoformat(),
-        })
+        }
+
+    quizzes = await db.quizzes.find({"course_id": course_id}).to_list(100)
+    if quizzes:
+        translated_quizzes = await asyncio.gather(*[_translate_quiz(q) for q in quizzes])
+        await db.quizzes.insert_many(list(translated_quizzes))
     
     return {
         "new_course_id": new_course_id,

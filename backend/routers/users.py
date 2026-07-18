@@ -190,16 +190,23 @@ async def import_users(data: UserImportRequest, request: Request):
     skipped = []
     errors = []
 
+    existing_docs = await db.users.find(
+        {"email": {"$in": [row.email.lower() for row in data.users]}},
+        {"email": 1},
+    ).to_list(len(data.users))
+    existing_emails = {d["email"] for d in existing_docs}
+    seen_emails = set()
+
     for index, row in enumerate(data.users, start=1):
         email = row.email.lower()
         role = row.role if row.role in VALID_ROLES else "student"
         if role == "admin":
             role = "student"
 
-        existing = await db.users.find_one({"email": email})
-        if existing:
+        if email in existing_emails or email in seen_emails:
             skipped.append({"row": index, "email": email, "reason": "Email already exists"})
             continue
+        seen_emails.add(email)
 
         password = row.password or secrets.token_urlsafe(10)
         if len(password) < 8:

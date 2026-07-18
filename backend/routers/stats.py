@@ -75,10 +75,14 @@ async def get_admin_analytics(request: Request):
     avg_lesson_progress = 0
     enrollments = await db.enrollments.find({}, {"user_id": 1, "course_id": 1}).to_list(5000)
     if enrollments:
-        progress_sum = 0
+        user_ids_by_course: dict[str, list[str]] = {}
         for e in enrollments:
-            bulk = await get_bulk_lesson_progress([e["user_id"]], e["course_id"])
-            progress_sum += bulk.get(e["user_id"], {}).get("progress_percent", 0)
+            user_ids_by_course.setdefault(e["course_id"], []).append(e["user_id"])
+
+        progress_sum = 0
+        for course_id, user_ids in user_ids_by_course.items():
+            bulk = await get_bulk_lesson_progress(user_ids, course_id)
+            progress_sum += sum(p.get("progress_percent", 0) for p in bulk.values())
         avg_lesson_progress = round(progress_sum / len(enrollments), 1)
 
     return {

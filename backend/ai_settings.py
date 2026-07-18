@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from typing import Optional
 
 from cryptography.fernet import Fernet
-from openai import OpenAI
+from openai import AsyncOpenAI
 
 from config import JWT_SECRET, SETTINGS_ENCRYPTION_KEY, logger
 from database import db
@@ -166,25 +166,25 @@ async def get_active_provider_settings() -> Optional[dict]:
     return settings["providers"].get(active)
 
 
-def build_ai_client(settings: dict) -> Optional[OpenAI]:
-    """Build an OpenAI-compatible client from provider settings."""
+def build_ai_client(settings: dict) -> Optional[AsyncOpenAI]:
+    """Build an OpenAI-compatible async client from provider settings."""
     api_key = settings.get("api_key", "") if settings else ""
     base_url = settings.get("base_url", "") if settings else ""
     if not api_key or not base_url:
         return None
-    return OpenAI(api_key=api_key, base_url=base_url)
+    return AsyncOpenAI(api_key=api_key, base_url=base_url)
 
 
-async def get_active_client() -> Optional[OpenAI]:
-    """Build an OpenAI-compatible client for the active AI provider."""
+async def get_active_client() -> Optional[AsyncOpenAI]:
+    """Build an OpenAI-compatible async client for the active AI provider."""
     settings = await get_active_provider_settings()
     if not settings or not settings.get("enabled", True):
         return None
     return build_ai_client(settings)
 
 
-async def get_client_for_provider(provider: str) -> Optional[OpenAI]:
-    """Build an OpenAI-compatible client for a specific provider."""
+async def get_client_for_provider(provider: str) -> Optional[AsyncOpenAI]:
+    """Build an OpenAI-compatible async client for a specific provider."""
     settings = await get_provider_settings(provider)
     if not settings or not settings.get("enabled", True):
         return None
@@ -259,11 +259,11 @@ async def test_provider_connection(provider: str, override_key: Optional[str] = 
     if not model:
         model = _PROVIDERS[provider]["default_model"]
 
-    client = OpenAI(api_key=api_key, base_url=_PROVIDERS[provider]["base_url"])
+    client = AsyncOpenAI(api_key=api_key, base_url=_PROVIDERS[provider]["base_url"])
 
     start = time.time()
     try:
-        response = client.chat.completions.create(
+        response = await client.chat.completions.create(
             model=model,
             messages=[
                 {"role": "system", "content": "Respond with the single word OK."},

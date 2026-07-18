@@ -2,6 +2,8 @@ from datetime import datetime, timezone
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Request
+from pymongo import UpdateOne
+from starlette.concurrency import run_in_threadpool
 from starlette.responses import Response
 
 from auth_utils import get_current_user, require_admin_or_manager, require_roles
@@ -232,7 +234,7 @@ async def preview_certificate(data: CertificatePreview, request: Request):
         )
 
     if data.format == "pdf":
-        pdf_bytes = generate_certificate_pdf(cert_doc)
+        pdf_bytes = await run_in_threadpool(generate_certificate_pdf, cert_doc)
         filename = f"certificate-preview-{sample_id}.pdf"
         return Response(
             content=pdf_bytes,
@@ -270,7 +272,7 @@ async def _get_authorized_certificate(certificate_id: str, request: Request) -> 
 async def download_certificate_pdf(certificate_id: str, request: Request):
     cert = await _get_authorized_certificate(certificate_id, request)
 
-    pdf_bytes = generate_certificate_pdf(cert)
+    pdf_bytes = await run_in_threadpool(generate_certificate_pdf, cert)
     filename = f"certificate-{cert.get('certificate_id', certificate_id)}.pdf"
     return Response(
         content=pdf_bytes,
@@ -317,7 +319,7 @@ async def customize_certificate(
     else:
         targets = [cert]
 
-    modified = 0
+    operations = []
     for target in targets:
         target["template"] = data.template
         target["primary_color"] = data.primary_color
@@ -328,18 +330,24 @@ async def customize_certificate(
         )
         # Re-render the stored HTML so downloads/previews reflect the new style.
         rendered = create_certification_template(target)
-        await db.certificates.update_one(
-            {"_id": target["_id"]},
-            {
-                "$set": {
-                    "template": target["template"],
-                    "primary_color": target["primary_color"],
-                    "secondary_color": target["secondary_color"],
-                    "background": target["background"],
-                    "language": target["language"],
-                    "template_html": rendered,
-                }
-            },
+        operations.append(
+            UpdateOne(
+                {"_id": target["_id"]},
+                {
+                    "$set": {
+                        "template": target["template"],
+                        "primary_color": target["primary_color"],
+                        "secondary_color": target["secondary_color"],
+                        "background": target["background"],
+                        "language": target["language"],
+                        "template_html": rendered,
+                    }
+                },
+            )
         )
-        modified += 1
+
+    modified = 0
+    if operations:
+        result = await db.certificates.bulk_write(operations)
+        modified = result.modified_count
     return {"message": f"Updated {modified} certificate(s)"}

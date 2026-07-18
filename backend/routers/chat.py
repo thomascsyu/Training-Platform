@@ -68,7 +68,7 @@ async def chat_with_ai(data: ChatMessageCreate, request: Request):
     messages.append({"role": "user", "content": data.message})
 
     try:
-        response = client.chat.completions.create(
+        response = await client.chat.completions.create(
             model=model,
             messages=messages,
             temperature=0.7,

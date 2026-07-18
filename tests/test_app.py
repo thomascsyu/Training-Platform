@@ -29,6 +29,14 @@ def mock_db(monkeypatch):
     db.chat_messages.create_index = AsyncMock()
     db.certificate_templates = MagicMock()
     db.certificate_templates.create_index = AsyncMock()
+    db.quiz_attempts = MagicMock()
+    db.quiz_attempts.create_index = AsyncMock()
+    db.certificates = MagicMock()
+    db.certificates.create_index = AsyncMock()
+    db.lessons = MagicMock()
+    db.lessons.create_index = AsyncMock()
+    db.payment_transactions = MagicMock()
+    db.payment_transactions.create_index = AsyncMock()
     monkeypatch.setattr(app, "db", db)
     return db
 
