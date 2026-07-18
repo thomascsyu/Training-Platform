@@ -187,6 +187,10 @@ export const AdminCourseEditPage = () => {
   }, [fetchCourse]);
 
   const handleSave = async () => {
+    if (formData.course_type === "payment_required" && !(Number(formData.price) > 0)) {
+      toast.error("Please set a price greater than 0 for paid courses.");
+      return;
+    }
     setSaving(true);
     try {
       const payload = {
@@ -529,28 +533,16 @@ export const AdminCourseEditPage = () => {
                 className="rounded-sm"
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>{t("courses.price")}</Label>
-                <Input
-                  type="number"
-                  value={formData.price}
-                  onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
-                  className="rounded-sm"
-                  disabled={formData.course_type === "free"}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>{t("courses.passingScore")}</Label>
-                <Input
-                  type="number"
-                  value={formData.passing_score}
-                  onChange={(e) => setFormData({ ...formData, passing_score: parseInt(e.target.value) || 70 })}
-                  className="rounded-sm"
-                  min={0}
-                  max={100}
-                />
-              </div>
+            <div className="space-y-2">
+              <Label>{t("courses.passingScore")}</Label>
+              <Input
+                type="number"
+                value={formData.passing_score}
+                onChange={(e) => setFormData({ ...formData, passing_score: parseInt(e.target.value) || 70 })}
+                className="rounded-sm"
+                min={0}
+                max={100}
+              />
             </div>
             <div className="space-y-2 border border-slate-200 rounded-sm p-4">
               <div className="flex items-center gap-2">
@@ -601,6 +593,23 @@ export const AdminCourseEditPage = () => {
                 />
                 <Label>{t("courses.privateCourse")}</Label>
               </div>
+            </div>
+            <div className="space-y-2">
+              <Label>{t("courses.price")}</Label>
+              <Input
+                type="number"
+                step="0.01"
+                min={0}
+                value={formData.price}
+                onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
+                className="rounded-sm"
+                disabled={formData.course_type === "free"}
+              />
+              {formData.course_type === "free" && (
+                <p className="text-xs text-slate-500">
+                  {t("courses.free")} courses are always saved with a price of 0.
+                </p>
+              )}
             </div>
             <div className="space-y-3 border border-slate-200 rounded-sm p-4">
               <div className="flex items-center gap-2 text-sm font-medium text-[#0A0B10]">
