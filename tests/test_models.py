@@ -61,3 +61,13 @@ def test_company_update_accepts_training_assignments():
 def test_course_update_accepts_auto_issue_certificate():
     update = CourseUpdate(auto_issue_certificate=False)
     assert update.auto_issue_certificate is False
+
+
+def test_course_create_rejects_negative_price():
+    with pytest.raises(ValidationError):
+        CourseCreate(title="Course", description="Description", price=-1)
+
+
+def test_course_update_rejects_negative_price():
+    with pytest.raises(ValidationError):
+        CourseUpdate(price=-0.01)
