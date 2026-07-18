@@ -139,8 +139,9 @@ LearnHub is a full-featured LMS for creating, managing, and delivering courses. 
 | Assessments | Multiple-choice quizzes, configurable pass threshold |
 | Credentials | Auto-generated certificates on pass |
 | Commerce | Stripe checkout + webhooks |
-| AI | Deepseek chatbot + course/quiz translation |
+| AI | Deepseek/xAI chatbot + course/quiz translation (admin-configurable provider) |
 | Comms | Brevo emails (enrollment, quiz progress, certificate) |
+| Companies | B2B org management; courses/users scoped to a company |
 | Roles | Admin, client manager (admin-assigned), student |
 
 ---
@@ -151,7 +152,7 @@ LearnHub is a full-featured LMS for creating, managing, and delivering courses. 
 ┌─────────────────────────────────────────────────────────────────┐
 │                         CLIENT (React SPA)                        │
 │  Landing · Auth · Dashboards · Course player · Quiz · Certs      │
-│  i18n: EN + 繁中 (partial — see Internationalization)            │
+│  i18n: EN, 繁中, 简中, 日本語, 한국어 (see Internationalization)  │
 └───────────────────────────────┬─────────────────────────────────┘
                                 │ HTTPS + cookies (JWT)
                                 ▼
@@ -163,7 +164,7 @@ LearnHub is a full-featured LMS for creating, managing, and delivering courses. 
                                 │
         ┌───────────────────────┼───────────────────────┐
         ▼                       ▼                       ▼
-   MongoDB                 Deepseek AI              Stripe
+   MongoDB               Deepseek / xAI             Stripe
    (primary DB)            (chat / translate)      (payments)
                                 │
                                 ▼
@@ -177,7 +178,7 @@ LearnHub is a full-featured LMS for creating, managing, and delivering courses. 
 | `server.py` | Uvicorn entry point |
 | `app.py` | App factory, CORS, lifespan, indexes, admin seed |
 | `routes.py` | Aggregates routers under `/api` |
-| `routers/` | Domain route modules (`auth`, `courses`, `lessons`, `quizzes`, `enrollments`, `groups`, `certificates`, `forums`, `chat`, `translate`, `payments`, `users`, `stats`, `root`) |
+| `routers/` | Domain route modules (`auth`, `courses`, `lessons`, `quizzes`, `enrollments`, `groups`, `companies`, `certificates`, `certificate_templates`, `certificate_settings`, `forums`, `chat`, `translate`, `payments`, `progress`, `users`, `stats`, `uploads`, `email_notifications`, `ai_settings`, `root`) |
 | `clients.py` | Shared Deepseek + Stripe client init |
 | `course_utils.py` | Course cascade-delete helpers |
 | `config.py` | Environment configuration |
@@ -212,7 +213,7 @@ See [frontend/README.md](frontend/README.md) for frontend-specific setup.
 | Database | MongoDB 6+ | Document store |
 | Auth | PyJWT, bcrypt | HTTP-only cookies |
 | Payments | Stripe | Checkout sessions + webhooks |
-| AI | OpenAI SDK → Deepseek | Chat + translation |
+| AI | OpenAI SDK → Deepseek or xAI (admin-configurable) | Chat + translation |
 | Email | Brevo (httpx) | Optional; skipped if no API key |
 
 ---
@@ -318,6 +319,8 @@ Set `apply_to_course: true` to apply styling to all certificates for that certif
 | Users | `GET /users`, `PUT /users/{id}/role` |
 | Stats | `GET /stats/admin`, `GET /stats/admin/analytics`, `GET /stats/student` |
 | Progress | `GET /progress/course/{id}`, `PATCH /progress/lessons/{id}`, `POST /progress/lessons/{id}/complete` |
+| AI settings | `GET/PUT /admin/ai-settings`, `POST /admin/ai-settings/test` — configure Deepseek/xAI provider + key (admin) |
+| Companies | `GET/POST /companies`, `GET/PUT/DELETE /companies/{id}` — B2B org management (admin) |
 
 ---
 
@@ -386,7 +389,7 @@ Course content supports **5 languages**: `en`, `zh-TW`, `zh-CN`, `ja`, `ko`. UI 
 
 ## Database Collections
 
-`users` · `courses` · `lessons` · `quizzes` · `quiz_attempts` · `enrollments` · `certificates` · `forum_posts` · `chat_messages` · `payment_transactions`
+`users` · `companies` · `courses` · `lessons` · `lesson_progress` · `quizzes` · `quiz_attempts` · `enrollments` · `certificates` · `certificate_templates` · `forum_posts` · `chat_messages` · `payment_transactions` · `platform_settings` · `email_notification_settings` · `email_notification_logs`
 
 <details>
 <summary>Schema reference (expand)</summary>
@@ -454,7 +457,12 @@ STRIPE_API_KEY=
 STRIPE_WEBHOOK_SECRET=
 REQUIRE_STRIPE_WEBHOOK_SECRET=false # true in production
 
+# AI provider keys are NOT read from env vars — set them from the admin UI
+# (Admin → AI Settings, PUT /api/admin/ai-settings). DEEPSEEK_API_KEY/XAI_API_KEY
+# below are unused placeholders kept for backward compatibility.
 DEEPSEEK_API_KEY=
+XAI_API_KEY=
+SETTINGS_ENCRYPTION_KEY=            # encrypts AI provider keys at rest; falls back to JWT_SECRET if unset
 BREVO_API_KEY=
 EMAIL_FROM=noreply@yourdomain.com
 EMAIL_FROM_NAME=LearnHub
@@ -568,7 +576,7 @@ Take quiz → score computed vs `passing_score` → **pass:** mark enrollment co
 
 ### AI translation
 
-Admin selects target language → Deepseek translates title, description, lessons → new course copy linked via `source_course_id`.
+Admin selects target language → configured provider (Deepseek or xAI) translates title, description, lessons, quizzes → new course copy linked via `source_course_id`.
 
 ---
 
