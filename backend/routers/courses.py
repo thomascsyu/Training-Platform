@@ -314,9 +314,9 @@ async def update_course(course_id: str, data: CourseUpdate, request: Request):
         if not existing_course:
             raise HTTPException(status_code=404, detail="Course not found")
         is_free, price, course_type = _resolve_course_type(
-            update_data.get("is_free", existing_course.get("is_free")),
+            update_data.get("is_free"),
             update_data.get("price", existing_course.get("price")),
-            update_data.get("course_type", existing_course.get("course_type")),
+            update_data.get("course_type"),
         )
         update_data["is_free"] = is_free
         update_data["price"] = price
