@@ -22,13 +22,10 @@ async def create_enrollment(data: EnrollmentCreate, request: Request):
         raise HTTPException(status_code=404, detail="Course not found")
 
     if user["role"] == "admin" and data.user_ids:
-        enrolled_users = []
-        for uid in data.user_ids:
-            enrolled_user = await db.users.find_one(
-                {"_id": parse_object_id(uid, "user")}
-            )
-            if enrolled_user:
-                enrolled_users.append(enrolled_user)
+        object_ids = [parse_object_id(uid, "user") for uid in data.user_ids]
+        enrolled_users = await db.users.find({"_id": {"$in": object_ids}}).to_list(
+            len(object_ids)
+        )
         enrolled = await enroll_users_in_course(
             course,
             data.course_id,

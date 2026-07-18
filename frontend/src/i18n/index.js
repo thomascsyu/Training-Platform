@@ -1,16 +1,17 @@
 import en from "./en";
-import zhTW from "./zh-TW";
-import zhCN from "./zh-CN";
-import ja from "./ja";
-import ko from "./ko";
 
-export const translations = {
-  en,
-  "zh-TW": zhTW,
-  "zh-CN": zhCN,
-  ja,
-  ko,
+// Only the default locale is bundled eagerly. The rest are code-split and
+// fetched on demand by LanguageContext so switching/loading a non-English
+// UI doesn't cost every visitor ~2,000 lines of unused translation strings.
+export const localeLoaders = {
+  en: () => Promise.resolve(en),
+  "zh-TW": () => import("./zh-TW").then((m) => m.default),
+  "zh-CN": () => import("./zh-CN").then((m) => m.default),
+  ja: () => import("./ja").then((m) => m.default),
+  ko: () => import("./ko").then((m) => m.default),
 };
+
+export const defaultTranslations = en;
 
 export const languageNames = {
   en: "English",
@@ -51,4 +52,4 @@ export const getCourseLanguageDisplay = (langCode, { short = false } = {}) => {
   return labels[langCode] || langCode;
 };
 
-export default translations;
+export default defaultTranslations;

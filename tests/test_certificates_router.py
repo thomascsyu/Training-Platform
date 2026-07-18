@@ -137,7 +137,9 @@ async def test_customize_certificate_updates_language(monkeypatch):
         "background": "plain",
     }
     mock_db.certificates.find_one.return_value = existing_cert
-    mock_db.certificates.update_one = AsyncMock()
+    mock_db.certificates.bulk_write = AsyncMock(
+        return_value=MagicMock(modified_count=1)
+    )
 
     monkeypatch.setattr(certificates_router, "db", mock_db)
     monkeypatch.setattr(certificates_router, "require_roles", _fake_admin_require_roles)
@@ -149,7 +151,9 @@ async def test_customize_certificate_updates_language(monkeypatch):
     )
 
     assert result["message"] == "Updated 1 certificate(s)"
-    update_call = mock_db.certificates.update_one.await_args.args[1]
+    operations = mock_db.certificates.bulk_write.await_args.args[0]
+    assert len(operations) == 1
+    update_call = operations[0]._doc
     assert update_call["$set"]["language"] == "ja"
     assert "修了証明書" in update_call["$set"]["template_html"]
 

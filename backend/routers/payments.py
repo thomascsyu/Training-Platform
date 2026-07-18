@@ -275,10 +275,12 @@ async def payments_summary(request: Request):
     paid = await db.payment_transactions.count_documents({"payment_status": "paid"})
     pending = await db.payment_transactions.count_documents({"payment_status": "pending"})
 
-    paid_transactions = await db.payment_transactions.find(
-        {"payment_status": "paid"}
-    ).to_list(10000)
-    revenue = sum(float(t.get("amount", 0)) for t in paid_transactions)
+    revenue = 0.0
+    async for row in db.payment_transactions.aggregate([
+        {"$match": {"payment_status": "paid"}},
+        {"$group": {"_id": None, "revenue": {"$sum": "$amount"}}},
+    ]):
+        revenue = row.get("revenue", 0) or 0
 
     return {
         "total_transactions": total,

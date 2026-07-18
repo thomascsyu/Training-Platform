@@ -25,7 +25,9 @@ def mock_db(monkeypatch):
     db = MagicMock()
     db.enrollments = MagicMock()
     db.enrollments.find_one = AsyncMock(return_value=None)
+    db.enrollments.find = MagicMock(return_value=FakeCursor([]))
     db.enrollments.insert_one = AsyncMock()
+    db.enrollments.insert_many = AsyncMock()
     db.courses = MagicMock()
     db.courses.find = MagicMock(return_value=FakeCursor([]))
     monkeypatch.setattr("enrollment_utils.db", db)
@@ -62,7 +64,7 @@ async def test_enroll_student_in_assigned_company_course(mock_db, mock_email):
     enrolled = await enroll_user_in_assigned_company_courses(user)
 
     assert enrolled == [course_id]
-    mock_db.enrollments.insert_one.assert_awaited_once()
+    mock_db.enrollments.insert_many.assert_awaited_once()
     mock_email.assert_awaited_once()
 
 
@@ -89,7 +91,7 @@ async def test_enroll_client_manager_in_assigned_company_course(mock_db, mock_em
     enrolled = await enroll_user_in_assigned_company_courses(user)
 
     assert enrolled == [course_id]
-    mock_db.enrollments.insert_one.assert_awaited_once()
+    mock_db.enrollments.insert_many.assert_awaited_once()
     mock_email.assert_awaited_once()
 
 
@@ -108,7 +110,7 @@ async def test_skip_admin_for_company_course_assignment(mock_db, mock_email):
     enrolled = await enroll_user_in_assigned_company_courses(user)
 
     assert enrolled == []
-    mock_db.enrollments.insert_one.assert_not_awaited()
+    mock_db.enrollments.insert_many.assert_not_awaited()
     mock_email.assert_not_awaited()
 
 
@@ -162,5 +164,7 @@ async def test_enroll_company_students_includes_client_managers(mock_db, mock_em
     enrolled = await enroll_company_students_in_course(course, course_id, [company_id])
 
     assert set(enrolled) == {student_id, manager_id}
-    assert mock_db.enrollments.insert_one.await_count == 2
+    mock_db.enrollments.insert_many.assert_awaited_once()
+    inserted_docs = mock_db.enrollments.insert_many.await_args[0][0]
+    assert {doc["user_id"] for doc in inserted_docs} == {student_id, manager_id}
     assert mock_email.await_count == 2

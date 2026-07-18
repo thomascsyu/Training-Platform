@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, useCallback, useMemo } from "react";
 import { API, setSessionExpiredHandler } from "@/lib/api";
 
 const AuthContext = createContext(null);
@@ -14,11 +14,7 @@ export const AuthProvider = ({ children }) => {
     return () => setSessionExpiredHandler(null);
   }, []);
 
-  useEffect(() => {
-    checkAuth();
-  }, []);
-
-  const checkAuth = async () => {
+  const checkAuth = useCallback(async () => {
     setLoading(true);
     try {
       const { data } = await API.get("/auth/me");
@@ -28,9 +24,13 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const _verifySession = async () => {
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
+
+  const _verifySession = useCallback(async () => {
     // The login/register endpoints return the user object in the JSON body, but
     // real session persistence depends on HTTP-only cookies. Re-fetch /me so
     // we fail fast here if the browser didn't store/send cookies, instead of
@@ -49,53 +49,62 @@ export const AuthProvider = ({ children }) => {
       sessionError.cause = err;
       throw sessionError;
     }
-  };
+  }, []);
 
-  const login = async (email, password) => {
-    setLoading(true);
-    try {
-      const { data } = await API.post("/auth/login", { email, password });
-      setUser(data);
-      const me = await _verifySession();
-      setUser(me);
-      return me;
-    } catch (err) {
-      setUser(false);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
+  const login = useCallback(
+    async (email, password) => {
+      setLoading(true);
+      try {
+        const { data } = await API.post("/auth/login", { email, password });
+        setUser(data);
+        const me = await _verifySession();
+        setUser(me);
+        return me;
+      } catch (err) {
+        setUser(false);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [_verifySession]
+  );
 
-  const register = async (email, password, name) => {
-    setLoading(true);
-    try {
-      const { data } = await API.post("/auth/register", {
-        email,
-        password,
-        name,
-        role: "student",
-      });
-      setUser(data);
-      const me = await _verifySession();
-      setUser(me);
-      return me;
-    } catch (err) {
-      setUser(false);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
+  const register = useCallback(
+    async (email, password, name) => {
+      setLoading(true);
+      try {
+        const { data } = await API.post("/auth/register", {
+          email,
+          password,
+          name,
+          role: "student",
+        });
+        setUser(data);
+        const me = await _verifySession();
+        setUser(me);
+        return me;
+      } catch (err) {
+        setUser(false);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [_verifySession]
+  );
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     await API.post("/auth/logout");
     setUser(false);
-  };
+  }, []);
+
+  const value = useMemo(
+    () => ({ user, loading, login, register, logout, checkAuth }),
+    [user, loading, login, register, logout, checkAuth]
+  );
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, checkAuth }}>
-      {children}
-    </AuthContext.Provider>
+    <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
   );
 };

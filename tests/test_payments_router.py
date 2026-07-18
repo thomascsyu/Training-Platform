@@ -31,6 +31,14 @@ def _cursor_mock(items):
     return cursor
 
 
+def _agg_cursor_mock(items):
+    async def _generator():
+        for item in items:
+            yield item
+
+    return _generator()
+
+
 def _fake_require_roles(*roles):
     async def checker(_request):
         return {"id": ADMIN_ID, "role": "admin", "company_id": None}
@@ -166,11 +174,9 @@ async def test_get_payment_status_includes_receipt_info(monkeypatch):
 async def test_payments_summary_returns_counts_and_revenue(monkeypatch):
     mock_db = _build_mock_db()
     mock_db.payment_transactions.count_documents.side_effect = [10, 6, 4]
-    mock_db.payment_transactions.find.return_value = _cursor_mock([
-        {"amount": 10.0},
-        {"amount": 20.0},
-        {"amount": 5.5},
-    ])
+    mock_db.payment_transactions.aggregate = MagicMock(
+        return_value=_agg_cursor_mock([{"_id": None, "revenue": 35.5}])
+    )
 
     monkeypatch.setattr(payments_router, "db", mock_db)
     monkeypatch.setattr(payments_router, "require_roles", _fake_require_roles)
