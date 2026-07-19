@@ -17,6 +17,7 @@ export default {
       bulkEnroll: "Bulk Enroll",
       groupProgress: "Group Progress",
       aiSettings: "AI API Keys",
+      stripeSettings: "Stripe Payments",
       emailNotifications: "Email Notifications",
       payments: "Payments",
       certificates: "Certificates"
@@ -439,6 +440,31 @@ export default {
       configureKey: "Please enter an API key to test.",
       deepseekHint: "Create a key at platform.deepseek.com",
       xaiHint: "Create a key at x.ai/api"
+    },
+
+    // Stripe Settings
+    stripeSettings: {
+      title: "Stripe Payments",
+      description: "Configure Stripe so students can pay for courses at checkout.",
+      credentials: "Stripe credentials",
+      hint: "Paste your Stripe secret key here, or set STRIPE_API_KEY on the API service. Database values override environment variables.",
+      apiKey: "Secret API Key",
+      apiKeyPlaceholder: "sk_live_… or sk_test_…",
+      apiKeyHint: "Leave blank and save only other fields to keep the existing key. Get keys from dashboard.stripe.com/apikeys.",
+      webhookSecret: "Webhook signing secret",
+      webhookSecretPlaceholder: "whsec_…",
+      webhookSecretHint: "Required in production. Point Stripe webhooks at /api/webhook/stripe for checkout.session.completed.",
+      currentSource: "Currently using: {source}",
+      sourceDatabase: "Saved in admin settings",
+      sourceEnvironment: "Environment variable",
+      testConnection: "Test Connection",
+      testing: "Testing...",
+      save: "Save Settings",
+      saving: "Saving...",
+      saved: "Stripe settings saved.",
+      connectionOk: "Connected",
+      connectionFailed: "Connection failed",
+      notConfigured: "Not configured"
     },
 
     // Toast

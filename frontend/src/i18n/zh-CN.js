@@ -18,6 +18,7 @@ export default {
       groupProgress: "群組進度",
       emailNotifications: "Email Notifications",
       aiSettings: "AI API 密钥",
+      stripeSettings: "Stripe 付款",
       payments: "付款",
       certificates: "证书"
     },
@@ -406,6 +407,31 @@ export default {
       lessonsColumn: "课时",
       attemptsColumn: "尝试次数",
       lastActivityColumn: "最近活动"
+    },
+
+    // Stripe Settings
+    stripeSettings: {
+      title: "Stripe 付款",
+      description: "配置 Stripe，让学生可以在结账时付款购买课程。",
+      credentials: "Stripe 凭证",
+      hint: "在此粘贴 Stripe 密钥，或在 API 服务设置 STRIPE_API_KEY。数据库中的值会覆盖环境变量。",
+      apiKey: "Secret API Key",
+      apiKeyPlaceholder: "sk_live_… 或 sk_test_…",
+      apiKeyHint: "若只想保留现有密钥，请留空并只保存其他字段。密钥请至 dashboard.stripe.com/apikeys 获取。",
+      webhookSecret: "Webhook 签名密钥",
+      webhookSecretPlaceholder: "whsec_…",
+      webhookSecretHint: "正式环境必须设置。请将 Stripe webhook 指向 /api/webhook/stripe，并订阅 checkout.session.completed。",
+      currentSource: "当前使用：{source}",
+      sourceDatabase: "已保存在管理设置",
+      sourceEnvironment: "环境变量",
+      testConnection: "测试连接",
+      testing: "测试中...",
+      save: "保存设置",
+      saving: "保存中...",
+      saved: "Stripe 设置已保存。",
+      connectionOk: "已连接",
+      connectionFailed: "连接失败",
+      notConfigured: "尚未配置"
     },
 
     // Toast

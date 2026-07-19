@@ -32,6 +32,7 @@ _ROUTER_MODULES = (
     "routers.chat",
     "routers.translate",
     "routers.payments",
+    "routers.stripe_settings",
     "routers.progress",
     "routers.companies",
     "routers.users",

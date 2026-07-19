@@ -18,6 +18,7 @@ export default {
       groupProgress: "グループ進捗",
       emailNotifications: "Email Notifications",
       aiSettings: "AI APIキー",
+      stripeSettings: "Stripe 決済",
       payments: "支払い",
       certificates: "修了証"
     },
@@ -407,6 +408,31 @@ export default {
       lessonsColumn: "レッスン",
       attemptsColumn: "受験回数",
       lastActivityColumn: "最終活動"
+    },
+
+    // Stripe Settings
+    stripeSettings: {
+      title: "Stripe 決済",
+      description: "Stripe を設定して、受講者がチェックアウトでコースを購入できるようにします。",
+      credentials: "Stripe 認証情報",
+      hint: "ここに Stripe シークレットキーを貼り付けるか、API サービスに STRIPE_API_KEY を設定してください。データベースの値が環境変数より優先されます。",
+      apiKey: "Secret API Key",
+      apiKeyPlaceholder: "sk_live_… または sk_test_…",
+      apiKeyHint: "既存のキーを維持する場合は空のままにし、他の項目のみ保存してください。キーは dashboard.stripe.com/apikeys で取得できます。",
+      webhookSecret: "Webhook 署名シークレット",
+      webhookSecretPlaceholder: "whsec_…",
+      webhookSecretHint: "本番環境では必須です。Stripe webhook を /api/webhook/stripe に向け、checkout.session.completed を購読してください。",
+      currentSource: "現在の設定元: {source}",
+      sourceDatabase: "管理画面に保存済み",
+      sourceEnvironment: "環境変数",
+      testConnection: "接続テスト",
+      testing: "テスト中...",
+      save: "設定を保存",
+      saving: "保存中...",
+      saved: "Stripe 設定を保存しました。",
+      connectionOk: "接続済み",
+      connectionFailed: "接続に失敗しました",
+      notConfigured: "未設定"
     },
 
     // Toast

@@ -358,6 +358,15 @@ class AITestConnectionResponse(BaseModel):
     error: Optional[str] = None
 
 
+class StripeSettingsUpdate(BaseModel):
+    api_key: Optional[str] = None
+    webhook_secret: Optional[str] = None
+
+
+class StripeTestConnectionRequest(BaseModel):
+    api_key: Optional[str] = None
+
+
 _CERTIFICATE_BACKGROUND_KEYS = {"plain", "geometric", "waves", "guilloche", "corners"}
 _CERTIFICATE_ORIENTATIONS = {"landscape", "portrait"}
 _DEFAULT_BODY_TEXT = (

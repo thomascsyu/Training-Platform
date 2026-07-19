@@ -6,16 +6,16 @@ import stripe
 from fastapi import APIRouter, HTTPException, Request
 
 from auth_utils import get_current_user, require_roles
-from config import (
-    REQUIRE_STRIPE_WEBHOOK_SECRET,
-    STRIPE_API_KEY,
-    STRIPE_WEBHOOK_SECRET,
-    logger,
-)
+from config import REQUIRE_STRIPE_WEBHOOK_SECRET, logger
 from database import db
 from db_utils import parse_object_id
 from models import PaymentCreate
 from payment_utils import enroll_user_after_payment, mark_transaction_paid
+from stripe_settings import (
+    apply_stripe_api_key,
+    get_stripe_api_key,
+    get_stripe_webhook_secret,
+)
 
 router = APIRouter(tags=["payments"])
 
@@ -24,8 +24,10 @@ router = APIRouter(tags=["payments"])
 async def create_checkout(data: PaymentCreate, request: Request):
     user = await get_current_user(request)
 
-    if not STRIPE_API_KEY:
+    api_key = await get_stripe_api_key()
+    if not api_key:
         raise HTTPException(status_code=503, detail="Payment service not configured")
+    apply_stripe_api_key(api_key)
 
     course = await db.courses.find_one({"_id": parse_object_id(data.course_id, "course")})
     if not course:
@@ -95,8 +97,10 @@ async def create_checkout(data: PaymentCreate, request: Request):
 async def get_payment_status(session_id: str, request: Request):
     user = await get_current_user(request)
 
-    if not STRIPE_API_KEY:
+    api_key = await get_stripe_api_key()
+    if not api_key:
         raise HTTPException(status_code=503, detail="Payment service not configured")
+    apply_stripe_api_key(api_key)
 
     transaction = await db.payment_transactions.find_one({"session_id": session_id})
     if not transaction:
@@ -141,15 +145,18 @@ async def stripe_webhook(request: Request):
     body = await request.body()
     signature = request.headers.get("Stripe-Signature")
 
-    if not STRIPE_API_KEY:
+    api_key = await get_stripe_api_key()
+    if not api_key:
         raise HTTPException(status_code=503, detail="Payment service not configured")
+    apply_stripe_api_key(api_key)
 
-    if REQUIRE_STRIPE_WEBHOOK_SECRET and not STRIPE_WEBHOOK_SECRET:
+    webhook_secret = await get_stripe_webhook_secret()
+    if REQUIRE_STRIPE_WEBHOOK_SECRET and not webhook_secret:
         raise HTTPException(status_code=503, detail="Stripe webhook secret is required")
 
     try:
-        if STRIPE_WEBHOOK_SECRET:
-            event = stripe.Webhook.construct_event(body, signature, STRIPE_WEBHOOK_SECRET)
+        if webhook_secret:
+            event = stripe.Webhook.construct_event(body, signature, webhook_secret)
         else:
             event = stripe.Event.construct_from(json.loads(body), stripe.api_key)
 
