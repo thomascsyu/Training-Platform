@@ -449,7 +449,11 @@ export default {
       modeTest: "テスト",
       rejectPublishableKey: "公開可能キー（pk_…）は使用できません。Secret（sk_…）または制限付き（rk_…）キーを貼り付けてください。",
       rejectInvalidApiKey: "API キーは sk_… または rk_… で始まる必要があります。",
-      rejectInvalidWebhookSecret: "Webhook シークレットは whsec_… で始まる必要があります。"
+      rejectInvalidWebhookSecret: "Webhook シークレットは whsec_… で始まる必要があります。",
+      currency: "チェックアウト通貨",
+      currencyHint: "Stripe Checkout に送信され、コース価格に表示される通貨（例: HKD）。入力するコース金額と一致させてください。",
+      sourceDefault: "デフォルト（USD）",
+      accountDefaultCurrency: "Stripe アカウントのデフォルト通貨"
     },
 
     // Toast

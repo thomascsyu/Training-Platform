@@ -16,6 +16,7 @@ import {
 import { courseLanguages } from "@/i18n";
 import { API, formatError } from "@/lib/api";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useCurrency } from "@/contexts/CurrencyContext";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { ThumbnailUpload } from "@/components/ThumbnailUpload";
 
@@ -120,6 +121,7 @@ export const AdminCourseEditPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const { currency } = useCurrency();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [course, setCourse] = useState(null);
@@ -537,7 +539,7 @@ export const AdminCourseEditPage = () => {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>{t("courses.price")} ($)</Label>
+                <Label>{t("courses.price")} ({currency.toUpperCase()})</Label>
                 <Input
                   type="number"
                   value={formData.price}

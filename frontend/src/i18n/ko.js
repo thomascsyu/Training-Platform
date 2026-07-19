@@ -449,7 +449,11 @@ export default {
       modeTest: "테스트",
       rejectPublishableKey: "공개 가능 키(pk_…)는 사용할 수 없습니다. Secret(sk_…) 또는 제한(rk_…) 키를 붙여넣으세요.",
       rejectInvalidApiKey: "API 키는 sk_… 또는 rk_…로 시작해야 합니다.",
-      rejectInvalidWebhookSecret: "Webhook 시크릿은 whsec_…로 시작해야 합니다."
+      rejectInvalidWebhookSecret: "Webhook 시크릿은 whsec_…로 시작해야 합니다.",
+      currency: "결제 통화",
+      currencyHint: "Stripe Checkout에 전달되고 코스 가격에 표시되는 통화입니다(예: HKD). 입력한 코스 금액과 일치해야 합니다.",
+      sourceDefault: "기본값(USD)",
+      accountDefaultCurrency: "Stripe 계정 기본 통화"
     },
 
     // Toast

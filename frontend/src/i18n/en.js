@@ -481,7 +481,11 @@ export default {
       modeTest: "Test",
       rejectPublishableKey: "Publishable keys (pk_…) cannot be used. Paste a Secret (sk_…) or Restricted (rk_…) key.",
       rejectInvalidApiKey: "API key must start with sk_… or rk_….",
-      rejectInvalidWebhookSecret: "Webhook secret must start with whsec_…."
+      rejectInvalidWebhookSecret: "Webhook secret must start with whsec_….",
+      currency: "Checkout currency",
+      currencyHint: "Currency sent to Stripe Checkout and shown on course prices (e.g. HKD). Must match the amounts you enter for courses.",
+      sourceDefault: "Default (USD)",
+      accountDefaultCurrency: "Stripe account default currency"
     },
 
     // Toast

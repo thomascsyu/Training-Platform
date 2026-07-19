@@ -448,7 +448,11 @@ export default {
       modeTest: "测试（Test）",
       rejectPublishableKey: "不能使用可发布密钥（pk_…）。请粘贴 Secret（sk_…）或受限（rk_…）密钥。",
       rejectInvalidApiKey: "API 密钥必须以 sk_… 或 rk_… 开头。",
-      rejectInvalidWebhookSecret: "Webhook 密钥必须以 whsec_… 开头。"
+      rejectInvalidWebhookSecret: "Webhook 密钥必须以 whsec_… 开头。",
+      currency: "结账货币",
+      currencyHint: "发送至 Stripe Checkout 并显示在课程价格中的货币（例如 HKD）。请与你输入的课程金额一致。",
+      sourceDefault: "默认（USD）",
+      accountDefaultCurrency: "Stripe 账户默认货币"
     },
 
     // Toast

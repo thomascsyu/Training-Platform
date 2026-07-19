@@ -361,6 +361,7 @@ class AITestConnectionResponse(BaseModel):
 class StripeSettingsUpdate(BaseModel):
     api_key: Optional[str] = None
     webhook_secret: Optional[str] = None
+    currency: Optional[str] = None
 
 
 class StripeTestConnectionRequest(BaseModel):

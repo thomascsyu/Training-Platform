@@ -13,11 +13,19 @@ from models import PaymentCreate
 from payment_utils import enroll_user_after_payment, mark_transaction_paid
 from stripe_settings import (
     apply_stripe_api_key,
+    get_payment_currency,
     get_stripe_api_key,
     get_stripe_webhook_secret,
+    to_stripe_unit_amount,
 )
 
 router = APIRouter(tags=["payments"])
+
+
+@router.get("/payments/currency")
+async def get_currency():
+    """Public: currency used for course prices and Stripe Checkout."""
+    return {"currency": await get_payment_currency()}
 
 
 @router.post("/payments/checkout")
@@ -48,13 +56,14 @@ async def create_checkout(data: PaymentCreate, request: Request):
 
     success_url = f"{data.origin_url}/payment/success?session_id={{CHECKOUT_SESSION_ID}}"
     cancel_url = f"{data.origin_url}/checkout/{data.course_id}?payment=canceled"
+    currency = await get_payment_currency()
 
     try:
         # Omit payment_method_types so Stripe can enable dynamic payment methods.
         session = stripe.checkout.Session.create(
             line_items=[{
                 "price_data": {
-                    "currency": "usd",
+                    "currency": currency,
                     "product_data": {
                         "name": course.get("title", "Course"),
                         "description": (
@@ -63,7 +72,7 @@ async def create_checkout(data: PaymentCreate, request: Request):
                             else None
                         ),
                     },
-                    "unit_amount": int(price * 100),
+                    "unit_amount": to_stripe_unit_amount(price, currency),
                 },
                 "quantity": 1,
             }],
@@ -82,7 +91,7 @@ async def create_checkout(data: PaymentCreate, request: Request):
             "course_id": data.course_id,
             "user_id": user["id"],
             "amount": price,
-            "currency": "usd",
+            "currency": currency,
             "payment_status": "pending",
             "created_at": datetime.now(timezone.utc).isoformat(),
         })

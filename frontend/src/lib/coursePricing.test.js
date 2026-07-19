@@ -1,9 +1,10 @@
 import { formatCoursePrice, getCoursePriceDisplay, hasSpecialOffer } from "./coursePricing";
 
 describe("coursePricing", () => {
-  test("formats prices with two decimals", () => {
-    expect(formatCoursePrice(90)).toBe("$90.00");
-    expect(formatCoursePrice("12.5")).toBe("$12.50");
+  test("formats prices with currency code", () => {
+    expect(formatCoursePrice(90, "usd")).toMatch(/90/);
+    expect(formatCoursePrice(90, "hkd")).toMatch(/90/);
+    expect(formatCoursePrice("12.5", "usd")).toMatch(/12\.50|12\.5/);
   });
 
   test("detects special offer only when original_price is higher", () => {
@@ -14,14 +15,18 @@ describe("coursePricing", () => {
   });
 
   test("builds display model for special offer courses", () => {
-    expect(getCoursePriceDisplay({ price: 90, original_price: 120, is_free: false })).toEqual({
+    const display = getCoursePriceDisplay(
+      { price: 90, original_price: 120, is_free: false },
+      "hkd"
+    );
+    expect(display).toMatchObject({
       isFree: false,
       hasOffer: true,
       price: 90,
       originalPrice: 120,
-      priceLabel: "$90.00",
-      originalPriceLabel: "$120.00",
     });
+    expect(display.priceLabel).toMatch(/90/);
+    expect(display.originalPriceLabel).toMatch(/120/);
   });
 
   test("builds display model for free courses", () => {

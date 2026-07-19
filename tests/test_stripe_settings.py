@@ -119,12 +119,18 @@ async def test_update_stripe_settings_saves(mock_db, mock_require_admin, monkeyp
     mock_db.platform_settings.replace_one = AsyncMock(side_effect=fake_replace)
 
     response = await stripe_settings_router.update_stripe_settings(
-        StripeSettingsUpdate(api_key="sk_test_newkey", webhook_secret="whsec_new"),
+        StripeSettingsUpdate(
+            api_key="sk_test_newkey",
+            webhook_secret="whsec_new",
+            currency="hkd",
+        ),
         request=object(),
     )
 
     assert response["api_key_configured"] is True
     assert response["api_key_source"] == "database"
+    assert response["currency"] == "hkd"
+    assert response["currency_source"] == "database"
 
 
 @pytest.mark.asyncio
@@ -161,6 +167,47 @@ def test_validate_webhook_secret():
     assert stripe_settings.validate_stripe_webhook_secret("whsec_abc") is None
     assert stripe_settings.validate_stripe_webhook_secret("") is None
     assert stripe_settings.validate_stripe_webhook_secret("not-a-secret") is not None
+
+
+def test_validate_currency():
+    assert stripe_settings.validate_currency("hkd") is None
+    assert stripe_settings.validate_currency("USD") is None
+    assert stripe_settings.validate_currency("") is None
+    assert stripe_settings.validate_currency("us") is not None
+    assert stripe_settings.validate_currency("dollar") is not None
+
+
+def test_to_stripe_unit_amount():
+    assert stripe_settings.to_stripe_unit_amount(1000, "hkd") == 100000
+    assert stripe_settings.to_stripe_unit_amount(1000, "usd") == 100000
+    assert stripe_settings.to_stripe_unit_amount(1000, "jpy") == 1000
+
+
+@pytest.mark.asyncio
+async def test_resolve_payment_currency_prefers_database(mock_db, monkeypatch):
+    monkeypatch.delenv("STRIPE_CURRENCY", raising=False)
+    mock_db.platform_settings.find_one.return_value = {
+        "_id": "stripe",
+        "api_key": "",
+        "webhook_secret": "",
+        "currency": "hkd",
+    }
+
+    resolved = await stripe_settings.resolve_payment_currency()
+
+    assert resolved["currency"] == "hkd"
+    assert resolved["currency_source"] == "database"
+
+
+@pytest.mark.asyncio
+async def test_resolve_payment_currency_uses_env(mock_db, monkeypatch):
+    monkeypatch.setenv("STRIPE_CURRENCY", "sgd")
+    mock_db.platform_settings.find_one.return_value = None
+
+    resolved = await stripe_settings.resolve_payment_currency()
+
+    assert resolved["currency"] == "sgd"
+    assert resolved["currency_source"] == "environment"
 
 
 def test_is_stripe_live_key():

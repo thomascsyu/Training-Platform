@@ -14,6 +14,8 @@ import { BookOpen, Edit, Globe, Loader2, Plus, Trash2 } from "lucide-react";
 import { courseLanguages, getCourseLanguageDisplay } from "@/i18n";
 import { API, formatError } from "@/lib/api";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useCurrency } from "@/contexts/CurrencyContext";
+import { formatCoursePrice } from "@/lib/coursePricing";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { TranslateDialog } from "@/components/TranslateDialog";
 import { ThumbnailUpload } from "@/components/ThumbnailUpload";
@@ -26,6 +28,7 @@ export const AdminCoursesPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useLanguage();
+  const { currency } = useCurrency();
   const [courses, setCourses] = useState([]);
   const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -215,7 +218,7 @@ export const AdminCoursesPage = () => {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>{t("courses.price")} ($)</Label>
+                    <Label>{t("courses.price")} ({currency.toUpperCase()})</Label>
                     <Input
                       type="number"
                       value={formData.price}
@@ -367,7 +370,8 @@ export const AdminCoursesPage = () => {
                         <Badge variant="secondary" className="bg-green-100 text-green-700 rounded-sm text-xs">{t("courses.free")}</Badge>
                       ) : (
                         <Badge className="bg-amber-100 text-amber-700 rounded-sm text-xs">
-                          {t("courses.paymentRequired")} ${course.price}
+                          {t("courses.paymentRequired")}{" "}
+                          {formatCoursePrice(course.price, currency)}
                           {course.original_price > course.price ? ` · ${t("courses.specialOffer")}` : ""}
                         </Badge>
                       )}

@@ -3,6 +3,7 @@ import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "sonner";
 import { LanguageProvider } from "@/contexts/LanguageContext";
+import { CurrencyProvider } from "@/contexts/CurrencyContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { DashboardLayout } from "@/components/DashboardLayout";
@@ -71,6 +72,7 @@ const DashboardRouter = () => {
 function App() {
   return (
     <LanguageProvider>
+      <CurrencyProvider>
       <AuthProvider>
         <BrowserRouter>
           <Toaster position="top-right" richColors />
@@ -250,6 +252,7 @@ function App() {
           </Suspense>
         </BrowserRouter>
       </AuthProvider>
+      </CurrencyProvider>
     </LanguageProvider>
   );
 }
