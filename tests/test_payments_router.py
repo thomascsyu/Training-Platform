@@ -189,6 +189,9 @@ async def test_create_checkout_creates_stripe_session(monkeypatch):
     monkeypatch.setattr(
         payments_router, "get_stripe_api_key", AsyncMock(return_value="sk_test_123")
     )
+    monkeypatch.setattr(
+        payments_router, "get_payment_currency", AsyncMock(return_value="hkd")
+    )
     monkeypatch.setattr(payments_router, "apply_stripe_api_key", lambda *_args, **_kwargs: None)
     monkeypatch.setattr(
         payments_router,
@@ -205,6 +208,10 @@ async def test_create_checkout_creates_stripe_session(monkeypatch):
     assert "payment_method_types" not in created_kwargs
     assert created_kwargs["cancel_url"] == f"https://example.com/checkout/{COURSE_ID}?payment=canceled"
     assert created_kwargs["success_url"].startswith("https://example.com/payment/success")
+    assert created_kwargs["line_items"][0]["price_data"]["currency"] == "hkd"
+    assert created_kwargs["line_items"][0]["price_data"]["unit_amount"] == 100000
+    insert_doc = mock_db.payment_transactions.insert_one.await_args.args[0]
+    assert insert_doc["currency"] == "hkd"
     mock_db.payment_transactions.insert_one.assert_awaited_once()
 
 

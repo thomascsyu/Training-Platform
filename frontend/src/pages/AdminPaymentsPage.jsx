@@ -61,9 +61,17 @@ export const AdminPaymentsPage = () => {
     fetchData();
   }, [fetchData]);
 
-  const formatCurrency = (value) => {
+  const formatCurrency = (value, currency = "usd") => {
     const num = Number(value || 0);
-    return `$${num.toFixed(2)}`;
+    const code = (currency || "usd").toUpperCase();
+    try {
+      return new Intl.NumberFormat(undefined, {
+        style: "currency",
+        currency: code,
+      }).format(num);
+    } catch {
+      return `${code} ${num.toFixed(2)}`;
+    }
   };
 
   const formatDate = (value) => {
@@ -157,7 +165,9 @@ export const AdminPaymentsPage = () => {
                       <td className="p-4 font-mono text-xs text-slate-600">{tx.session_id}</td>
                       <td className="p-4 text-slate-700">{tx.course_title}</td>
                       <td className="p-4 text-slate-700">{tx.user_name}</td>
-                      <td className="p-4 font-medium text-slate-900">{formatCurrency(tx.amount)}</td>
+                      <td className="p-4 font-medium text-slate-900">
+                        {formatCurrency(tx.amount, tx.currency)}
+                      </td>
                       <td className="p-4">
                         <Badge variant={statusBadgeVariant(tx.payment_status)} className="rounded-sm capitalize">
                           {tx.payment_status}

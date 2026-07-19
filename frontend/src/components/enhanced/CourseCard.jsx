@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { BookOpen, Lock, Globe2, ArrowUpRight } from 'lucide-react';
 import { getCoursePriceDisplay } from '@/lib/coursePricing';
+import { useCurrency } from '@/contexts/CurrencyContext';
 
 /**
  * CourseCard — Swiss card with a 3px Klein index rule, lazy-loaded
@@ -18,8 +19,9 @@ const LANG_LABELS = { en: 'EN', 'zh-TW': '繁中', 'zh-CN': '简中', ja: '日�
 
 export default function CourseCard({ course, progress, onOpen, t = (s) => s }) {
   const [imgFailed, setImgFailed] = useState(false);
+  const { currency } = useCurrency();
   const showImage = course.thumbnail_url && !imgFailed;
-  const pricing = getCoursePriceDisplay(course);
+  const pricing = getCoursePriceDisplay(course, currency);
 
   return (
     <article

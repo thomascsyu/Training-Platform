@@ -1,5 +1,6 @@
-"""Stripe API key / webhook secret stored in platform_settings (admin-configurable)."""
+"""Stripe API key / webhook secret / currency stored in platform_settings (admin-configurable)."""
 
+import re
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -10,6 +11,16 @@ from config import STRIPE_API_KEY, STRIPE_WEBHOOK_SECRET, logger
 from database import db
 
 SETTINGS_ID = "stripe"
+DEFAULT_CURRENCY = "usd"
+
+# Stripe zero-decimal currencies — charge in whole units, not cents.
+# https://docs.stripe.com/currencies#zero-decimal
+ZERO_DECIMAL_CURRENCIES = frozenset({
+    "bif", "clp", "djf", "gnf", "jpy", "kmf", "krw", "mga",
+    "pyg", "rwf", "ugx", "vnd", "vuv", "xaf", "xof", "xpf",
+})
+
+_CURRENCY_RE = re.compile(r"^[a-z]{3}$")
 
 
 def _env_api_key() -> str:
@@ -49,6 +60,30 @@ def validate_stripe_webhook_secret(webhook_secret: Optional[str]) -> Optional[st
     return None
 
 
+def normalize_currency(currency: Optional[str]) -> Optional[str]:
+    """Return a lowercase ISO 4217 code, or None if empty."""
+    code = (currency or "").strip().lower()
+    return code or None
+
+
+def validate_currency(currency: Optional[str]) -> Optional[str]:
+    """Return an error message if currency is invalid; None if empty or valid."""
+    code = normalize_currency(currency)
+    if code is None:
+        return None
+    if not _CURRENCY_RE.match(code):
+        return "Currency must be a 3-letter ISO 4217 code (e.g. hkd, usd)."
+    return None
+
+
+def to_stripe_unit_amount(amount: float, currency: str) -> int:
+    """Convert a major-unit price to Stripe's integer unit_amount."""
+    code = (currency or DEFAULT_CURRENCY).strip().lower() or DEFAULT_CURRENCY
+    if code in ZERO_DECIMAL_CURRENCIES:
+        return int(round(float(amount)))
+    return int(round(float(amount) * 100))
+
+
 def is_stripe_live_key(api_key: str) -> bool:
     key = (api_key or "").strip()
     return key.startswith("sk_live") or key.startswith("rk_live")
@@ -58,10 +93,11 @@ async def load_stripe_settings() -> dict:
     """Load and decrypt Stripe settings from the database (no env fallback)."""
     doc = await db.platform_settings.find_one({"_id": SETTINGS_ID})
     if not doc:
-        return {"api_key": "", "webhook_secret": ""}
+        return {"api_key": "", "webhook_secret": "", "currency": ""}
     return {
         "api_key": _decrypt_value(doc.get("api_key", "") or ""),
         "webhook_secret": _decrypt_value(doc.get("webhook_secret", "") or ""),
+        "currency": normalize_currency(doc.get("currency")) or "",
     }
 
 
@@ -88,6 +124,25 @@ async def resolve_stripe_credentials() -> dict:
     }
 
 
+async def resolve_payment_currency() -> dict:
+    """Resolve checkout currency: database override, then environment, then usd."""
+    import os
+
+    stored = await load_stripe_settings()
+    db_currency = normalize_currency(stored.get("currency")) or ""
+    if db_currency:
+        return {"currency": db_currency, "currency_source": "database"}
+
+    raw_env = (os.environ.get("STRIPE_CURRENCY") or "").strip()
+    if raw_env:
+        return {
+            "currency": raw_env.lower(),
+            "currency_source": "environment",
+        }
+
+    return {"currency": DEFAULT_CURRENCY, "currency_source": "default"}
+
+
 async def get_stripe_api_key() -> str:
     creds = await resolve_stripe_credentials()
     return creds["api_key"]
@@ -96,6 +151,11 @@ async def get_stripe_api_key() -> str:
 async def get_stripe_webhook_secret() -> str:
     creds = await resolve_stripe_credentials()
     return creds["webhook_secret"]
+
+
+async def get_payment_currency() -> str:
+    resolved = await resolve_payment_currency()
+    return resolved["currency"]
 
 
 def apply_stripe_api_key(api_key: str) -> None:
@@ -107,6 +167,7 @@ async def load_stripe_settings_masked() -> dict:
     """Return settings for the admin UI with secrets masked."""
     stored = await load_stripe_settings()
     creds = await resolve_stripe_credentials()
+    currency_info = await resolve_payment_currency()
 
     api_key_source = creds["api_key_source"]
     webhook_source = creds["webhook_secret_source"]
@@ -128,6 +189,8 @@ async def load_stripe_settings_masked() -> dict:
     return {
         "api_key": masked_api_key,
         "webhook_secret": masked_webhook,
+        "currency": currency_info["currency"],
+        "currency_source": currency_info["currency_source"],
         "api_key_configured": bool(creds["api_key"]),
         "webhook_secret_configured": bool(creds["webhook_secret"]),
         "api_key_source": api_key_source,
@@ -145,6 +208,10 @@ async def save_stripe_settings(data: dict, user_id: str) -> dict:
         webhook_error = validate_stripe_webhook_secret(data.get("webhook_secret"))
         if webhook_error:
             raise ValueError(webhook_error)
+    if "currency" in data:
+        currency_error = validate_currency(data.get("currency"))
+        if currency_error:
+            raise ValueError(currency_error)
 
     current = await load_stripe_settings()
 
@@ -156,10 +223,16 @@ async def save_stripe_settings(data: dict, user_id: str) -> dict:
     if webhook_secret is None:
         webhook_secret = current.get("webhook_secret", "")
 
+    if "currency" in data:
+        currency = normalize_currency(data.get("currency")) or ""
+    else:
+        currency = current.get("currency", "") or ""
+
     doc = {
         "_id": SETTINGS_ID,
         "api_key": _encrypt_value((api_key or "").strip()),
         "webhook_secret": _encrypt_value((webhook_secret or "").strip()),
+        "currency": currency,
         "updated_at": datetime.now(timezone.utc).isoformat(),
         "updated_by": user_id,
     }
@@ -184,10 +257,14 @@ async def test_stripe_connection(override_key: Optional[str] = None) -> dict:
     apply_stripe_api_key(api_key)
     try:
         account = stripe.Account.retrieve()
+        default_currency = getattr(account, "default_currency", None)
         return {
             "connected": True,
             "account_id": getattr(account, "id", None),
             "livemode": is_stripe_live_key(api_key),
+            "default_currency": (
+                str(default_currency).lower() if default_currency else None
+            ),
             "message": "Stripe API key is valid",
         }
     except stripe.error.AuthenticationError as exc:

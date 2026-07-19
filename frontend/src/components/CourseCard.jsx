@@ -4,11 +4,13 @@ import { getCourseLanguageDisplay } from "@/i18n";
 import { CourseThumbnail } from "@/components/CourseThumbnail";
 import { getCoursePriceDisplay } from "@/lib/coursePricing";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 export const CourseCard = ({ course, showProgress = false, progress = 0 }) => {
   const navigate = useNavigate();
   const { t } = useLanguage();
-  const pricing = getCoursePriceDisplay(course);
+  const { currency } = useCurrency();
+  const pricing = getCoursePriceDisplay(course, currency);
 
   return (
     <article

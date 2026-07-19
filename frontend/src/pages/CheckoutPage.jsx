@@ -11,11 +11,13 @@ import { API, formatError } from "@/lib/api";
 import { getCoursePriceDisplay } from "@/lib/coursePricing";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 export const CheckoutPage = () => {
   const { courseId } = useParams();
   const { user } = useAuth();
   const { lang, t } = useLanguage();
+  const { currency } = useCurrency();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [course, setCourse] = useState(null);
@@ -92,7 +94,7 @@ export const CheckoutPage = () => {
 
   if (!course) return null;
 
-  const pricing = getCoursePriceDisplay(course);
+  const pricing = getCoursePriceDisplay(course, currency);
   const priceLabel = pricing.priceLabel;
 
   return (

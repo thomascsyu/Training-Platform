@@ -18,6 +18,7 @@ import {
 import { API, formatError } from "@/lib/api";
 import { getCoursePriceDisplay } from "@/lib/coursePricing";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useCurrency } from "@/contexts/CurrencyContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { PublicSiteHeader } from "@/components/PublicSiteHeader";
 import { CourseThumbnail } from "@/components/CourseThumbnail";
@@ -161,6 +162,7 @@ export const CourseDetailPage = () => {
   const { id } = useParams();
   const { user } = useAuth();
   const { lang, t } = useLanguage();
+  const { currency } = useCurrency();
   const navigate = useNavigate();
   const [course, setCourse] = useState(null);
   const [enrollment, setEnrollment] = useState(null);
@@ -380,7 +382,7 @@ export const CourseDetailPage = () => {
     );
   }
 
-  const pricing = getCoursePriceDisplay(course);
+  const pricing = getCoursePriceDisplay(course, currency);
 
   return (
     <div className="min-h-screen bg-[#F4F5F7]">

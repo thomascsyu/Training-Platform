@@ -5,6 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Activity, CheckCircle2, Copy, CreditCard, Loader2, ListOrdered } from "lucide-react";
 import { API, formatError } from "@/lib/api";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -16,13 +23,19 @@ const looksLikePublishableKey = (value) => /^pk_(live|test)_/i.test((value || ""
 const looksLikeServerKey = (value) => /^(sk|rk)_(live|test)_/i.test((value || "").trim());
 const looksLikeWebhookSecret = (value) => /^whsec_/i.test((value || "").trim());
 
+const CURRENCY_OPTIONS = [
+  "hkd", "usd", "sgd", "cny", "twd", "jpy", "krw", "eur", "gbp", "aud", "cad",
+];
+
 export const AdminStripeSettingsPage = () => {
   const { t } = useLanguage();
   const [settings, setSettings] = useState(null);
   const [apiKey, setApiKey] = useState("");
   const [webhookSecret, setWebhookSecret] = useState("");
+  const [currency, setCurrency] = useState("usd");
   const [apiKeyChanged, setApiKeyChanged] = useState(false);
   const [webhookChanged, setWebhookChanged] = useState(false);
+  const [currencyChanged, setCurrencyChanged] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
@@ -43,8 +56,10 @@ export const AdminStripeSettingsPage = () => {
       setSettings(data);
       setApiKey(data.api_key || "");
       setWebhookSecret(data.webhook_secret || "");
+      setCurrency((data.currency || "usd").toLowerCase());
       setApiKeyChanged(false);
       setWebhookChanged(false);
+      setCurrencyChanged(false);
       setTestResult(null);
     } catch (e) {
       toast.error(formatError(e));
@@ -79,9 +94,12 @@ export const AdminStripeSettingsPage = () => {
       const payload = {};
       if (apiKeyChanged) payload.api_key = apiKey.trim();
       if (webhookChanged) payload.webhook_secret = webhookSecret.trim();
+      if (currencyChanged) payload.currency = currency.trim().toLowerCase();
       await API.put("/admin/stripe-settings", payload);
       toast.success(t("stripeSettings.saved"));
       await loadSettings();
+      // Reload so course prices refresh without a full page refresh.
+      window.dispatchEvent(new Event("learnhub:currency-changed"));
     } catch (e) {
       toast.error(formatError(e));
     } finally {
@@ -133,6 +151,7 @@ export const AdminStripeSettingsPage = () => {
   const sourceLabel = (source) => {
     if (source === "database") return t("stripeSettings.sourceDatabase");
     if (source === "environment") return t("stripeSettings.sourceEnvironment");
+    if (source === "default") return t("stripeSettings.sourceDefault");
     return t("stripeSettings.notConfigured");
   };
 
@@ -279,6 +298,40 @@ export const AdminStripeSettingsPage = () => {
                   )}
                 </div>
 
+                <div className="space-y-2">
+                  <Label htmlFor="stripe-currency">{t("stripeSettings.currency")}</Label>
+                  <Select
+                    value={currency}
+                    onValueChange={(value) => {
+                      setCurrency(value);
+                      setCurrencyChanged(true);
+                    }}
+                  >
+                    <SelectTrigger
+                      id="stripe-currency"
+                      className="rounded-sm"
+                      data-testid="stripe-currency-select"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CURRENCY_OPTIONS.map((code) => (
+                        <SelectItem key={code} value={code}>
+                          {code.toUpperCase()}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-slate-500">{t("stripeSettings.currencyHint")}</p>
+                  {settings?.currency && (
+                    <p className="text-xs text-slate-400">
+                      {t("stripeSettings.currentSource", {
+                        source: sourceLabel(settings.currency_source),
+                      })}
+                    </p>
+                  )}
+                </div>
+
                 {testResult?.connected && (
                   <div
                     className="rounded-sm border border-green-200 bg-green-50 p-4 text-sm text-green-900 space-y-1"
@@ -300,6 +353,14 @@ export const AdminStripeSettingsPage = () => {
                         ? t("stripeSettings.modeLive")
                         : t("stripeSettings.modeTest")}
                     </p>
+                    {testResult.default_currency && (
+                      <p>
+                        {t("stripeSettings.accountDefaultCurrency")}:{" "}
+                        <span className="font-mono uppercase">
+                          {testResult.default_currency}
+                        </span>
+                      </p>
+                    )}
                   </div>
                 )}
 
@@ -334,7 +395,7 @@ export const AdminStripeSettingsPage = () => {
                     type="button"
                     className="btn-primary"
                     onClick={handleSave}
-                    disabled={saving || (!apiKeyChanged && !webhookChanged)}
+                    disabled={saving || (!apiKeyChanged && !webhookChanged && !currencyChanged)}
                     data-testid="stripe-save-btn"
                   >
                     {saving ? (

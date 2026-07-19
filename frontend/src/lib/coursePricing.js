@@ -6,10 +6,27 @@
  * - A special offer is active when original_price > price on a paid course
  */
 
-export function formatCoursePrice(amount) {
+export function formatCoursePrice(amount, currency = "usd") {
   const value = Number(amount);
-  if (!Number.isFinite(value)) return "$0.00";
-  return `$${value.toFixed(2)}`;
+  const code = (currency || "usd").toUpperCase();
+  if (!Number.isFinite(value)) {
+    try {
+      return new Intl.NumberFormat(undefined, {
+        style: "currency",
+        currency: code,
+      }).format(0);
+    } catch {
+      return `${code} 0.00`;
+    }
+  }
+  try {
+    return new Intl.NumberFormat(undefined, {
+      style: "currency",
+      currency: code,
+    }).format(value);
+  } catch {
+    return `${code} ${value.toFixed(2)}`;
+  }
 }
 
 export function hasSpecialOffer(course) {
@@ -19,7 +36,7 @@ export function hasSpecialOffer(course) {
   return Number.isFinite(price) && Number.isFinite(original) && original > price;
 }
 
-export function getCoursePriceDisplay(course) {
+export function getCoursePriceDisplay(course, currency = "usd") {
   const price = Number(course?.price) || 0;
   if (course?.is_free) {
     return {
@@ -39,7 +56,7 @@ export function getCoursePriceDisplay(course) {
     hasOffer: offer,
     price,
     originalPrice,
-    priceLabel: formatCoursePrice(price),
-    originalPriceLabel: offer ? formatCoursePrice(originalPrice) : null,
+    priceLabel: formatCoursePrice(price, currency),
+    originalPriceLabel: offer ? formatCoursePrice(originalPrice, currency) : null,
   };
 }

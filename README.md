@@ -454,6 +454,7 @@ ADMIN2_EMAIL=admin2@learnhub.com
 ADMIN2_PASSWORD=change-me-admin2
 
 STRIPE_API_KEY=
+STRIPE_CURRENCY=usd # e.g. hkd — also configurable in Admin → Stripe Payments
 STRIPE_WEBHOOK_SECRET=
 REQUIRE_STRIPE_WEBHOOK_SECRET=false # true in production
 
