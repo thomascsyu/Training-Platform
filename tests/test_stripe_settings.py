@@ -141,3 +141,77 @@ async def test_test_stripe_connection_without_key(mock_db, mock_require_admin, m
 
     assert result["connected"] is False
     assert "not configured" in result["error"].lower()
+
+
+def test_validate_rejects_publishable_key():
+    error = stripe_settings.validate_stripe_api_key("pk_live_abc123")
+    assert error is not None
+    assert "pk_" in error.lower() or "Publishable" in error
+
+
+def test_validate_accepts_secret_and_restricted_keys():
+    assert stripe_settings.validate_stripe_api_key("sk_live_abc123") is None
+    assert stripe_settings.validate_stripe_api_key("rk_live_abc123") is None
+    assert stripe_settings.validate_stripe_api_key("sk_test_abc123") is None
+    assert stripe_settings.validate_stripe_api_key("rk_test_abc123") is None
+    assert stripe_settings.validate_stripe_api_key("") is None
+
+
+def test_validate_webhook_secret():
+    assert stripe_settings.validate_stripe_webhook_secret("whsec_abc") is None
+    assert stripe_settings.validate_stripe_webhook_secret("") is None
+    assert stripe_settings.validate_stripe_webhook_secret("not-a-secret") is not None
+
+
+def test_is_stripe_live_key():
+    assert stripe_settings.is_stripe_live_key("sk_live_x") is True
+    assert stripe_settings.is_stripe_live_key("rk_live_x") is True
+    assert stripe_settings.is_stripe_live_key("sk_test_x") is False
+    assert stripe_settings.is_stripe_live_key("rk_test_x") is False
+
+
+@pytest.mark.asyncio
+async def test_update_rejects_publishable_key(mock_db, mock_require_admin, monkeypatch):
+    monkeypatch.setattr(stripe_settings, "STRIPE_API_KEY", None)
+    monkeypatch.setattr(stripe_settings, "STRIPE_WEBHOOK_SECRET", None)
+
+    with pytest.raises(Exception) as exc_info:
+        await stripe_settings_router.update_stripe_settings(
+            StripeSettingsUpdate(api_key="pk_live_not_allowed"),
+            request=object(),
+        )
+
+    # FastAPI HTTPException 400
+    assert getattr(exc_info.value, "status_code", None) == 400
+    assert "Publishable" in str(exc_info.value.detail)
+
+
+@pytest.mark.asyncio
+async def test_test_connection_rejects_publishable_override(mock_db, mock_require_admin):
+    result = await stripe_settings_router.test_stripe_settings(
+        StripeTestConnectionRequest(api_key="pk_live_not_allowed"),
+        request=object(),
+    )
+
+    assert result["connected"] is False
+    assert "Publishable" in result["error"]
+
+
+@pytest.mark.asyncio
+async def test_test_connection_marks_rk_live_as_livemode(
+    mock_db, mock_require_admin, monkeypatch
+):
+    class FakeAccount:
+        id = "acct_test123"
+
+    monkeypatch.setattr(
+        stripe_settings.stripe.Account,
+        "retrieve",
+        staticmethod(lambda: FakeAccount()),
+    )
+
+    result = await stripe_settings.test_stripe_connection("rk_live_abc123")
+
+    assert result["connected"] is True
+    assert result["livemode"] is True
+    assert result["account_id"] == "acct_test123"
