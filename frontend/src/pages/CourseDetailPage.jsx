@@ -236,12 +236,7 @@ export const CourseDetailPage = () => {
 
   const startEnroll = () => {
     if (!course.is_free && course.price > 0) {
-      const checkoutPath = `/checkout/${id}`;
-      if (!user) {
-        navigate(`/login?next=${encodeURIComponent(checkoutPath)}`);
-        return;
-      }
-      navigate(checkoutPath);
+      navigate(`/checkout/${id}`);
       return;
     }
 
