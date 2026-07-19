@@ -26,6 +26,8 @@ async def update_stripe_settings(data: StripeSettingsUpdate, request: Request):
             data.model_dump(exclude_unset=True),
             user.get("id", ""),
         )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     except Exception as exc:
         raise HTTPException(status_code=500, detail="Failed to save Stripe settings") from exc
 

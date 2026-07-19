@@ -1,16 +1,20 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Activity, CreditCard, Loader2 } from "lucide-react";
+import { Activity, CheckCircle2, Copy, CreditCard, Loader2, ListOrdered } from "lucide-react";
 import { API, formatError } from "@/lib/api";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import PageHeader from "@/components/enhanced/PageHeader";
 import { SkeletonGrid } from "@/components/enhanced/Skeletons";
+
+const looksLikePublishableKey = (value) => /^pk_(live|test)_/i.test((value || "").trim());
+const looksLikeServerKey = (value) => /^(sk|rk)_(live|test)_/i.test((value || "").trim());
+const looksLikeWebhookSecret = (value) => /^whsec_/i.test((value || "").trim());
 
 export const AdminStripeSettingsPage = () => {
   const { t } = useLanguage();
@@ -23,6 +27,11 @@ export const AdminStripeSettingsPage = () => {
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState(null);
+
+  const webhookUrl = useMemo(
+    () => `${window.location.origin}/api/webhook/stripe`,
+    []
+  );
 
   useEffect(() => {
     loadSettings();
@@ -44,7 +53,27 @@ export const AdminStripeSettingsPage = () => {
     }
   };
 
+  const validateBeforeSave = () => {
+    if (apiKeyChanged && apiKey.trim()) {
+      if (looksLikePublishableKey(apiKey)) {
+        toast.error(t("stripeSettings.rejectPublishableKey"));
+        return false;
+      }
+      if (!looksLikeServerKey(apiKey)) {
+        toast.error(t("stripeSettings.rejectInvalidApiKey"));
+        return false;
+      }
+    }
+    if (webhookChanged && webhookSecret.trim() && !looksLikeWebhookSecret(webhookSecret)) {
+      toast.error(t("stripeSettings.rejectInvalidWebhookSecret"));
+      return false;
+    }
+    return true;
+  };
+
   const handleSave = async () => {
+    if (!validateBeforeSave()) return;
+
     setSaving(true);
     try {
       const payload = {};
@@ -61,6 +90,17 @@ export const AdminStripeSettingsPage = () => {
   };
 
   const handleTest = async () => {
+    if (apiKeyChanged && apiKey.trim()) {
+      if (looksLikePublishableKey(apiKey)) {
+        toast.error(t("stripeSettings.rejectPublishableKey"));
+        return;
+      }
+      if (!looksLikeServerKey(apiKey)) {
+        toast.error(t("stripeSettings.rejectInvalidApiKey"));
+        return;
+      }
+    }
+
     setTesting(true);
     try {
       const payload = {};
@@ -78,6 +118,15 @@ export const AdminStripeSettingsPage = () => {
       toast.error(formatError(e));
     } finally {
       setTesting(false);
+    }
+  };
+
+  const copyWebhookUrl = async () => {
+    try {
+      await navigator.clipboard.writeText(webhookUrl);
+      toast.success(t("stripeSettings.webhookUrlCopied"));
+    } catch {
+      toast.error(t("stripeSettings.webhookUrlCopyFailed"));
     }
   };
 
@@ -108,6 +157,13 @@ export const AdminStripeSettingsPage = () => {
     );
   };
 
+  const setupSteps = [
+    t("stripeSettings.step1"),
+    t("stripeSettings.step2"),
+    t("stripeSettings.step3"),
+    t("stripeSettings.step4"),
+  ];
+
   return (
     <DashboardLayout>
       <div className="p-6" data-testid="admin-stripe-settings-page">
@@ -118,9 +174,49 @@ export const AdminStripeSettingsPage = () => {
         />
 
         {loading ? (
-          <SkeletonGrid n={1} />
+          <SkeletonGrid n={2} />
         ) : (
           <div className="space-y-6 max-w-3xl">
+            <Card className="card-swiss" data-testid="stripe-setup-guide">
+              <CardHeader>
+                <CardTitle className="font-display flex items-center gap-2">
+                  <ListOrdered className="w-5 h-5 text-[#002FA7]" />
+                  {t("stripeSettings.setupTitle")}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <ol className="list-decimal pl-5 space-y-2 text-sm text-slate-600">
+                  {setupSteps.map((step) => (
+                    <li key={step}>{step}</li>
+                  ))}
+                </ol>
+
+                <div className="space-y-2">
+                  <Label htmlFor="stripe-webhook-url">{t("stripeSettings.webhookUrl")}</Label>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Input
+                      id="stripe-webhook-url"
+                      readOnly
+                      value={webhookUrl}
+                      className="rounded-sm font-mono text-xs sm:text-sm"
+                      data-testid="stripe-webhook-url"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="rounded-sm shrink-0"
+                      onClick={copyWebhookUrl}
+                      data-testid="stripe-copy-webhook-url-btn"
+                    >
+                      <Copy className="w-4 h-4 mr-2" />
+                      {t("stripeSettings.copyWebhookUrl")}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-slate-500">{t("stripeSettings.webhookUrlHint")}</p>
+                </div>
+              </CardContent>
+            </Card>
+
             <Card className="card-swiss">
               <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
                 <CardTitle className="font-display flex items-center gap-2">
@@ -149,6 +245,13 @@ export const AdminStripeSettingsPage = () => {
                     data-testid="stripe-api-key-input"
                   />
                   <p className="text-xs text-slate-500">{t("stripeSettings.apiKeyHint")}</p>
+                  {settings?.api_key_configured && (
+                    <p className="text-xs text-slate-400">
+                      {t("stripeSettings.currentSource", {
+                        source: sourceLabel(settings.api_key_source),
+                      })}
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -175,6 +278,39 @@ export const AdminStripeSettingsPage = () => {
                     </p>
                   )}
                 </div>
+
+                {testResult?.connected && (
+                  <div
+                    className="rounded-sm border border-green-200 bg-green-50 p-4 text-sm text-green-900 space-y-1"
+                    data-testid="stripe-test-success-details"
+                  >
+                    <p className="font-medium flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4" />
+                      {t("stripeSettings.connectionOk")}
+                    </p>
+                    {testResult.account_id && (
+                      <p>
+                        {t("stripeSettings.accountId")}:{" "}
+                        <span className="font-mono">{testResult.account_id}</span>
+                      </p>
+                    )}
+                    <p>
+                      {t("stripeSettings.mode")}:{" "}
+                      {testResult.livemode
+                        ? t("stripeSettings.modeLive")
+                        : t("stripeSettings.modeTest")}
+                    </p>
+                  </div>
+                )}
+
+                {testResult && !testResult.connected && testResult.error && (
+                  <div
+                    className="rounded-sm border border-red-200 bg-red-50 p-4 text-sm text-red-800"
+                    data-testid="stripe-test-error-details"
+                  >
+                    {testResult.error}
+                  </div>
+                )}
 
                 <div className="flex flex-col-reverse sm:flex-row gap-3 sm:justify-end">
                   <Button
