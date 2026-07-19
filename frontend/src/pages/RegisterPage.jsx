@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,14 +10,22 @@ import { formatError } from "@/lib/api";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 
+const safeNextPath = (raw) => {
+  if (!raw || typeof raw !== "string") return null;
+  if (!raw.startsWith("/") || raw.startsWith("//")) return null;
+  return raw;
+};
+
 export const RegisterPage = () => {
   const { register } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const nextPath = safeNextPath(searchParams.get("next"));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -25,7 +33,7 @@ export const RegisterPage = () => {
     try {
       await register(email, password, name);
       toast.success(t("auth.signUp"));
-      navigate("/dashboard");
+      navigate(nextPath || "/dashboard");
     } catch (err) {
       toast.error(formatError(err));
     } finally {
@@ -93,7 +101,11 @@ export const RegisterPage = () => {
           </form>
           <p className="text-center text-sm text-slate-600 mt-4">
             {t("auth.haveAccount")}{" "}
-            <Link to="/login" className="text-[#002FA7] hover:underline" data-testid="login-link">
+            <Link
+              to={nextPath ? `/login?next=${encodeURIComponent(nextPath)}` : "/login"}
+              className="text-[#002FA7] hover:underline"
+              data-testid="login-link"
+            >
               {t("auth.signIn")}
             </Link>
           </p>
