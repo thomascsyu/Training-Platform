@@ -120,7 +120,10 @@ async def test_create_checkout_rejects_when_already_enrolled(monkeypatch):
     mock_db.enrollments.find_one = AsyncMock(return_value={"_id": "existing"})
 
     monkeypatch.setattr(payments_router, "db", mock_db)
-    monkeypatch.setattr(payments_router, "STRIPE_API_KEY", "sk_test_123")
+    monkeypatch.setattr(
+        payments_router, "get_stripe_api_key", AsyncMock(return_value="sk_test_123")
+    )
+    monkeypatch.setattr(payments_router, "apply_stripe_api_key", lambda *_args, **_kwargs: None)
     monkeypatch.setattr(
         payments_router,
         "get_current_user",
@@ -134,6 +137,26 @@ async def test_create_checkout_rejects_when_already_enrolled(monkeypatch):
 
     assert exc_info.value.status_code == 400
     assert "already enrolled" in exc_info.value.detail.lower()
+
+
+@pytest.mark.asyncio
+async def test_create_checkout_rejects_when_stripe_not_configured(monkeypatch):
+    monkeypatch.setattr(
+        payments_router, "get_stripe_api_key", AsyncMock(return_value="")
+    )
+    monkeypatch.setattr(
+        payments_router,
+        "get_current_user",
+        AsyncMock(return_value={"id": STUDENT_ID, "role": "student"}),
+    )
+
+    data = PaymentCreate(course_id=COURSE_ID, origin_url="https://example.com")
+
+    with pytest.raises(HTTPException) as exc_info:
+        await payments_router.create_checkout(data, request=object())
+
+    assert exc_info.value.status_code == 503
+    assert "not configured" in exc_info.value.detail.lower()
 
 
 @pytest.mark.asyncio
@@ -163,7 +186,10 @@ async def test_create_checkout_creates_stripe_session(monkeypatch):
         return FakeSession()
 
     monkeypatch.setattr(payments_router, "db", mock_db)
-    monkeypatch.setattr(payments_router, "STRIPE_API_KEY", "sk_test_123")
+    monkeypatch.setattr(
+        payments_router, "get_stripe_api_key", AsyncMock(return_value="sk_test_123")
+    )
+    monkeypatch.setattr(payments_router, "apply_stripe_api_key", lambda *_args, **_kwargs: None)
     monkeypatch.setattr(
         payments_router,
         "get_current_user",
@@ -200,7 +226,10 @@ async def test_get_payment_status_includes_receipt_info(monkeypatch):
     )
 
     monkeypatch.setattr(payments_router, "db", mock_db)
-    monkeypatch.setattr(payments_router, "STRIPE_API_KEY", "sk_test_123")
+    monkeypatch.setattr(
+        payments_router, "get_stripe_api_key", AsyncMock(return_value="sk_test_123")
+    )
+    monkeypatch.setattr(payments_router, "apply_stripe_api_key", lambda *_args, **_kwargs: None)
     monkeypatch.setattr(
         payments_router,
         "get_current_user",

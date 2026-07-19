@@ -17,6 +17,7 @@ export default {
       bulkEnroll: "批量報名",
       groupProgress: "群組進度",
       aiSettings: "AI API 金鑰",
+      stripeSettings: "Stripe 付款",
       emailNotifications: "Email Notifications",
       payments: "付款",
       certificates: "證書"
@@ -406,6 +407,31 @@ export default {
       lessonsColumn: "課時",
       attemptsColumn: "嘗試次數",
       lastActivityColumn: "最近活動"
+    },
+
+    // Stripe Settings
+    stripeSettings: {
+      title: "Stripe 付款",
+      description: "設定 Stripe，讓學生可以在結帳時付款購買課程。",
+      credentials: "Stripe 憑證",
+      hint: "在此貼上 Stripe 密鑰，或在 API 服務設定 STRIPE_API_KEY。資料庫中的值會覆寫環境變數。",
+      apiKey: "Secret API Key",
+      apiKeyPlaceholder: "sk_live_… 或 sk_test_…",
+      apiKeyHint: "若只想保留現有金鑰，請留空並只儲存其他欄位。金鑰請至 dashboard.stripe.com/apikeys 取得。",
+      webhookSecret: "Webhook 簽章密鑰",
+      webhookSecretPlaceholder: "whsec_…",
+      webhookSecretHint: "正式環境必須設定。請將 Stripe webhook 指向 /api/webhook/stripe，並訂閱 checkout.session.completed。",
+      currentSource: "目前使用：{source}",
+      sourceDatabase: "已儲存於管理設定",
+      sourceEnvironment: "環境變數",
+      testConnection: "測試連線",
+      testing: "測試中...",
+      save: "儲存設定",
+      saving: "儲存中...",
+      saved: "Stripe 設定已儲存。",
+      connectionOk: "已連線",
+      connectionFailed: "連線失敗",
+      notConfigured: "尚未設定"
     },
 
     // Toast
