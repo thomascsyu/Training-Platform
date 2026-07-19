@@ -160,6 +160,7 @@ export const AdminCourseEditPage = () => {
         video_url: data.video_url || "",
         video_type: data.video_type || "youtube",
         price: data.price || 0,
+        original_price: data.original_price != null && data.original_price > 0 ? data.original_price : "",
         is_free: data.is_free ?? true,
         course_type: data.course_type || (data.is_free ? "free" : "payment_required"),
         is_private: data.is_private ?? false,
@@ -189,8 +190,13 @@ export const AdminCourseEditPage = () => {
   const handleSave = async () => {
     setSaving(true);
     try {
+      const originalPriceValue = parseFloat(formData.original_price);
       const payload = {
         ...formData,
+        original_price:
+          formData.course_type === "free" || !Number.isFinite(originalPriceValue) || originalPriceValue <= 0
+            ? null
+            : originalPriceValue,
         materials: (formData.materials || [])
           .map((material) => ({
             name: material.name?.trim() || "",
@@ -531,26 +537,42 @@ export const AdminCourseEditPage = () => {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>{t("courses.price")}</Label>
+                <Label>{t("courses.price")} ($)</Label>
                 <Input
                   type="number"
                   value={formData.price}
                   onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
                   className="rounded-sm"
                   disabled={formData.course_type === "free"}
+                  data-testid="course-edit-price-input"
                 />
               </div>
               <div className="space-y-2">
-                <Label>{t("courses.passingScore")}</Label>
+                <Label>{t("courses.specialOfferOptional")}</Label>
                 <Input
                   type="number"
-                  value={formData.passing_score}
-                  onChange={(e) => setFormData({ ...formData, passing_score: parseInt(e.target.value) || 70 })}
+                  value={formData.original_price}
+                  onChange={(e) => setFormData({ ...formData, original_price: e.target.value })}
                   className="rounded-sm"
+                  disabled={formData.course_type === "free"}
+                  placeholder={t("courses.specialOfferPlaceholder")}
                   min={0}
-                  max={100}
+                  step="0.01"
+                  data-testid="course-edit-special-offer-input"
                 />
+                <p className="text-xs text-slate-500">{t("courses.specialOfferHint")}</p>
               </div>
+            </div>
+            <div className="space-y-2">
+              <Label>{t("courses.passingScore")}</Label>
+              <Input
+                type="number"
+                value={formData.passing_score}
+                onChange={(e) => setFormData({ ...formData, passing_score: parseInt(e.target.value) || 70 })}
+                className="rounded-sm"
+                min={0}
+                max={100}
+              />
             </div>
             <div className="space-y-2 border border-slate-200 rounded-sm p-4">
               <div className="flex items-center gap-2">
@@ -582,7 +604,8 @@ export const AdminCourseEditPage = () => {
                     ...formData,
                     course_type: v,
                     is_free: v === "free",
-                    price: v === "free" ? 0 : formData.price
+                    price: v === "free" ? 0 : formData.price,
+                    original_price: v === "free" ? "" : formData.original_price,
                   })}
                 >
                   <SelectTrigger className="rounded-sm">

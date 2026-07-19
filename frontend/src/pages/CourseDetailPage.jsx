@@ -16,6 +16,7 @@ import {
   Lock, MessageSquare, Send, Video, X,
 } from "lucide-react";
 import { API, formatError } from "@/lib/api";
+import { getCoursePriceDisplay } from "@/lib/coursePricing";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { PublicSiteHeader } from "@/components/PublicSiteHeader";
@@ -379,6 +380,8 @@ export const CourseDetailPage = () => {
     );
   }
 
+  const pricing = getCoursePriceDisplay(course);
+
   return (
     <div className="min-h-screen bg-[#F4F5F7]">
       <PublicSiteHeader variant="compact" />
@@ -410,11 +413,19 @@ export const CourseDetailPage = () => {
               {course.title}
             </h1>
             <p className="text-slate-600 mb-4">{course.description}</p>
-            <div className="flex gap-2">
-              {course.is_free ? (
-                <Badge className="bg-green-100 text-green-700 rounded-sm">Free</Badge>
+            <div className="flex flex-wrap gap-2">
+              {pricing.isFree ? (
+                <Badge className="bg-green-100 text-green-700 rounded-sm">{t("courses.free")}</Badge>
+              ) : pricing.hasOffer ? (
+                <>
+                  <Badge className="bg-[#002FA7] text-white rounded-sm tabular-nums" data-testid="course-detail-special-offer-price">
+                    <span className="line-through opacity-80 mr-1.5">{pricing.originalPriceLabel}</span>
+                    {pricing.priceLabel}
+                  </Badge>
+                  <Badge className="bg-amber-100 text-amber-800 rounded-sm">{t("courses.specialOffer")}</Badge>
+                </>
               ) : (
-                <Badge className="bg-[#002FA7] text-white rounded-sm">${course.price?.toFixed(2)}</Badge>
+                <Badge className="bg-[#002FA7] text-white rounded-sm">{pricing.priceLabel}</Badge>
               )}
               {course.is_private && (
                 <Badge variant="secondary" className="rounded-sm">
@@ -475,7 +486,7 @@ export const CourseDetailPage = () => {
                     ) : (
                       <>
                         <DollarSign className="w-4 h-4 mr-1" />
-                        Buy Now - ${course.price?.toFixed(2)}
+                        {t("courses.buyNow")} - {pricing.priceLabel}
                       </>
                     )}
                   </Button>

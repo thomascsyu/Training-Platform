@@ -37,6 +37,7 @@ export const AdminCoursesPage = () => {
     video_url: "",
     video_type: "youtube",
     price: 0,
+    original_price: "",
     is_free: true,
     course_type: "free",
     is_private: false,
@@ -70,7 +71,15 @@ export const AdminCoursesPage = () => {
   const handleCreate = async () => {
     setCreating(true);
     try {
-      await API.post("/courses", formData);
+      const originalPriceValue = parseFloat(formData.original_price);
+      const payload = {
+        ...formData,
+        original_price:
+          formData.course_type === "free" || !Number.isFinite(originalPriceValue) || originalPriceValue <= 0
+            ? null
+            : originalPriceValue,
+      };
+      await API.post("/courses", payload);
       toast.success(t("courses.createCourse") + " ✓");
       setShowCreateDialog(false);
       setFormData({
@@ -80,6 +89,7 @@ export const AdminCoursesPage = () => {
         video_url: "",
         video_type: "youtube",
         price: 0,
+        original_price: "",
         is_free: true,
         course_type: "free",
         is_private: false,
@@ -205,7 +215,7 @@ export const AdminCoursesPage = () => {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Price ($)</Label>
+                    <Label>{t("courses.price")} ($)</Label>
                     <Input
                       type="number"
                       value={formData.price}
@@ -216,17 +226,32 @@ export const AdminCoursesPage = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Passing Score (%)</Label>
-                    <Input 
+                    <Label>{t("courses.specialOfferOptional")}</Label>
+                    <Input
                       type="number"
-                      value={formData.passing_score}
-                      onChange={(e) => setFormData({...formData, passing_score: parseInt(e.target.value) || 70})}
+                      value={formData.original_price}
+                      onChange={(e) => setFormData({...formData, original_price: e.target.value})}
                       className="rounded-sm"
+                      disabled={formData.course_type === "free"}
+                      placeholder={t("courses.specialOfferPlaceholder")}
                       min={0}
-                      max={100}
-                      data-testid="course-passing-score-input"
+                      step="0.01"
+                      data-testid="course-special-offer-input"
                     />
+                    <p className="text-xs text-slate-500">{t("courses.specialOfferHint")}</p>
                   </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Passing Score (%)</Label>
+                  <Input
+                    type="number"
+                    value={formData.passing_score}
+                    onChange={(e) => setFormData({...formData, passing_score: parseInt(e.target.value) || 70})}
+                    className="rounded-sm"
+                    min={0}
+                    max={100}
+                    data-testid="course-passing-score-input"
+                  />
                 </div>
                 <div className="space-y-2 border border-slate-200 rounded-sm p-4">
                   <div className="flex items-center gap-2">
@@ -248,7 +273,8 @@ export const AdminCoursesPage = () => {
                         ...formData,
                         course_type: v,
                         is_free: v === "free",
-                        price: v === "free" ? 0 : formData.price
+                        price: v === "free" ? 0 : formData.price,
+                        original_price: v === "free" ? "" : formData.original_price,
                       })}
                     >
                       <SelectTrigger className="rounded-sm" data-testid="course-type-select">
@@ -340,7 +366,10 @@ export const AdminCoursesPage = () => {
                       {(course.course_type || (course.is_free ? "free" : "payment_required")) === "free" ? (
                         <Badge variant="secondary" className="bg-green-100 text-green-700 rounded-sm text-xs">{t("courses.free")}</Badge>
                       ) : (
-                        <Badge className="bg-amber-100 text-amber-700 rounded-sm text-xs">{t("courses.paymentRequired")} ${course.price}</Badge>
+                        <Badge className="bg-amber-100 text-amber-700 rounded-sm text-xs">
+                          {t("courses.paymentRequired")} ${course.price}
+                          {course.original_price > course.price ? ` · ${t("courses.specialOffer")}` : ""}
+                        </Badge>
                       )}
                       {course.is_private && (
                         <Badge variant="outline" className="rounded-sm text-xs">Private</Badge>

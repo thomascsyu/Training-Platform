@@ -65,6 +65,27 @@ class ResetPasswordRequest(BaseModel):
     new_password: str = Field(min_length=8)
 
 
+def _normalize_original_price(value: Optional[float]) -> Optional[float]:
+    if value is None:
+        return None
+    normalized = float(value)
+    if normalized <= 0:
+        return None
+    return normalized
+
+
+def _validate_original_price_against_price(
+    original_price: Optional[float],
+    price: Optional[float],
+) -> Optional[float]:
+    normalized = _normalize_original_price(original_price)
+    if normalized is None:
+        return None
+    if price is not None and normalized <= float(price):
+        raise ValueError("original_price must be greater than price for a special offer")
+    return normalized
+
+
 class CourseCreate(BaseModel):
     title: str
     description: str
@@ -72,6 +93,7 @@ class CourseCreate(BaseModel):
     video_url: Optional[str] = None
     video_type: str = "youtube"
     price: float = Field(default=0.0, ge=0)
+    original_price: Optional[float] = Field(default=None, ge=0)
     is_free: Optional[bool] = None
     is_private: bool = False
     passing_score: int = 70
@@ -93,6 +115,13 @@ class CourseCreate(BaseModel):
             raise ValueError("course_type must be 'free' or 'payment_required'")
         return value
 
+    @model_validator(mode="after")
+    def _validate_special_offer(self):
+        self.original_price = _validate_original_price_against_price(
+            self.original_price, self.price
+        )
+        return self
+
 
 class CourseUpdate(BaseModel):
     title: Optional[str] = None
@@ -101,6 +130,7 @@ class CourseUpdate(BaseModel):
     video_url: Optional[str] = None
     video_type: Optional[str] = None
     price: Optional[float] = Field(default=None, ge=0)
+    original_price: Optional[float] = Field(default=None, ge=0)
     is_free: Optional[bool] = None
     is_private: Optional[bool] = None
     passing_score: Optional[int] = None
@@ -121,6 +151,17 @@ class CourseUpdate(BaseModel):
         if value not in {"free", "payment_required"}:
             raise ValueError("course_type must be 'free' or 'payment_required'")
         return value
+
+    @model_validator(mode="after")
+    def _validate_special_offer(self):
+        # Only validate when both values are present on this update payload.
+        if self.original_price is not None and self.price is not None:
+            self.original_price = _validate_original_price_against_price(
+                self.original_price, self.price
+            )
+        elif self.original_price is not None:
+            self.original_price = _normalize_original_price(self.original_price)
+        return self
 
 
 class LessonCreate(BaseModel):
