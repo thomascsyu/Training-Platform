@@ -11,7 +11,7 @@ from config import STRIPE_API_KEY, STRIPE_WEBHOOK_SECRET, logger
 from database import db
 
 SETTINGS_ID = "stripe"
-DEFAULT_CURRENCY = "usd"
+DEFAULT_CURRENCY = "hkd"
 
 # Stripe zero-decimal currencies — charge in whole units, not cents.
 # https://docs.stripe.com/currencies#zero-decimal
@@ -125,7 +125,7 @@ async def resolve_stripe_credentials() -> dict:
 
 
 async def resolve_payment_currency() -> dict:
-    """Resolve checkout currency: database override, then environment, then usd."""
+    """Resolve checkout currency: database override, then environment, then hkd."""
     import os
 
     stored = await load_stripe_settings()

@@ -129,7 +129,7 @@ async def get_payment_status(session_id: str, request: Request):
         "course_id": transaction.get("course_id"),
         "course_title": course.get("title") if course else None,
         "amount": float(transaction.get("amount", 0)),
-        "currency": transaction.get("currency", "usd"),
+        "currency": transaction.get("currency", "hkd"),
     }
 
     if transaction.get("payment_status") == "paid":
@@ -239,7 +239,7 @@ async def list_transactions(
             "user_id": t.get("user_id"),
             "user_name": user.get("name") if user else "Unknown",
             "amount": float(t.get("amount", 0)),
-            "currency": t.get("currency", "usd"),
+            "currency": t.get("currency", "hkd"),
             "payment_status": t.get("payment_status"),
             "created_at": t.get("created_at"),
             "updated_at": t.get("updated_at"),
@@ -276,7 +276,7 @@ async def get_transaction_detail(session_id: str, request: Request):
         "user_id": transaction.get("user_id"),
         "user_name": user.get("name") if user else "Unknown",
         "amount": float(transaction.get("amount", 0)),
-        "currency": transaction.get("currency", "usd"),
+        "currency": transaction.get("currency", "hkd"),
         "payment_status": transaction.get("payment_status"),
         "created_at": transaction.get("created_at"),
         "updated_at": transaction.get("updated_at"),

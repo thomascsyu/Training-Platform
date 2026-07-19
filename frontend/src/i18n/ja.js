@@ -452,7 +452,7 @@ export default {
       rejectInvalidWebhookSecret: "Webhook シークレットは whsec_… で始まる必要があります。",
       currency: "チェックアウト通貨",
       currencyHint: "Stripe Checkout に送信され、コース価格に表示される通貨（例: HKD）。入力するコース金額と一致させてください。",
-      sourceDefault: "デフォルト（USD）",
+      sourceDefault: "デフォルト（HKD）",
       accountDefaultCurrency: "Stripe アカウントのデフォルト通貨"
     },
 

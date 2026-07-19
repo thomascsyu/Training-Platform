@@ -17,6 +17,7 @@ import { courseLanguages } from "@/i18n";
 import { API, formatError } from "@/lib/api";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useCurrency } from "@/contexts/CurrencyContext";
+import { getCurrencySign } from "@/lib/coursePricing";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { ThumbnailUpload } from "@/components/ThumbnailUpload";
 
@@ -539,7 +540,7 @@ export const AdminCourseEditPage = () => {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>{t("courses.price")} ({currency.toUpperCase()})</Label>
+                <Label>{t("courses.price")} ({getCurrencySign(currency)})</Label>
                 <Input
                   type="number"
                   value={formData.price}

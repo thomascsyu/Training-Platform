@@ -1,10 +1,16 @@
-import { formatCoursePrice, getCoursePriceDisplay, hasSpecialOffer } from "./coursePricing";
+import { formatCoursePrice, getCoursePriceDisplay, getCurrencySign, hasSpecialOffer } from "./coursePricing";
 
 describe("coursePricing", () => {
-  test("formats prices with currency code", () => {
+  test("formats prices with currency sign", () => {
     expect(formatCoursePrice(90, "usd")).toMatch(/90/);
+    expect(formatCoursePrice(90, "hkd")).toMatch(/HK\$/);
     expect(formatCoursePrice(90, "hkd")).toMatch(/90/);
     expect(formatCoursePrice("12.5", "usd")).toMatch(/12\.50|12\.5/);
+  });
+
+  test("returns unambiguous HKD sign for labels", () => {
+    expect(getCurrencySign("hkd")).toBe("HK$");
+    expect(getCurrencySign("HKD")).toBe("HK$");
   });
 
   test("detects special offer only when original_price is higher", () => {
@@ -25,6 +31,7 @@ describe("coursePricing", () => {
       price: 90,
       originalPrice: 120,
     });
+    expect(display.priceLabel).toMatch(/HK\$/);
     expect(display.priceLabel).toMatch(/90/);
     expect(display.originalPriceLabel).toMatch(/120/);
   });
