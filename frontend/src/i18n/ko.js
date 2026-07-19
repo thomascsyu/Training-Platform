@@ -426,7 +426,20 @@ export default {
       enrolledInCourse: "코스에 등록되었습니다.",
       goToCourses: "내 코스로 이동",
       somethingWrong: "문제가 발생했습니다",
-      contactSupport: "문제가 계속되면 고객 지원에 문의하세요."
+      contactSupport: "문제가 계속되면 고객 지원에 문의하세요.",
+      checkout: "결제",
+      completePurchase: "구매 완료하기",
+      reviewOrder: "주문을 확인한 후 Stripe 보안 결제로 계속하세요.",
+      orderSummary: "주문 요약",
+      secureStripe: "결제는 Stripe에서 안전하게 처리됩니다.",
+      fullAccess: "전체 코스 이용권",
+      total: "합계",
+      redirectNotice: "결제를 완료하려면 Stripe로 이동합니다. 결제가 성공하면 바로 수강할 수 있습니다.",
+      payAmount: "{amount} 결제",
+      backToCourse: "코스로 돌아가기",
+      termsHint: "다음 코스 이용권을 구매합니다:",
+      alreadyEnrolled: "이미 이 코스에 등록되어 있습니다.",
+      canceled: "결제가 취소되었습니다. 언제든지 다시 시도할 수 있습니다."
     },
 
     // Admin Payments

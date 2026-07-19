@@ -426,7 +426,20 @@ export default {
       enrolledInCourse: "コースに登録されました。",
       goToCourses: "マイコースへ",
       somethingWrong: "問題が発生しました",
-      contactSupport: "問題が続く場合はサポートにお問い合わせください。"
+      contactSupport: "問題が続く場合はサポートにお問い合わせください。",
+      checkout: "チェックアウト",
+      completePurchase: "購入を完了する",
+      reviewOrder: "注文内容を確認し、Stripe の安全なチェックアウトへ進んでください。",
+      orderSummary: "注文概要",
+      secureStripe: "お支払いは Stripe で安全に処理されます。",
+      fullAccess: "コースへのフルアクセス",
+      total: "合計",
+      redirectNotice: "支払い完了のため Stripe に移動します。支払いが成功するとすぐに受講できます。",
+      payAmount: "{amount} を支払う",
+      backToCourse: "コースに戻る",
+      termsHint: "次のコースへのアクセスを購入します：",
+      alreadyEnrolled: "このコースにはすでに登録済みです。",
+      canceled: "支払いがキャンセルされました。いつでも再試行できます。"
     },
 
     // Admin Payments
