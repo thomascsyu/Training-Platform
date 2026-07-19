@@ -95,7 +95,7 @@ SETTINGS_ENCRYPTION_KEY = os.environ.get("SETTINGS_ENCRYPTION_KEY")
 STRIPE_API_KEY = os.environ.get("STRIPE_API_KEY")
 STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET")
 # Checkout currency (ISO 4217, lowercase). Overridable in Admin → Stripe Payments.
-STRIPE_CURRENCY = (os.environ.get("STRIPE_CURRENCY") or "usd").strip().lower() or "usd"
+STRIPE_CURRENCY = (os.environ.get("STRIPE_CURRENCY") or "hkd").strip().lower() or "hkd"
 BREVO_API_KEY = os.environ.get("BREVO_API_KEY")
 EMAIL_FROM = os.environ.get("EMAIL_FROM", "noreply@learnhub.com")
 EMAIL_FROM_NAME = os.environ.get("EMAIL_FROM_NAME", "LearnHub")

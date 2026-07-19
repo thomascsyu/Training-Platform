@@ -32,7 +32,7 @@ export const AdminStripeSettingsPage = () => {
   const [settings, setSettings] = useState(null);
   const [apiKey, setApiKey] = useState("");
   const [webhookSecret, setWebhookSecret] = useState("");
-  const [currency, setCurrency] = useState("usd");
+  const [currency, setCurrency] = useState("hkd");
   const [apiKeyChanged, setApiKeyChanged] = useState(false);
   const [webhookChanged, setWebhookChanged] = useState(false);
   const [currencyChanged, setCurrencyChanged] = useState(false);
@@ -56,7 +56,7 @@ export const AdminStripeSettingsPage = () => {
       setSettings(data);
       setApiKey(data.api_key || "");
       setWebhookSecret(data.webhook_secret || "");
-      setCurrency((data.currency || "usd").toLowerCase());
+      setCurrency((data.currency || "hkd").toLowerCase());
       setApiKeyChanged(false);
       setWebhookChanged(false);
       setCurrencyChanged(false);

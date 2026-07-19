@@ -484,7 +484,7 @@ export default {
       rejectInvalidWebhookSecret: "Webhook secret must start with whsec_….",
       currency: "Checkout currency",
       currencyHint: "Currency sent to Stripe Checkout and shown on course prices (e.g. HKD). Must match the amounts you enter for courses.",
-      sourceDefault: "Default (USD)",
+      sourceDefault: "Default (HKD)",
       accountDefaultCurrency: "Stripe account default currency"
     },
 

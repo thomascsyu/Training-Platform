@@ -210,6 +210,18 @@ async def test_resolve_payment_currency_uses_env(mock_db, monkeypatch):
     assert resolved["currency_source"] == "environment"
 
 
+@pytest.mark.asyncio
+async def test_resolve_payment_currency_defaults_to_hkd(mock_db, monkeypatch):
+    monkeypatch.delenv("STRIPE_CURRENCY", raising=False)
+    mock_db.platform_settings.find_one.return_value = None
+
+    resolved = await stripe_settings.resolve_payment_currency()
+
+    assert resolved["currency"] == "hkd"
+    assert resolved["currency_source"] == "default"
+    assert stripe_settings.DEFAULT_CURRENCY == "hkd"
+
+
 def test_is_stripe_live_key():
     assert stripe_settings.is_stripe_live_key("sk_live_x") is True
     assert stripe_settings.is_stripe_live_key("rk_live_x") is True

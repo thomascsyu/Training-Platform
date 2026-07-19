@@ -452,7 +452,7 @@ export default {
       rejectInvalidWebhookSecret: "Webhook 시크릿은 whsec_…로 시작해야 합니다.",
       currency: "결제 통화",
       currencyHint: "Stripe Checkout에 전달되고 코스 가격에 표시되는 통화입니다(예: HKD). 입력한 코스 금액과 일치해야 합니다.",
-      sourceDefault: "기본값(USD)",
+      sourceDefault: "기본값(HKD)",
       accountDefaultCurrency: "Stripe 계정 기본 통화"
     },
 

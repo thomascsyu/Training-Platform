@@ -451,7 +451,7 @@ export default {
       rejectInvalidWebhookSecret: "Webhook 密钥必须以 whsec_… 开头。",
       currency: "结账货币",
       currencyHint: "发送至 Stripe Checkout 并显示在课程价格中的货币（例如 HKD）。请与你输入的课程金额一致。",
-      sourceDefault: "默认（USD）",
+      sourceDefault: "默认（HKD）",
       accountDefaultCurrency: "Stripe 账户默认货币"
     },
 

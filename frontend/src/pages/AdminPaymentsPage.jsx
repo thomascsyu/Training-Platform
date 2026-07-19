@@ -13,6 +13,7 @@ import {
 import { CreditCard, DollarSign, CheckCircle, Clock } from "lucide-react";
 import { API, formatError } from "@/lib/api";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { formatCoursePrice } from "@/lib/coursePricing";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import PageHeader from "@/components/enhanced/PageHeader";
 import StatCard from "@/components/enhanced/StatCard";
@@ -61,18 +62,8 @@ export const AdminPaymentsPage = () => {
     fetchData();
   }, [fetchData]);
 
-  const formatCurrency = (value, currency = "usd") => {
-    const num = Number(value || 0);
-    const code = (currency || "usd").toUpperCase();
-    try {
-      return new Intl.NumberFormat(undefined, {
-        style: "currency",
-        currency: code,
-      }).format(num);
-    } catch {
-      return `${code} ${num.toFixed(2)}`;
-    }
-  };
+  const formatCurrency = (value, currency = "hkd") =>
+    formatCoursePrice(value, currency);
 
   const formatDate = (value) => {
     if (!value) return "—";
