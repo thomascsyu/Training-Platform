@@ -71,3 +71,41 @@ def test_course_create_rejects_negative_price():
 def test_course_update_rejects_negative_price():
     with pytest.raises(ValidationError):
         CourseUpdate(price=-0.01)
+
+
+def test_course_create_accepts_special_offer_original_price():
+    course = CourseCreate(
+        title="Course",
+        description="Description",
+        price=90,
+        original_price=120,
+        course_type="payment_required",
+        is_free=False,
+    )
+    assert course.original_price == 120
+
+
+def test_course_create_rejects_original_price_not_higher_than_price():
+    with pytest.raises(ValidationError):
+        CourseCreate(
+            title="Course",
+            description="Description",
+            price=90,
+            original_price=90,
+        )
+
+
+def test_course_create_treats_zero_original_price_as_unset():
+    course = CourseCreate(
+        title="Course",
+        description="Description",
+        price=90,
+        original_price=0,
+    )
+    assert course.original_price is None
+
+
+def test_course_update_accepts_clearing_original_price():
+    update = CourseUpdate(original_price=None)
+    assert "original_price" in update.model_dump(exclude_unset=True)
+    assert update.original_price is None

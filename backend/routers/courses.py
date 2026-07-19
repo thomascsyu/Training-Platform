@@ -36,6 +36,37 @@ def _resolve_course_type(
     return True, 0.0, "free"
 
 
+def _resolve_original_price(
+    original_price: Optional[float],
+    price: float,
+    is_free: bool,
+    *,
+    strict: bool = False,
+) -> Optional[float]:
+    """Return a compare-at price for special-offer display, or None."""
+    if is_free or original_price is None:
+        return None
+    try:
+        normalized = float(original_price)
+    except (TypeError, ValueError) as exc:
+        if strict:
+            raise HTTPException(
+                status_code=400,
+                detail="original_price must be a valid number",
+            ) from exc
+        return None
+    if normalized <= 0:
+        return None
+    if normalized <= price:
+        if strict:
+            raise HTTPException(
+                status_code=400,
+                detail="original_price must be greater than price for a special offer",
+            )
+        return None
+    return normalized
+
+
 def _course_type_for(course: dict) -> str:
     return course.get("course_type") or (
         "free" if course.get("is_free", True) else "payment_required"
@@ -102,6 +133,7 @@ async def create_course(data: CourseCreate, request: Request):
     is_free, price, course_type = _resolve_course_type(
         data.is_free, data.price, data.course_type
     )
+    original_price = _resolve_original_price(data.original_price, price, is_free)
     course_doc = {
         "title": data.title,
         "description": data.description,
@@ -109,6 +141,7 @@ async def create_course(data: CourseCreate, request: Request):
         "video_url": data.video_url,
         "video_type": data.video_type,
         "price": price,
+        "original_price": original_price,
         "is_free": is_free,
         "course_type": course_type,
         "is_private": data.is_private,
@@ -198,6 +231,7 @@ async def get_courses(
             "description": 1,
             "thumbnail_url": 1,
             "price": 1,
+            "original_price": 1,
             "is_free": 1,
             "course_type": 1,
             "is_private": 1,
@@ -303,13 +337,19 @@ async def get_course(course_id: str, request: Request, lang: Optional[str] = Non
 @router.put("/courses/{course_id}")
 async def update_course(course_id: str, data: CourseUpdate, request: Request):
     user = await require_roles("admin")(request)
-    update_data = {k: v for k, v in data.model_dump(exclude_unset=True).items() if v is not None}
+    raw_update = data.model_dump(exclude_unset=True)
+    # Allow clearing optional special-offer compare-at price with null.
+    update_data = {
+        k: v
+        for k, v in raw_update.items()
+        if v is not None or k == "original_price"
+    }
 
-    pricing_fields = {"course_type", "is_free", "price"}
+    pricing_fields = {"course_type", "is_free", "price", "original_price"}
     if update_data.keys() & pricing_fields:
         existing_course = await db.courses.find_one(
             {"_id": parse_object_id(course_id, "course")},
-            {"is_free": 1, "price": 1, "course_type": 1},
+            {"is_free": 1, "price": 1, "course_type": 1, "original_price": 1},
         )
         if not existing_course:
             raise HTTPException(status_code=404, detail="Course not found")
@@ -321,6 +361,18 @@ async def update_course(course_id: str, data: CourseUpdate, request: Request):
         update_data["is_free"] = is_free
         update_data["price"] = price
         update_data["course_type"] = course_type
+        if "original_price" in raw_update or update_data.keys() & {"course_type", "is_free", "price"}:
+            candidate_original = (
+                update_data["original_price"]
+                if "original_price" in raw_update
+                else existing_course.get("original_price")
+            )
+            update_data["original_price"] = _resolve_original_price(
+                candidate_original,
+                price,
+                is_free,
+                strict="original_price" in raw_update and candidate_original is not None,
+            )
     if "company_ids" in update_data:
         update_data["company_ids"] = await _validate_company_ids(update_data["company_ids"])
     update_data["updated_at"] = datetime.now(timezone.utc).isoformat()

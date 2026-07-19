@@ -2,9 +2,13 @@ import { useNavigate } from "react-router-dom";
 import { Globe, Lock } from "lucide-react";
 import { getCourseLanguageDisplay } from "@/i18n";
 import { CourseThumbnail } from "@/components/CourseThumbnail";
+import { getCoursePriceDisplay } from "@/lib/coursePricing";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export const CourseCard = ({ course, showProgress = false, progress = 0 }) => {
   const navigate = useNavigate();
+  const { t } = useLanguage();
+  const pricing = getCoursePriceDisplay(course);
 
   return (
     <article
@@ -24,17 +28,30 @@ export const CourseCard = ({ course, showProgress = false, progress = 0 }) => {
           fallbackClassName="w-full h-full grid place-items-center bg-[linear-gradient(135deg,#002FA7_0%,#001C63_100%)]"
           fallbackIconClassName="w-10 h-10 text-white/70"
         />
-        <div className="absolute top-2 left-2 flex gap-1.5">
+        <div className="absolute top-2 left-2 flex flex-wrap gap-1.5 max-w-[85%]">
           {course.language && (
             <span className="chip bg-white/95 text-slate-600 border border-slate-200">
               <Globe className="w-3 h-3" />
               {getCourseLanguageDisplay(course.language, { short: true })}
             </span>
           )}
-          {course.is_free ? (
-            <span className="chip chip-free bg-white/95">Free</span>
+          {pricing.isFree ? (
+            <span className="chip chip-free bg-white/95">{t("courses.free")}</span>
+          ) : pricing.hasOffer ? (
+            <>
+              <span
+                className="chip chip-paid bg-white/95 tabular inline-flex items-center gap-1.5"
+                data-testid={`course-card-special-offer-${course.id}`}
+              >
+                <span className="line-through opacity-70">{pricing.originalPriceLabel}</span>
+                <span>{pricing.priceLabel}</span>
+              </span>
+              <span className="chip bg-amber-50 text-amber-800 border border-amber-200">
+                {t("courses.specialOffer")}
+              </span>
+            </>
           ) : (
-            <span className="chip chip-paid bg-white/95 tabular">${course.price?.toFixed(2)}</span>
+            <span className="chip chip-paid bg-white/95 tabular">{pricing.priceLabel}</span>
           )}
         </div>
         {course.is_private && (

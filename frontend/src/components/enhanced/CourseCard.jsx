@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { BookOpen, Lock, Globe2, ArrowUpRight } from 'lucide-react';
+import { getCoursePriceDisplay } from '@/lib/coursePricing';
 
 /**
  * CourseCard — Swiss card with a 3px Klein index rule, lazy-loaded
@@ -7,8 +8,8 @@ import { BookOpen, Lock, Globe2, ArrowUpRight } from 'lucide-react';
  * optional progress rail for enrolled students.
  *
  * Props:
- *  course:   { id, title, description, thumbnail_url, price, is_free,
- *              is_private, language, category }
+ *  course:   { id, title, description, thumbnail_url, price, original_price,
+ *              is_free, is_private, language, category }
  *  progress: number 0–100 (optional — shown only if provided)
  *  onOpen:   (course) => void
  *  t:        i18n translate fn (optional; falls back to English)
@@ -18,6 +19,7 @@ const LANG_LABELS = { en: 'EN', 'zh-TW': '繁中', 'zh-CN': '简中', ja: '日�
 export default function CourseCard({ course, progress, onOpen, t = (s) => s }) {
   const [imgFailed, setImgFailed] = useState(false);
   const showImage = course.thumbnail_url && !imgFailed;
+  const pricing = getCoursePriceDisplay(course);
 
   return (
     <article
@@ -48,12 +50,22 @@ export default function CourseCard({ course, progress, onOpen, t = (s) => s }) {
         )}
 
         {/* Chips overlay */}
-        <div className="absolute top-2 left-2 flex gap-1.5">
-          {course.is_free ? (
+        <div className="absolute top-2 left-2 flex flex-wrap gap-1.5 max-w-[85%]">
+          {pricing.isFree ? (
             <span className="chip chip-free bg-white/95">{t('Free')}</span>
+          ) : pricing.hasOffer ? (
+            <>
+              <span className="chip chip-paid bg-white/95 tabular inline-flex items-center gap-1.5">
+                <span className="line-through opacity-70">{pricing.originalPriceLabel}</span>
+                <span>{pricing.priceLabel}</span>
+              </span>
+              <span className="chip bg-amber-50 text-amber-800 border border-amber-200">
+                {t('Special offer')}
+              </span>
+            </>
           ) : (
             <span className="chip chip-paid bg-white/95 tabular">
-              ${Number(course.price || 0).toFixed(2)}
+              {pricing.priceLabel}
             </span>
           )}
           {course.is_private && (

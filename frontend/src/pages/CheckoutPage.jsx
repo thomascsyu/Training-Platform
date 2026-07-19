@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { PublicSiteHeader } from "@/components/PublicSiteHeader";
 import { CourseThumbnail } from "@/components/CourseThumbnail";
 import { API, formatError } from "@/lib/api";
+import { getCoursePriceDisplay } from "@/lib/coursePricing";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -91,7 +92,8 @@ export const CheckoutPage = () => {
 
   if (!course) return null;
 
-  const priceLabel = `$${Number(course.price).toFixed(2)}`;
+  const pricing = getCoursePriceDisplay(course);
+  const priceLabel = pricing.priceLabel;
 
   return (
     <div className="min-h-screen bg-[#F4F5F7]" data-testid="checkout-page">
@@ -136,10 +138,18 @@ export const CheckoutPage = () => {
                   {course.title}
                 </p>
                 <p className="text-sm text-slate-500">{t("payment.fullAccess")}</p>
+                {pricing.hasOffer && (
+                  <p className="text-xs text-amber-700 mt-1">{t("courses.specialOffer")}</p>
+                )}
               </div>
-              <p className="font-display text-xl tabular-nums" data-testid="checkout-course-price">
-                {priceLabel}
-              </p>
+              <div className="text-right" data-testid="checkout-course-price">
+                {pricing.hasOffer && (
+                  <p className="text-sm text-slate-400 line-through tabular-nums">
+                    {pricing.originalPriceLabel}
+                  </p>
+                )}
+                <p className="font-display text-xl tabular-nums">{priceLabel}</p>
+              </div>
             </div>
 
             <Separator />
