@@ -237,12 +237,8 @@ export const CourseDetailPage = () => {
 
   const startEnroll = () => {
     if (!course.is_free && course.price > 0) {
-      const checkoutPath = `/checkout/${id}`;
-      if (!user) {
-        navigate(`/login?next=${encodeURIComponent(checkoutPath)}`);
-        return;
-      }
-      navigate(checkoutPath);
+      // Always open checkout; guests sign in on that page before Stripe payment.
+      navigate(`/checkout/${id}`);
       return;
     }
 
