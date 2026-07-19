@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,10 +10,17 @@ import { formatError } from "@/lib/api";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 
+const safeNextPath = (raw) => {
+  if (!raw || typeof raw !== "string") return null;
+  if (!raw.startsWith("/") || raw.startsWith("//")) return null;
+  return raw;
+};
+
 export const LoginPage = () => {
   const { login } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -24,7 +31,7 @@ export const LoginPage = () => {
     try {
       await login(email, password);
       toast.success(t("auth.welcomeBack"));
-      navigate("/dashboard");
+      navigate(safeNextPath(searchParams.get("next")) || "/dashboard");
     } catch (err) {
       toast.error(formatError(err));
     } finally {

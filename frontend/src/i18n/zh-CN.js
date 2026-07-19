@@ -420,12 +420,25 @@ export default {
     // Payment
     payment: {
       processing: "处理付款中...",
-      pleaseWait: "请稍候，我们正在確认您的付款。",
+      pleaseWait: "请稍候，我们正在确认您的付款。",
       successful: "付款成功！",
       enrolledInCourse: "您已成功报名课程。",
       goToCourses: "前往我的课程",
-      somethingWrong: "出現问题",
-      contactSupport: "如果问题持续存在，请联繫客服。"
+      somethingWrong: "出现问题",
+      contactSupport: "如果问题持续存在，请联系客服。",
+      checkout: "结账",
+      completePurchase: "完成购买",
+      reviewOrder: "请确认订单内容，然后前往 Stripe 安全结账。",
+      orderSummary: "订单摘要",
+      secureStripe: "付款由 Stripe 安全处理。",
+      fullAccess: "完整课程权限",
+      total: "合计",
+      redirectNotice: "您将被导向 Stripe 完成付款。付款成功后即可立即开通课程。",
+      payAmount: "支付 {amount}",
+      backToCourse: "返回课程",
+      termsHint: "您正在购买以下课程的访问权限：",
+      alreadyEnrolled: "您已报名此课程。",
+      canceled: "付款已取消，您可以随时再试。"
     },
 
     // Admin Payments

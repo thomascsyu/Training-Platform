@@ -45,11 +45,11 @@ async def create_checkout(data: PaymentCreate, request: Request):
         raise HTTPException(status_code=400, detail="You are already enrolled in this course")
 
     success_url = f"{data.origin_url}/payment/success?session_id={{CHECKOUT_SESSION_ID}}"
-    cancel_url = f"{data.origin_url}/courses/{data.course_id}?payment=canceled"
+    cancel_url = f"{data.origin_url}/checkout/{data.course_id}?payment=canceled"
 
     try:
+        # Omit payment_method_types so Stripe can enable dynamic payment methods.
         session = stripe.checkout.Session.create(
-            payment_method_types=["card"],
             line_items=[{
                 "price_data": {
                     "currency": "usd",

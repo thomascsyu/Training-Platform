@@ -18,6 +18,7 @@ const ForgotPasswordPage = lazy(() => import("@/pages/ForgotPasswordPage").then(
 const ResetPasswordPage = lazy(() => import("@/pages/ResetPasswordPage").then((m) => ({ default: m.ResetPasswordPage })));
 const CoursesPage = lazy(() => import("@/pages/CoursesPage").then((m) => ({ default: m.CoursesPage })));
 const CourseDetailPage = lazy(() => import("@/pages/CourseDetailPage").then((m) => ({ default: m.CourseDetailPage })));
+const CheckoutPage = lazy(() => import("@/pages/CheckoutPage").then((m) => ({ default: m.CheckoutPage })));
 const PaymentSuccessPage = lazy(() => import("@/pages/PaymentSuccessPage").then((m) => ({ default: m.PaymentSuccessPage })));
 const StudentDashboard = lazy(() => import("@/pages/StudentDashboard").then((m) => ({ default: m.StudentDashboard })));
 const AdminDashboard = lazy(() => import("@/pages/AdminDashboard").then((m) => ({ default: m.AdminDashboard })));
@@ -81,6 +82,7 @@ function App() {
               <Route path="/reset-password" element={<ResetPasswordPage />} />
               <Route path="/courses" element={<CoursesPage />} />
               <Route path="/courses/:id" element={<CourseDetailPage />} />
+              <Route path="/checkout/:courseId" element={<CheckoutPage />} />
               <Route path="/payment/success" element={<PaymentSuccessPage />} />
 
               <Route

@@ -458,7 +458,20 @@ export default {
       enrolledInCourse: "You have been enrolled in the course.",
       goToCourses: "Go to My Courses",
       somethingWrong: "Something went wrong",
-      contactSupport: "Please contact support if the issue persists."
+      contactSupport: "Please contact support if the issue persists.",
+      checkout: "Checkout",
+      completePurchase: "Complete your purchase",
+      reviewOrder: "Review your order, then continue to Stripe's secure checkout.",
+      orderSummary: "Order summary",
+      secureStripe: "Payments are processed securely by Stripe.",
+      fullAccess: "Full course access",
+      total: "Total",
+      redirectNotice: "You'll be redirected to Stripe to finish payment. Your enrollment unlocks as soon as payment succeeds.",
+      payAmount: "Pay {amount}",
+      backToCourse: "Back to course",
+      termsHint: "You are purchasing access to",
+      alreadyEnrolled: "You are already enrolled in this course.",
+      canceled: "Payment canceled. You can try again anytime."
     },
 
     // Admin Payments

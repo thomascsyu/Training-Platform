@@ -425,7 +425,20 @@ export default {
       enrolledInCourse: "您已成功報名課程。",
       goToCourses: "前往我的課程",
       somethingWrong: "出現問題",
-      contactSupport: "如果問題持續存在，請聯繫客服。"
+      contactSupport: "如果問題持續存在，請聯繫客服。",
+      checkout: "結帳",
+      completePurchase: "完成購買",
+      reviewOrder: "請確認訂單內容，然後前往 Stripe 安全結帳。",
+      orderSummary: "訂單摘要",
+      secureStripe: "付款由 Stripe 安全處理。",
+      fullAccess: "完整課程權限",
+      total: "合計",
+      redirectNotice: "您將被導向 Stripe 完成付款。付款成功後即可立即開通課程。",
+      payAmount: "支付 {amount}",
+      backToCourse: "返回課程",
+      termsHint: "您正在購買以下課程的存取權限：",
+      alreadyEnrolled: "您已報名此課程。",
+      canceled: "付款已取消，您可以隨時再試。"
     },
 
     // Admin Payments
