@@ -29,6 +29,8 @@ CERTIFICATE_BACKGROUNDS = [
 ]
 _BACKGROUND_KEYS = {bg["key"] for bg in CERTIFICATE_BACKGROUNDS}
 DEFAULT_BACKGROUND = "plain"
+# Maximum named certificate templates allowed on the platform (admin Templates tab).
+MAX_CERTIFICATE_TEMPLATES = 5
 DEFAULT_ORIENTATION = "landscape"
 _ORIENTATIONS = {"landscape", "portrait"}
 DEFAULT_BODY_TEXT = (

@@ -23,11 +23,17 @@ import {
 } from "@/components/ui/select";
 import { Plus, Edit, Trash2, Loader2, FileCheck, Palette, Wand2 } from "lucide-react";
 import { API, formatError } from "@/lib/api";
-import { CERTIFICATE_BACKGROUNDS, DEFAULT_CERTIFICATE_BACKGROUND, backgroundLabel } from "@/lib/certificateBackgrounds";
+import {
+  CERTIFICATE_BACKGROUNDS,
+  DEFAULT_CERTIFICATE_BACKGROUND,
+  MAX_CERTIFICATE_TEMPLATES,
+  backgroundLabel,
+} from "@/lib/certificateBackgrounds";
 import { useLanguage } from "@/contexts/LanguageContext";
 import EmptyState from "@/components/enhanced/EmptyState";
 import { TableSkeleton } from "@/components/enhanced/Skeletons";
 import { useNavigate } from "react-router-dom";
+import { CertificateBackgroundUpload } from "@/components/certificates/CertificateBackgroundUpload";
 
 const emptyTemplate = () => ({
   id: null,
@@ -36,6 +42,8 @@ const emptyTemplate = () => ({
   primary_color: "#002fa7",
   secondary_color: "#0a0b10",
   background: DEFAULT_CERTIFICATE_BACKGROUND,
+  background_image_url: null,
+  orientation: "landscape",
   is_default: false,
 });
 
@@ -67,6 +75,10 @@ export const CertificateTemplatesPanel = () => {
   };
 
   const openCreate = () => {
+    if (templates.length >= MAX_CERTIFICATE_TEMPLATES) {
+      toast.error(t("certificateTemplates.limitReached", { max: MAX_CERTIFICATE_TEMPLATES }));
+      return;
+    }
     setEditing(null);
     setForm(emptyTemplate());
     setDialogOpen(true);
@@ -85,6 +97,8 @@ export const CertificateTemplatesPanel = () => {
         primary_color: form.primary_color,
         secondary_color: form.secondary_color,
         background: form.background,
+        orientation: form.orientation || "landscape",
+        background_image_url: form.background_image_url || undefined,
       });
       setForm((prev) => ({ ...prev, html: data.html }));
       toast.success(t("certificateTemplates.generated"));
@@ -92,6 +106,21 @@ export const CertificateTemplatesPanel = () => {
       toast.error(formatError(e));
     } finally {
       setGenerating(false);
+    }
+  };
+
+  const regeneratePreviewHtml = async (nextForm) => {
+    try {
+      const { data } = await API.post("/certificate-templates/render-default", {
+        primary_color: nextForm.primary_color,
+        secondary_color: nextForm.secondary_color,
+        background: nextForm.background,
+        orientation: nextForm.orientation || "landscape",
+        background_image_url: nextForm.background_image_url || undefined,
+      });
+      setForm((prev) => ({ ...prev, html: data.html }));
+    } catch (e) {
+      toast.error(formatError(e));
     }
   };
 
@@ -108,6 +137,8 @@ export const CertificateTemplatesPanel = () => {
         primary_color: form.primary_color,
         secondary_color: form.secondary_color,
         background: form.background,
+        background_image_url: form.background_image_url,
+        orientation: form.orientation || "landscape",
         is_default: form.is_default,
       };
       if (editing) {
@@ -139,13 +170,27 @@ export const CertificateTemplatesPanel = () => {
     }
   };
 
+  const atTemplateLimit = templates.length >= MAX_CERTIFICATE_TEMPLATES;
+
   return (
     <div data-testid="admin-certificate-templates-page">
+      {atTemplateLimit ? (
+        <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-sm px-3 py-2 mb-4" data-testid="template-limit-notice">
+          {t("certificateTemplates.limitNotice", { max: MAX_CERTIFICATE_TEMPLATES })}
+        </p>
+      ) : null}
       <div className="flex justify-end gap-2 mb-4">
         <Button
           variant="outline"
           className="rounded-sm"
-          onClick={() => navigate("/admin/certificate-builder")}
+          onClick={() => {
+            if (atTemplateLimit) {
+              toast.error(t("certificateTemplates.limitReached", { max: MAX_CERTIFICATE_TEMPLATES }));
+              return;
+            }
+            navigate("/admin/certificate-builder");
+          }}
+          disabled={atTemplateLimit}
           data-testid="create-with-builder-btn"
         >
           <Wand2 className="w-4 h-4 mr-2" /> {t("certificateTemplates.createWithBuilder")}
@@ -153,6 +198,7 @@ export const CertificateTemplatesPanel = () => {
         <Button
           onClick={openCreate}
           className="btn-primary"
+          disabled={atTemplateLimit}
           data-testid="create-template-btn"
         >
           <Plus className="w-4 h-4 mr-2" /> {t("certificateTemplates.createTemplate")}
@@ -308,6 +354,19 @@ export const CertificateTemplatesPanel = () => {
                   />
                 </div>
               </div>
+              <CertificateBackgroundUpload
+                value={form.background_image_url}
+                requireLandscape
+                onChange={async (url) => {
+                  const next = { ...form, background_image_url: url };
+                  setForm(next);
+                  if (next.html?.trim()) {
+                    await regeneratePreviewHtml(next);
+                  }
+                }}
+                testId="template-background-upload"
+              />
+              <p className="text-xs text-slate-500">{t("certificateTemplates.landscapeBackgroundHint")}</p>
               <div className="space-y-2">
                 <Label>{t("certificateTemplates.background")}</Label>
                 <Select

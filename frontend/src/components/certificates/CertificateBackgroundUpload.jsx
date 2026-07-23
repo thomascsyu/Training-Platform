@@ -12,6 +12,8 @@ export const CertificateBackgroundUpload = ({
   value,
   onChange,
   disabled = false,
+  requireLandscape = false,
+  previewAspectClass = "aspect-[11/8.5]",
   testId = "certificate-background-upload",
 }) => {
   const { t } = useLanguage();
@@ -47,6 +49,26 @@ export const CertificateBackgroundUpload = ({
     if (!isAllowedType) {
       toast.error(t("certificateBuilder.invalidImageType"));
       return;
+    }
+
+    if (requireLandscape) {
+      const isLandscape = await new Promise((resolve) => {
+        const img = new Image();
+        const objectUrl = URL.createObjectURL(file);
+        img.onload = () => {
+          URL.revokeObjectURL(objectUrl);
+          resolve(img.naturalWidth > img.naturalHeight);
+        };
+        img.onerror = () => {
+          URL.revokeObjectURL(objectUrl);
+          resolve(false);
+        };
+        img.src = objectUrl;
+      });
+      if (!isLandscape) {
+        toast.error(t("certificateTemplates.landscapeBackgroundRequired"));
+        return;
+      }
     }
 
     clearLocalPreview();
@@ -106,7 +128,7 @@ export const CertificateBackgroundUpload = ({
         data-testid={`${testId}-dropzone`}
       >
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <div className="w-full sm:w-48 h-28 bg-white border border-slate-200 rounded-sm overflow-hidden flex items-center justify-center shrink-0">
+          <div className={`w-full sm:w-48 bg-white border border-slate-200 rounded-sm overflow-hidden flex items-center justify-center shrink-0 ${previewAspectClass}`}>
             {previewSrc ? (
               <img
                 src={previewSrc}
