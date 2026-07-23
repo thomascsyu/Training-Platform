@@ -10,6 +10,9 @@ export const CERTIFICATE_BACKGROUNDS = [
 
 export const DEFAULT_CERTIFICATE_BACKGROUND = "plain";
 
+/** Platform limit for named certificate templates (must match backend). */
+export const MAX_CERTIFICATE_TEMPLATES = 5;
+
 // Translate a background key to a human label using the i18n `t` helper,
 // falling back to the raw key when no translation is available.
 export const backgroundLabel = (t, key) => {

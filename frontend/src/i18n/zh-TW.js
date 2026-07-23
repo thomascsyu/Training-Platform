@@ -238,7 +238,11 @@ export default {
       created: "範本已建立。",
       updated: "範本已更新。",
       deleted: "範本已刪除。",
-      generated: "已產生預設 HTML。"
+      generated: "已產生預設 HTML。",
+      limitNotice: "最多可儲存 {max} 個證書範本。刪除一個後才能建立新的。",
+      limitReached: "已達 {max} 個證書範本上限。",
+      landscapeBackgroundHint: "可選橫向背景（11×8.5 英寸）。JPG 或 PNG，最大 5MB。自訂圖片優先於下方預設圖案。",
+      landscapeBackgroundRequired: "證書背景須為橫向圖片（寬度大於高度）。"
     },
 
     certificateBuilder: {

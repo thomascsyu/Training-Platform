@@ -239,7 +239,11 @@ export default {
       created: "Template created.",
       updated: "Template updated.",
       deleted: "Template deleted.",
-      generated: "Default HTML generated."
+      generated: "Default HTML generated.",
+      limitNotice: "You can save up to {max} certificate templates. Delete one to create another.",
+      limitReached: "Maximum of {max} certificate templates reached.",
+      landscapeBackgroundHint: "Optional landscape background (11×8.5 in). JPG or PNG, max 5MB. Custom image overrides preset artwork below.",
+      landscapeBackgroundRequired: "Certificate background must be a landscape image (width greater than height)."
     },
 
     certificateBuilder: {

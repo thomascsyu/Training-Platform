@@ -239,7 +239,11 @@ export default {
       created: "テンプレートを作成しました。",
       updated: "テンプレートを更新しました。",
       deleted: "テンプレートを削除しました。",
-      generated: "デフォルトHTMLを生成しました。"
+      generated: "デフォルトHTMLを生成しました。",
+      limitNotice: "証明書テンプレートは最大 {max} 件まで保存できます。新規作成するには1件削除してください。",
+      limitReached: "証明書テンプレートは最大 {max} 件までです。",
+      landscapeBackgroundHint: "任意の横向き背景（11×8.5インチ）。JPG または PNG、最大 5MB。カスタム画像は下のプリセットより優先されます。",
+      landscapeBackgroundRequired: "証明書背景は横向き画像（幅が高さより大きい）である必要があります。"
     },
 
     certificateBuilder: {

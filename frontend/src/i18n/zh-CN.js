@@ -238,7 +238,11 @@ export default {
       created: "模板已创建。",
       updated: "模板已更新。",
       deleted: "模板已删除。",
-      generated: "已生成默认 HTML。"
+      generated: "已生成默认 HTML。",
+      limitNotice: "最多可保存 {max} 个证书模板。删除一个后才能创建新的。",
+      limitReached: "已达 {max} 个证书模板上限。",
+      landscapeBackgroundHint: "可选横向背景（11×8.5 英寸）。JPG 或 PNG，最大 5MB。自定义图片优先于下方预设图案。",
+      landscapeBackgroundRequired: "证书背景须为横向图片（宽度大于高度）。"
     },
 
     certificateBuilder: {

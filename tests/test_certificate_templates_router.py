@@ -27,6 +27,7 @@ def _build_mock_db():
     mock_db.certificate_templates.update_one = AsyncMock()
     mock_db.certificate_templates.update_many = AsyncMock()
     mock_db.certificate_templates.delete_one = AsyncMock()
+    mock_db.certificate_templates.count_documents = AsyncMock(return_value=0)
     return mock_db
 
 
@@ -103,6 +104,25 @@ async def test_create_template_with_custom_background(monkeypatch):
 def test_certificate_template_create_rejects_invalid_background():
     with pytest.raises(ValidationError):
         CertificateTemplateCreate(name="Bad Background", background="not-a-real-style")
+
+
+@pytest.mark.asyncio
+async def test_create_template_rejects_when_at_template_limit(monkeypatch):
+    mock_db = _build_mock_db()
+    mock_db.certificate_templates.count_documents = AsyncMock(return_value=5)
+    mock_db.certificate_templates.find_one.return_value = None
+    monkeypatch.setattr(templates_router, "db", mock_db)
+    monkeypatch.setattr(templates_router, "require_roles", _fake_require_roles)
+
+    with pytest.raises(HTTPException) as exc_info:
+        await templates_router.create_template(
+            CertificateTemplateCreate(name="Sixth Template"),
+            request=object(),
+        )
+
+    assert exc_info.value.status_code == 409
+    assert "5" in exc_info.value.detail
+    mock_db.certificate_templates.insert_one.assert_not_awaited()
 
 
 @pytest.mark.asyncio

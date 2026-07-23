@@ -4,6 +4,7 @@ from fastapi import APIRouter, HTTPException, Request
 
 from auth_utils import require_roles
 from certificate_template import (
+    MAX_CERTIFICATE_TEMPLATES,
     compose_builder_certificate_html,
     create_certification_template_source,
     normalize_background,
@@ -148,6 +149,13 @@ async def render_default_template(data: CertificateTemplateRender, request: Requ
 @router.post("/certificate-templates")
 async def create_template(data: CertificateTemplateCreate, request: Request):
     await require_roles("admin")(request)
+
+    template_count = await db.certificate_templates.count_documents({})
+    if template_count >= MAX_CERTIFICATE_TEMPLATES:
+        raise HTTPException(
+            status_code=409,
+            detail=f"At most {MAX_CERTIFICATE_TEMPLATES} certificate templates are allowed",
+        )
 
     existing = await db.certificate_templates.find_one({"name": data.name})
     if existing:

@@ -239,7 +239,11 @@ export default {
       created: "템플릿이 생성되었습니다.",
       updated: "템플릿이 업데이트되었습니다.",
       deleted: "템플릿이 삭제되었습니다.",
-      generated: "기본 HTML이 생성되었습니다."
+      generated: "기본 HTML이 생성되었습니다.",
+      limitNotice: "인증서 템플릿은 최대 {max}개까지 저장할 수 있습니다. 새로 만들려면 하나를 삭제하세요.",
+      limitReached: "인증서 템플릿은 최대 {max}개까지입니다.",
+      landscapeBackgroundHint: "선택 사항: 가로 배경(11×8.5인치). JPG 또는 PNG, 최대 5MB. 사용자 이미지가 아래 프리셋보다 우선합니다.",
+      landscapeBackgroundRequired: "인증서 배경은 가로 이미지(너비가 높이보다 커야 함)여야 합니다."
     },
 
     certificateBuilder: {
